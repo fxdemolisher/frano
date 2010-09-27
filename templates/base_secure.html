@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Frano: Portfolio Management Improved{% endblock %}
+
+{% block navBar %}
+  <ul class="horizontallist">
+    <li>Signed in as <a href="/settings.html">{{ request.session.username }}</a></li>
+    <li><form action="/logout.html"><button id="logout">Sign Out</button></form></li>
+  </ul>
+{% endblock %}
+
+{% block headerRow %}
+  {% block loggedInHeader %}
+    <div class="six columns">
+      <div id="itemSelector" class="pageHeading">{{ portfolio.name }}</div>
+      <br style="clear:both;"/>
+       
+      <select name="type" id="myPortfolios" size="{{ portfolios.count }}">
+        {% for other_portfolio in portfolios %}
+          <option value="{{ other_portfolio.id }}" {% ifequal other_portfolio.id portfolio.id %}selected="selected"{% endifequal %}>{{ other_portfolio.name }}</option>
+        {% endfor %}
+      </select>
+      
+      <ul class="horizontallist" id="portfolioMeta">
+        {% if portfolio_start and portfolio_duration %}
+          <li><strong>Start Date:</strong></li>
+          <li></li>
+            
+          <li><strong>Duration:</strong></li>
+          <li></li>
+        {% else %}
+          <li>This portfolio is empty, please add transactions below.</li>
+        {% endif %}
+        
+      </ul>
+    </div>
+  {% endblock %}
+ 
+  <div class="two columns">
+    <button class="addNewPortfolio" id="addNewPortfolio">
+      Create New Portfolio
+    </button>
+  </div>
+
+  <div id="createNewDialogue">
+    <form action="/createPortfolio.html" method="post">
+      <label for="createNew">Enter a name:</label>
+      <input value="" type="text" name="name" id="name"/>
+      <button class="addNewPortfolio" id="confirmAddNewPortfolio">Create Portfolio</button>
+    </form>
+  </div>
+  
+  <div id="closeCreateNewDialogue"></div>
+  
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base_public.html" %}
+
+{% block pageHeading %}Register{% endblock %}
+
+{% block mainContent %}
+<div class="column-row">                
+  <div class="four columns">
+    <br/>
+    <h2>Enter your email and password to register</h2>
+      
+    <div class="registerForm">
+      {% for message in messages %}
+        {{ message }}
+        <br/>
+      {% endfor %}
+      
+      <form action="/register.html" method="post">
+        <label for="username">Enter your email</label>
+        <input type="text" name="username" id="" value=""/>
+        {{ form.errors.username }}
+        <br class="clear"/>
+            
+        <label for="password">Choose password</label>
+        <input type="password" name="password" id="" value=""/>
+        {{ form.errors.password }}
+        <br class="clear"/>
+        
+        <button class="addButton">Create an Account</button>
+        <br class="clear"/>
+      </form>
+    </div>
+  </div>
+  
+  <div class="four columns">
+    <div class="homepageFeatures loginFeatures">
+      <ul>
+        <li>
+          <strong>Already have an account?</strong>
+          <a href="/login.html">Sign in</a> using your email and password.
+        </li>
+        <li>
+          <strong>Why sign up?</strong>
+          If you wish to track your portfolio day to day and add new transactions you will need an account. We ask and keep a minimum amount of 
+          information about you, just enough to help you use the site.
+        </li>
+        <li>
+          <strong>Why we ask for your email?</strong>
+          We use your email only to identify you and provide you a new password in case you forget the one you gave us. Thats it, we do not 
+          SPAM, we do not send notifications. We will never give your address to anyone, even if they give us candy.
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

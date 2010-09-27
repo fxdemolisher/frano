@@ -1,0 +1,241 @@
+from django import forms
+from django.http import HttpResponse
+from django.shortcuts import render_to_response, redirect
+from django.template import RequestContext
+
+from models import User, Portfolio, Transaction
+from services import *
+
+def index(request):
+  if get_user(request) != None:
+    return redirect('/portfolio.html')
+  
+  return render_to_response('index.html', { }, context_instance = RequestContext(request))
+
+def about(request):
+  return render_to_response('about.html', { }, context_instance = RequestContext(request))
+
+def feedback(request):
+  return render_to_response('feedback.html', { }, context_instance = RequestContext(request))
+
+def legal(request):
+  return render_to_response('legal.html', { }, context_instance = RequestContext(request))
+
+def register(request):
+  messages = []
+  form = UsernamePasswordForm()
+  if request.method == 'POST':
+    form = UsernamePasswordForm(request.POST)
+    
+    if form.is_valid():
+      username = form.cleaned_data['username'].encode('UTF8')
+      password = form.cleaned_data['password'].encode('UTF8')
+      
+      if not does_username_exist(username):
+        user = register_user(username, password)
+        set_user(request, user.username)
+        return redirect("/portfolio.html")
+      
+      else:
+        messages.append('We already have an account under that email')
+      
+  return render_to_response('register.html', { 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
+
+def logout(request):
+  set_user(request, None)
+  return redirect('/index.html')
+
+def login(request):
+  messages = []
+  form = UsernamePasswordForm()
+  if request.method == 'POST':
+    form = UsernamePasswordForm(request.POST)
+    
+    if form.is_valid():
+      username = form.cleaned_data['username'].encode('UTF8')
+      password = form.cleaned_data['password'].encode('UTF8')
+      
+      if login_user(username, password):
+        set_user(request, username)
+        return redirect('/portfolio.html')
+      
+      else:
+        messages.append('Invalid username or password')
+    
+  return render_to_response('login.html', { 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
+  
+
+@login_required_decorator
+def settings(request):
+  messages = []
+  form = UsernamePasswordForm()
+  if request.method == 'POST':
+    form = ChangeUsernamePasswordForm(request.POST)
+    
+    if form.is_valid():
+      username = form.cleaned_data['username'].encode('UTF8')
+      password = form.cleaned_data['password'].encode('UTF8')
+      new_password = form.cleaned_data['new_password'].encode('UTF8')
+      
+      if login_user(get_user(request), password):
+        user = update_user(get_user(request), username, new_password)
+        set_user(request, user.username)
+        
+      else :
+        messages.append('Incorrect current password')
+    
+  
+  portfolios = Portfolio.objects.filter(user__username__exact = get_user(request))
+  
+  return render_to_response('settings.html', { 'portfolios' : portfolios, 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
+
+@login_required_decorator
+def portfolio(request):
+  portfolio_id = request.GET.get('id')
+  portfolios = Portfolio.objects.filter(user__username__exact = get_user(request))
+  
+  portfolio = None
+  if portfolio_id != None:
+    portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
+    
+  elif portfolios.count() > 0:
+    portfolio = portfolios[0]
+    
+  if portfolio == None:
+    return redirect('/settings.html')
+  
+  transaction_infos = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
+  symbols = set([t.symbol for t in transaction_infos])
+  quotes = dict((symbol, get_quote(symbol)) for symbol in symbols)
+  
+  types = dict(Transaction.TRANSACTION_TYPES)
+  transactions = []
+  portfolio_start = None
+  for info in transaction_infos:
+    if portfolio_start == None or portfolio_start > info.as_of_date:
+      portfolio_start = info.as_of_date
+    
+    price_per_share = info.total / info.quantity
+    pl = (quotes[info.symbol].price - price_per_share) * info.quantity
+    pl_percent = pl / info.total * 100
+    
+    transactions.append({
+      'info' : info,
+      'symbol_name' : quotes[info.symbol].name,
+      'type_class' : info.type.lower(),
+      'type_text' : types[info.type],
+      'pl' : (("$%.2f" % pl) if info.type == 'BUY' else ' - '),
+      'pl_percent' : (("%.2f%%" % pl_percent) if info.type == 'BUY' else ' - '),
+      'pl_class' : ('' if (pl == 0 or info.type != 'BUY') else ('pos' if pl > 0 else 'neg')),
+    })
+  
+  context = {
+      'portfolios' : portfolios, 
+      'portfolio' : portfolio,
+      'positions' : [],
+      'transactions' : transactions,
+      'portfolio_start' : portfolio_start,
+      
+    }
+  
+  return render_to_response('portfolio.html', context, context_instance = RequestContext(request))
+
+@login_required_decorator
+def create_portfolio(request):
+  user = User.objects.filter(username = get_user(request))[0]
+  portfolio_count = Portfolio.objects.filter(user__id__exact = user.id).count()
+  
+  name = request.POST.get('name')
+  if name == None or name == '':
+    name = 'Default-%d' % (portfolio_count)
+  
+  portfolio = Portfolio()
+  portfolio.user = user
+  portfolio.name = name
+  portfolio.save()
+  
+  return redirect ('/portfolio.html?portfolioId=%d' % (portfolio.id))
+
+@login_required_decorator
+def delete_portfolio(request):
+  portfolio_id = request.GET.get('id')
+  portfolio = Portfolio.objects.filter(id = portfolio_id, user__username__exact = get_user(request))[0]
+  portfolio.delete()
+  return redirect ('/settings.html')
+  
+@login_required_decorator
+def update_portfolios(request):
+  user = User.objects.filter(username = get_user(request))[0]
+  
+  for field in request.POST:
+    if field.startswith('name_'):
+      portfolio_id = field[len('name_'):]
+      name = request.POST.get(field)
+      
+      portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
+      if portfolio.user.id != user.id:
+        return HttpResponse(status = 500)
+      
+      portfolio.name = name
+      portfolio.save()
+      
+  return redirect ('/settings.html')
+
+@login_required_decorator
+def add_transaction(request):
+  portfolio_id = request.POST.get('portfolio_id')
+  portfolio = Portfolio.objects.filter(id = portfolio_id, user__username__exact = get_user(request))[0]
+  
+  form = TransactionForm(request.POST)
+  if not form.is_valid():
+    return redirect ("/portfolio.html?id=%d&invalid_transaction_input=True" % portfolio_id)
+  
+  cleaned_data = form.cleaned_data
+  
+  transaction = Transaction()
+  transaction.portfolio = portfolio
+  transaction.type = cleaned_data['type'].encode('UTF8')
+  transaction.as_of_date = cleaned_data['as_of_date']
+  transaction.symbol = cleaned_data['symbol']
+  transaction.quantity = cleaned_data['quantity']
+  transaction.price = cleaned_data['price']
+  transaction.total = cleaned_data['total']
+  transaction.save()
+  
+  return redirect ("/portfolio.html?id=%s" % portfolio_id)
+
+@login_required_decorator
+def delete_transaction(request):
+  transaction_id = request.GET.get('id')
+  transaction = Transaction.objects.filter(id = transaction_id, portfolio__user__username__exact = get_user(request))[0]
+  portfolio = transaction.portfolio
+  transaction.delete()
+  return redirect ('/portfolio.html?id=%d' % portfolio.id)
+
+class UsernamePasswordForm(forms.Form):
+  EMAIL_ERROR_MESSAGES = {
+      'required' : 'Please enter your email address',
+      'invalid' : 'Please enter a valid email address',
+      'max_length' : 'Email cannot be longer than 100 characters',
+    }
+
+  PASSWORD_ERROR_MESSAGES = {
+      'required' : 'Please enter your password',
+      'min_length' : 'Passwords cannot be shorter than 6 characters',
+      'max_length' : 'Passwords cannot be longer than 20 characters',
+    }
+
+  username = forms.EmailField(max_length = 100, error_messages = EMAIL_ERROR_MESSAGES)
+  password = forms.CharField(min_length = 6, max_length = 20, error_messages = PASSWORD_ERROR_MESSAGES)
+
+
+class ChangeUsernamePasswordForm(UsernamePasswordForm):
+  new_password = forms.CharField(required = False, min_length = 6, max_length = 20, error_messages = UsernamePasswordForm.PASSWORD_ERROR_MESSAGES)
+  
+class TransactionForm(forms.Form):
+  type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
+  as_of_date = forms.DateField()
+  symbol = forms.CharField(min_length = 1, max_length = 5)
+  quantity = forms.DecimalField(min_value = 0.01)
+  price = forms.DecimalField(min_value = 0.01)
+  total = forms.DecimalField(min_value = 0.01)

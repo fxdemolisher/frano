@@ -1,0 +1,115 @@
+/*  --------------------------------------------------
+  =TOC
+  --------------------------------------------------
+  1.  Portfolio
+    2.  Homepage
+
+*/
+
+
+/*  --------------------------------------------------
+  =Portfolio
+  -------------------------------------------------- */
+    /*typography*/
+    #portfolioMeta {color:#FFF;font-size:12px;}
+   #itemSelector {cursor:pointer;background: url(/img/icons.png) -24px -20px no-repeat;padding-left:25px;}
+   .tickerSymbol {font-size:18px;font-weight:bold;color:#333;}
+   .holdingsMeta {font-size:13px;font-weight:normal;margin-top:2px;}
+   #onboardingMessage {font-size:32px;margin-top:5px;margin-bottom:5px;}
+    /*forms*/
+    #myPortfolios {position:absolute;top:52px;font-size:50px;display:none;}
+    /*lists*/
+    .importantData {color:#000;}
+    .importantData .name {font-size:13px;font-weight:bold;}
+    .importantData .value {font-size:45px;margin-bottom:7px;}
+    .importantData .related {color:#666;}
+    .importantData .related STRONG {font-weight:bold;}
+    
+    .paging {width:250px;margin: 0 auto;font-size:15px;white-space:nowrap;}
+    .pagingButton {background: url(/img/gradients.png) 0 -43px repeat-x;padding:5px;cursor:pointer;color:#FFF;cursor:pointer;-moz-border-radius: 3px;-webkit-border-radius: 3px;}
+    .pagingSummary {padding-top:5px;}
+    
+    /*tabular data*/
+    .holdingsTable {font-size:16px;margin-top:10px;}
+    .holdingsTable TD {border-bottom: solid 1px #CCC;padding:5px 2px;font-weight:bold;vertical-align:top;}
+    .holdingsTable thead TD {font-size:12px;font-weight:normal !important;}
+    .pagingRow TD {background-color:#E3E3E3;}
+    .addNewRow TD {background: url(/img/gradients.png) 0 0 repeat-x;padding-top:9px;border-bottom:none;}
+    
+    /*buttons*/
+     .addNewPortfolio {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;float:right;margin-top:42px;}
+    
+    /*miscs*/
+    .ftl #nav, .ftl #header {opacity:0.25;}
+    .ftl #content {padding-top:20px;padding-bottom:20px;}
+    .ftl .addNewRow TD {background-image:none;}
+    #createNewDialogue {display:none;color:#CCC;right:-2px;top:92px;height:22px;width:400px;position:absolute;background-color:#666;border: solid 2px #999;padding:10px;-webkit-box-shadow: 2px 3px 3px #000;-moz-box-shadow: 2px 3px 3px #000;-moz-border-radius: 5px;-webkit-border-radius: 5px; }
+    #createNewDialogue .addNewPortfolio {margin-top:-3px;}
+    #closeCreateNewDialogue {display:none;background: url(/img/icons.png) -1px -75px no-repeat;width:40px;height:40px;cursor:pointer;position:absolute;right:-25px;top:72px;}
+    #createNewDialogue INPUT {-moz-border-radius: 5px;-webkit-border-radius: 5px;}
+    .transactionType {width:80px;float:left;padding:10px 3px;color:#FFF;background-color:#CCC;border: solid 1px #999;font-size:10px;font-weight:normal;text-align:center;text-transform: uppercase;margin-right:5px;}
+    .deposit {background-color:#B391B3;}
+    .sell {background-color:#A85252;}
+    .buy {background-color:#6CB56C;}
+    .withdraw {background-color:#BABA5D;}
+    .adjust {background-color:#D89041;}
+    .delete {background-position:0 0;cursor:pointer;}
+    .calendar {background-position:-22px 0;cursor:pointer;margin-left:3px;}
+    .add {background-position:0 -22px;cursor:pointer;}
+    
+/*  --------------------------------------------------
+  =Homepage
+  -------------------------------------------------- */
+    .homepageButton {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:20px;float:right;margin-top:16px; margin-left:20px;padding-left:10px;padding-right:10px;}   
+    .homepageButtonOr {margin-top:16px;float:right;font-size:20px;margin-left:10px;margin-right:-10px;padding-top:4px;}
+    .homepageCopy {line-height:24px;font-size:17px;}
+    .homepageCopy .highlight {color:#F90;font-weight:bold;}
+    .homepageImg {width:450px;height:368px;background: url(/img/homepage_screen.png) top left no-repeat;}
+    .loginFeatures {border-left:solid 1px #CCC;padding-left:22px;}
+    .homepageFeatures P {margin-bottom:12px;}
+    .homepageFeatures A {color:#3399cc;}
+    .homepageFeatures LI {line-height:24px;font-size:14px;}
+    .homepageFeatures STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
+
+/*  --------------------------------------------------
+  =login
+  -------------------------------------------------- */
+    .loginForm {margin-bottom:5px;padding-bottom:20px;margin-top:10px;border-bottom:solid 1px #CCC;border-bottom:none;border-right: solid 1px #CCC;}
+    .loginForm LABEL {width:120px;display:block;float:left;margin-top:5px;padding-left:35px;}
+    .loginForm INPUT {margin-top:5px;width:200px;} 
+    .loginForm BUTTON {margin-top:10px;margin-right:93px;}
+    .loginCopy {margin-top:30px;}
+    .loginCopy A {color:#3399cc;}
+    .loginCopy LI {line-height:24px;font-size:14px;}
+    .loginCopy STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
+    
+
+/*  --------------------------------------------------
+  =Register
+  -------------------------------------------------- */
+    .registerForm {margin-bottom:5px;padding-bottom:20px;margin-top:10px;border-bottom:solid 1px #CCC;}
+    .registerForm LABEL {width:120px;display:block;float:left;margin-top:5px;padding-left:35px;}
+    .registerForm INPUT {margin-top:5px;width:200px;} 
+    .registerForm BUTTON {margin-top:10px;margin-right:93px;}
+    .loginServices {margin-top:10px;margin-bottom:50px;}
+    .changeMind {display:block;text-align:center;color:#3399cc;}        
+    
+/*  --------------------------------------------------
+  =Password
+  -------------------------------------------------- */
+   /* .passwordForm {padding-100px;}*/
+    .passwordForm LABEL, .passwordForm INPUT {margin-top:5px;}
+    .passwordForm LABEL, .passwordForm INPUT, .passwordForm .addButton {float:left;margin-right:6px;}
+    
+/*  --------------------------------------------------
+  =Settings
+  -------------------------------------------------- */
+    .registerForm .explanatoryText {text-align:right;padding-right:90px;}
+    .updateSettingsForm {border-bottom:none;border-right: solid 1px #CCC;}
+    .portfolioOrderForm {padding-top:15px;}
+    .portfolioOrderForm INPUT {width:250px;}
+    .portfolioOrderForm .icon, .portfolioOrderForm INPUT {float:left;margin-right:8px;margin-bottom:22px;}
+    .portfolioOrderForm .addButton {margin-right:215px;}
+    .upArrow, .downArrow {width:26px;height:23px;cursor:pointer;}
+    .upArrow {background-position: 0 -114px;}
+    .downArrow {background-position:0 -140px;}

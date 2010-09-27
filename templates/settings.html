@@ -1,0 +1,71 @@
+{% extends "base_secure.html" %}
+
+{% block loggedInHeader %}
+  <div class="six columns">
+    <div class="pageHeading">Settings</div>
+    <br style="clear:both;"/>
+     
+    <ul class="horizontallist" id="portfolioMeta">
+      <li>You may use this screen to re-order your <a href="/portfolio.html">portfolios</a> or change your password</li>
+    </ul>
+  </div>
+{% endblock %}
+
+{% block mainContent %}
+  <div class="column-row">                
+    <div class="four columns">
+      <h2>Change Your Email or Password</h2>
+      <div class="registerForm updateSettingsForm">
+        {% for message in messages %}
+          {{ message }}
+          <br/>
+        {% endfor %}
+      
+        <form action="/settings.html" method="post">
+          <label for="username">Enter your email</label>
+          <input type="text" name="username" id="" value="{{ request.session.username }}"/>
+          {{ form.errors.username }}
+          <br class="clear"/>
+           
+          <label for="current_password">Current password</label>
+          <input type="password" name="password" id="" value=""/>
+          {{ form.errors.password }}
+          <br class="clear"/>
+           
+          <label for="new_password">New password</label>
+          <input type="password" name="new_password" id="" value=""/>
+          {{ form.errors.new_password }}
+          <br class="clear"/>
+           
+          <div class="explanatoryText">Leave new password blank if you are keeping your existing one</div>
+            
+          <button class="addButton">Save Changes</button>
+          <br class="clear"/>
+        </form>
+      </div>
+    </div>
+  
+    <div class="four columns">
+      <h2>Manage Portfolios</h2>
+      <div class="portfolioOrderForm">
+      
+        {% if not portfolios %}
+          You do not have any portfolios, add some using the button above.
+        {% else %}
+          <form action="/updatePortfolios.html" method="post">
+          
+            {% for portfolio in portfolios %}
+              <input type="text" name="name_{{ portfolio.id }}" value="{{ portfolio.name }}"/><div id="deletePortfolio_{{ portfolio.id }}" class="icon delete"></div>
+              <br class="clear"/>
+              
+            {% endfor %}
+          
+            <button class="addButton">Save Changes</button>
+            <br class="clear"/>
+          </form>
+        {% endif %}
+          
+      </div>
+    </div>
+  </div>
+{% endblock %}

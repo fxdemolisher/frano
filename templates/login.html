@@ -1,0 +1,47 @@
+{% extends "base_public.html" %}
+
+{% block pageHeading %}Sign In{% endblock %}
+
+{% block mainContent %}
+<div class="column-row">                
+  <div class="four columns">
+    <h2>Sign in using your Email and Password</h2>
+    <div class="loginForm">
+      <form action="/login.html" method="post">
+        {% for message in messages %}
+          {{ message }}
+          <br/>
+        {% endfor %}
+      
+        <label for="username">Enter your email</label>
+        <input type="text" name="username" id="username" value=""/>
+        {{ form.errors.username }}
+        <br class="clear"/>
+         
+        <label for="password">Current password</label>
+        <input type="password" name="password" id="password" value=""/>
+        {{ form.errors.username }}
+        <br class="clear"/>
+         
+        <button class="addButton">Sign In</button>
+        <br class="clear"/>
+       </form>
+    </div>
+  </div>
+  
+  <div class="four columns">
+    <div class="loginCopy">
+      <ul>
+        <li>
+          <strong>Already have an account?</strong>
+          Use the form on the left to sign in and see your portfolios.
+        </li>
+        <li>
+          <strong>Don't have an account yet?</strong>
+          Go ahead and <a href="/register.html">sign up</a> now!  
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

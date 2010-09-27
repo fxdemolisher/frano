@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Frano: Portfolio Management Improved{% endblock %}
+
+{% block navBar %}
+  <ul class="horizontallist">
+    <form action="/login.html" method="post">
+      <li><input type="text" name="username" id="username" /></li>
+      <li><input type="password" name="password" id="password"/></li>
+      <li><button id="signin">Sign In</button></li>
+    </form>
+  </ul>
+  <br/>
+  
+  <ul class="horizontallist">
+    <li><a href="/forgotPassword.html">Forgot Password?</a></li>
+  </ul>
+{% endblock %}
+
+{% block headerRow %}
+  <div class="five columns">
+    <div class="pageHeading">{% block pageHeading %}{% endblock %}</div>
+    <br style="clear:both;"/> 
+  </div>
+  <div class="three columns">
+    <form action="/register.html">
+      <button class="homepageButton">Sign Up</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base_secure.html" %}
+
+{% block mainContent %}
+<!-- important portfolio data -->        
+  <div class="column-row">                
+    <div class="three columns">
+      <ul class="importantData">
+        <li class="name">Market Value</li>
+        <li class="value">$30,380,10</li>
+        <li class="related"><strong>Cost Basis</strong> $30,497.83</li>
+      </ul>
+    </div>
+    
+    <div class="three columns">
+      <ul class="importantData">
+        <li class="name">Profit Loss</li>
+        <li class="value neg">-$117.73</li>
+        <li class="related"><strong>Daily %</strong> <span class="neg">-0.39%</span>&nbsp;&nbsp;&nbsp;&nbsp;<strong>Annual %</strong> <span class="neg">-0.19%</span></li>
+      </ul>
+    </div>
+    
+    <div class="two columns">
+      <ul class="importantData">
+        <li class="name">XIRR</li>
+        <li class="value pos">3.9893%</li>
+        <li class="related"><strong>IRR</strong> 0.346219%</li>
+      </ul>
+    </div>
+  </div>
+ 
+<!-- holdings -->
+  {% if positions %}             
+    <div class="column-row">
+      <div class="eight columns">
+        <table class="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+          <thead>
+            <tr>
+              <td>% of Allocation</td>
+              <td>Symbol/Name</td>
+              <td>Qty</td>
+              <td>Price/Cost</td>
+              <td>Mkt Value</td>                                
+              <td>Day's P/L</td>
+              <td>P/L %</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="allocation"></td>
+              <td>
+                <div class="tickerSymbol">IWM</div>
+                <div class="holdingsMeta">I Shares Russell 2000 I...</div>
+              </td>
+              <td>25.00</td>
+              <td>
+                <div class="neg">$61.21</div>
+                <div class="holdingsMeta neg">$63.55</div>
+              </td>
+              <td>$4,265.55</td>
+              <td class="neg">
+                  -$120.40
+                  <div class="holdingsMeta neg">-2.55%</div>
+              </td>
+              <td class="neg">-3.47%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+<!-- transactions -->
+  <div id="content" >
+    <div class="column-row">
+      <div class="eight columns">
+        <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+          <thead>
+            <tr>
+              <td>Type</td>
+              <td>Date</td>
+              <td>Symbol</td>
+              <td>Qty</td>
+              <td>Price</td>
+              <td>Total</td>
+              <td>P/L %</td>
+              <td>P/L $</td>
+              <td>&nbsp;</td>
+            </tr>
+          </thead>
+          <tbody id="holdingsTableTbody">
+          
+            {% if transactions %}
+              {% for transaction in transactions %}
+                <tr>
+                  <td><div class="transactionType {{ transaction.type_class }}">{{ transaction.type_text }}</div></td>
+                  <td>{{ transaction.info.as_of_date|date:'m/d/Y' }}</td>
+                  <td>
+                    <div class="tickerSymbol">{{ transaction.info.symbol }}</div>
+                    <div class="holdingsMeta">{{ transaction.symbol_name }}</div>
+                  </td>
+                  <td>{{ transaction.info.quantity|floatformat:4 }}</td>
+                  <td>${{ transaction.info.price|floatformat:2 }}</td>
+                  <td>${{ transaction.info.total|floatformat:2 }}</td>
+                  <td class="{{ transaction.pl_class }}">{{ transaction.pl_percent }}</td>
+                  <td class="{{ transaction.pl_class }}">{{ transaction.pl }}</td>
+                  <td><div id="deleteTransaction_{{ transaction.info.id }}" class="icon delete"></div></td>
+                </tr>
+              {% endfor %}
+              
+              <tr class="pagingRow">
+                <td colspan="99">
+                  <ul class="paging horizontallist">
+                    <li><div class="pagingButton">&lt;</div></li>
+                    <li><div class="pagingButton">&lt;&lt;</div></li>
+                    <li class="pagingSummary">1 - 5 out of 15</li>
+                    <li><div class="pagingButton">&gt;&gt;</div></li>
+                    <li><div class="pagingButton">&gt;</div></li>
+                  </ul>
+                </td>
+              </tr>
+              
+            {% endif %}
+   
+            <form action="addTransaction.html" method="post" id="addTransactionForm">
+              <input type="hidden" name="portfolio_id" value="{{ portfolio.id }}" />
+              
+              <tr class="addNewRow">
+                <td>
+                  <select name="type" id="newTransactionType">
+                    <option></option>
+                    <option value="BUY">Buy</option>
+                    <option value="SELL">Sell</option>
+                    <option value="DEPOSIT">Deposit Cash</option>
+                    <option value="WITHDRAW">Withdraw Cash</option>
+                    <option value="ADJUST">Adjust Cash</option>
+                  </select>
+                </td>
+                <td><input type="text" name="as_of_date" size="8" style="float:left;"/><div class="icon calendar"></div></td>
+                <td><input type="text" name="symbol" id="newTransactionSymbol" size="5"/></td>
+                <td><input type="text" name="quantity" size="5"/></td>
+                <td>$<input type="text" name="price" id="newTransactionPrice" size="5"/></td>
+                <td>$<input type="text" name="total" size="8"/></td>
+                <td> - </td>
+                <td> - </td>
+                <td><div class="icon add" id="addTransaction"></div></td>
+              </tr>
+            </form>
+            
+            {% if request.GET.invalid_transaction_input %}
+              <tr>
+                <td colspan="9">Invalid input for new transaction, please re-enter</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

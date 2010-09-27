@@ -1,0 +1,3 @@
+DROP DATABASE IF EXISTS frano;
+CREATE DATABASE frano;
+GRANT ALL ON frano.* TO tracker IDENTIFIED BY 'trackmystocks' WITH GRANT OPTION;
