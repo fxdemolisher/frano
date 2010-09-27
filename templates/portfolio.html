@@ -103,18 +103,18 @@
                   <td>${{ transaction.info.total|floatformat:2 }}</td>
                   <td class="{{ transaction.pl_class }}">{{ transaction.pl_percent }}</td>
                   <td class="{{ transaction.pl_class }}">{{ transaction.pl }}</td>
-                  <td><div id="deleteTransaction_{{ transaction.info.id }}" class="icon delete"></div></td>
+                  <td><a href="/deleteTransaction.html?id={{ transaction.info.id }}"><div class="icon delete"></div></a></td>
                 </tr>
               {% endfor %}
               
               <tr class="pagingRow">
                 <td colspan="99">
                   <ul class="paging horizontallist">
-                    <li><div class="pagingButton">&lt;</div></li>
-                    <li><div class="pagingButton">&lt;&lt;</div></li>
-                    <li class="pagingSummary">1 - 5 out of 15</li>
-                    <li><div class="pagingButton">&gt;&gt;</div></li>
-                    <li><div class="pagingButton">&gt;</div></li>
+                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page=1"><div class="pagingButton">&lt;&lt;</div></a></li>
+                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ previous_page }}"><div class="pagingButton">&lt;</div></a></li>
+                    <li class="pagingSummary">{{ page_start }} - {{ page_end }} out of {{ total_transactions }}</li>
+                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ next_page }}"><div class="pagingButton">&gt;</div></a></li>
+                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ last_page }}"><div class="pagingButton">&gt;&gt;</div></a></li>
                   </ul>
                 </td>
               </tr>

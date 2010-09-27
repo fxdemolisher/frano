@@ -10,12 +10,7 @@ $(function() {
       
     });
   });
-  
-  $("div[id^=deletePortfolio_]").click(function() {
-    var id = $(this).attr('id').substring('deletePortfolio_'.length)
-    location.href = "/deletePortfolio.html?id=" + id;
-  });
-  
+
   $("#itemSelector").click(function() {
     $("#myPortfolios").css("display", "block");
   });
@@ -36,10 +31,5 @@ $(function() {
   $("#addTransaction").click(function() {
     $('#addTransactionForm').submit();
   });
-  
-  $("div[id^=deleteTransaction_]").click(function() {
-    var id = $(this).attr('id').substring('deleteTransaction_'.length)
-    location.href = "/deleteTransaction.html?id=" + id;
-  });
-    
+   
 });

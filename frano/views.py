@@ -1,3 +1,5 @@
+import math
+
 from django import forms
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
@@ -105,16 +107,19 @@ def portfolio(request):
     return redirect('/settings.html')
   
   transaction_infos = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
+  transaction_count = transaction_infos.count()
   symbols = set([t.symbol for t in transaction_infos])
   quotes = dict((symbol, get_quote(symbol)) for symbol in symbols)
-  
   types = dict(Transaction.TRANSACTION_TYPES)
+  
+  last_page = int(math.ceil(transaction_count / 5.0))
+  page = int(request.GET.get('page', 1))
+  page = page if (page > last_page) else last_page
+  start_with = (page - 1) * 5
+  end_with = min(page * 5, transaction_count)
+  
   transactions = []
-  portfolio_start = None
-  for info in transaction_infos:
-    if portfolio_start == None or portfolio_start > info.as_of_date:
-      portfolio_start = info.as_of_date
-    
+  for info in transaction_infos[start_with:end_with]:
     price_per_share = info.total / info.quantity
     pl = (quotes[info.symbol].price - price_per_share) * info.quantity
     pl_percent = pl / info.total * 100
@@ -128,14 +133,25 @@ def portfolio(request):
       'pl_percent' : (("%.2f%%" % pl_percent) if info.type == 'BUY' else ' - '),
       'pl_class' : ('' if (pl == 0 or info.type != 'BUY') else ('pos' if pl > 0 else 'neg')),
     })
+    
+  portfolio_start = None
+  for info in transaction_infos:
+    if portfolio_start == None or portfolio_start > info.as_of_date:
+      portfolio_start = info.as_of_date
   
   context = {
       'portfolios' : portfolios, 
       'portfolio' : portfolio,
-      'positions' : [],
+      'total_transactions' : transaction_count,
+      'page_start' : start_with + 1,
+      'page_end' : end_with,
+      'page' : page,
+      'previous_page' : max(page - 1, 1),
+      'next_page' : min(page + 1, last_page),
+      'last_page' : last_page,
       'transactions' : transactions,
+      'positions' : [],
       'portfolio_start' : portfolio_start,
-      
     }
   
   return render_to_response('portfolio.html', context, context_instance = RequestContext(request))

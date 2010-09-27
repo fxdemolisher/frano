@@ -55,7 +55,7 @@
           <form action="/updatePortfolios.html" method="post">
           
             {% for portfolio in portfolios %}
-              <input type="text" name="name_{{ portfolio.id }}" value="{{ portfolio.name }}"/><div id="deletePortfolio_{{ portfolio.id }}" class="icon delete"></div>
+              <input type="text" name="name_{{ portfolio.id }}" value="{{ portfolio.name }}"/><a href="/deletePortfolio.html?id={{ portfolio.id }}"><div class="icon delete"></div></a>
               <br class="clear"/>
               
             {% endfor %}
