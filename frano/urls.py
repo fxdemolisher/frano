@@ -1,6 +1,8 @@
 from django.conf.urls.defaults import *
 from django.views.static import serve
-from frano import settings 
+from settings import DEBUG
+
+import os
 
 urlpatterns = patterns('frano.views',
   (r'^$', 'index'),
@@ -20,8 +22,10 @@ urlpatterns = patterns('frano.views',
   (r'^deleteTransaction.html', 'delete_transaction'),
 )
 
-urlpatterns += patterns('django.views.static',
-  (r'^css/(?P<path>.*)$', 'serve', { 'document_root' : settings.STATIC_DOC_ROOT + '/css' }),
-  (r'^img/(?P<path>.*)$', 'serve', { 'document_root' : settings.STATIC_DOC_ROOT + '/img' }),
-  (r'^js/(?P<path>.*)$', 'serve', { 'document_root' : settings.STATIC_DOC_ROOT + '/js' }),
-)
+if DEBUG:
+  dir = os.path.realpath('./../static')
+  urlpatterns += patterns('django.views.static',
+    (r'^css/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/css' }),
+    (r'^img/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/img' }),
+    (r'^js/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/js' }),
+  )

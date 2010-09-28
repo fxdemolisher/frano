@@ -5,8 +5,6 @@ import datetime
 DEBUG = True
 TEMPLATE_DEBUG = True
 
-STATIC_DOC_ROOT = '/home/gshafranovich/workspace/frano/static'
-
 DATABASE_ENGINE = 'mysql'
 DATABASE_NAME = 'frano'
 DATABASE_USER = 'tracker'
@@ -25,9 +23,10 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SECRET_KEY = '&1*y2=g+h57qxa&qct#z6+408l5$i5p7&cjp6)@@nfqwtrxn3&'
 
 TEMPLATE_LOADERS = (
-  'django.template.loaders.filesystem.load_template_source',
   'django.template.loaders.app_directories.load_template_source',
 )
+
+TEMPLATE_DIRS = ( )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
   'django.core.context_processors.request',
@@ -39,10 +38,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'frano.urls'
-
-TEMPLATE_DIRS = (
-  '/home/gshafranovich/workspace/frano/templates'
-)
 
 INSTALLED_APPS = (
   'django.contrib.sessions',

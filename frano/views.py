@@ -120,88 +120,8 @@ def portfolio(request):
   end_with = min(page * 5, transaction_count)
   
   transactions = []
-  for info in transaction_infos[start_with:end_with]:
-    transactions.append(info)
-    info.symbol_name = quotes[info.symbol].name
-    info.type_text = types[info.type]
-  
-  cash = 0.0
-  lots = {}
-  for info in reversed(transaction_infos):
-    if info.type == 'DEPOSIT' or info.type == 'WITHDRAW' or info.type == 'ADJUST':
-      cash += (-1 if info.type == 'WITHDRAW' else 1) * float(info.total)
-      
-    elif info.symbol != CASH_SYMBOL:
-      cash += (-1 if info.type == 'BUY' else 1) * float(info.total)
-      cur_lots = lots.get(info.symbol, [])
-      lots[info.symbol] = cur_lots
-      
-      if info.type == 'BUY':
-        cur_lots.append([ float(info.quantity), float(info.price) ])
-
-      elif info.type == 'SELL':
-        q = float(info.quantity)
-        while q > 0 and len(cur_lots) > 0:
-          can_sell = min(q, cur_lots[0][0])
-          q -= can_sell
-          if can_sell == cur_lots[0][0]:
-            del(cur_lots[0])
-            
-          else:
-           cur_lots[0][0] -= can_sell
-
   positions = []
-  for symbol in sorted(symbols):
-    if symbol != CASH_SYMBOL:
-      cost = sum([ (lot[0] * lot[1]) for lot in lots[symbol]])
-      quantity = sum([ lot[0] for lot in lots[symbol]])
-      opening_value = quantity * float(quotes[symbol].previous_close_price)
-      current_value = quantity * float(quotes[symbol].price)
-      
-      day_pl = (current_value - opening_value)
-      day_pl_percent = (day_pl / opening_value) * 100
-      pl_percent = ((current_value - cost) / cost) * 100
-      
-      positions.append({
-          'symbol' : symbol,
-          'name' : quotes[symbol].name,
-          'quantity' : quantity,
-          'price' : quotes[symbol].price,
-          'cost_price' : (cost / quantity),
-          'market_value' : current_value,
-          'day_pl' : day_pl,
-          'day_pl_percent' : day_pl_percent,
-          'day_pl_class' : ('' if day_pl == 0 else ('pos' if day_pl > 0 else 'neg')),
-          'pl_percent' : pl_percent,
-          'pl_percent_class' : ('' if pl_percent == 0 else ('pos' if pl_percent > 0 else 'neg')),
-        })
 
-  positions.append({ 'symbol' : CASH_SYMBOL, 'name' : quotes[CASH_SYMBOL].name, 'quantity' : cash, 'price' : 1.0, 
-                     'cost_price' : 1.0, 'market_value' : cash, 'day_pl' : 0, 'day_pl_percent' : 0, 'pl_percent' : 0, })
-
-  as_of_date = max([quotes[symbol].last_trade for symbol in quotes])
-  portfolio_start = min([info.as_of_date for info in transaction_infos])
-  market_value = sum([p['market_value'] for p in positions])
-  cost_basis = sum([(p['cost_price'] * p['quantity']) for p in positions])
-  pl = market_value - cost_basis
-  pl_percent = (pl / cost_basis) * 100
-  annualized_pl_percent = pl_percent / ((as_of_date.date() - portfolio_start).days / 365.0)
-  
-  for position in positions:
-    position['allocation'] = position['market_value'] / market_value * 100
-  
-  dates = []
-  payments = []
-  for info in reversed(transaction_infos):
-    if info.type == 'DEPOSIT' or info.type == 'WITHDRAW':
-      dates.append(info.as_of_date)
-      payments.append((-1 if info.type == 'DEPOSIT' else 1) * float(info.total))
-      
-  dates.append(as_of_date.date())
-  payments.append(market_value)
-  xirr_candidate = xirr(dates, payments)
-  xirr_percent = (xirr_candidate * 100) if xirr_candidate != None else 0 
-    
   context = {
       'portfolios' : portfolios, 
       'portfolio' : portfolio,
@@ -214,18 +134,101 @@ def portfolio(request):
       'last_page' : last_page,
       'transactions' : transactions,
       'positions' : positions,
-      'market_value' : market_value,
-      'cost_basis' : cost_basis,
-      'pl' : pl,
-      'pl_class' : ('' if pl == 0 else ('pos' if pl > 0 else 'neg')),
-      'pl_percent' : pl_percent,
-      'annualized_pl_percent' : annualized_pl_percent,
-      'xirr_percent': xirr_percent,
-      'xirr_percent_class' : ('' if xirr_percent == 0 else ('pos' if xirr_percent > 0 else 'neg')),
-      'as_of_date' : as_of_date,
-      'portfolio_start' : portfolio_start,
     }
-  
+
+  if transaction_count > 0:
+    for info in transaction_infos[start_with:end_with]:
+      transactions.append(info)
+      info.symbol_name = quotes[info.symbol].name
+      info.type_text = types[info.type]
+    
+    cash = 0.0
+    lots = {}
+    for info in reversed(transaction_infos):
+      if info.type == 'DEPOSIT' or info.type == 'WITHDRAW' or info.type == 'ADJUST':
+        cash += (-1 if info.type == 'WITHDRAW' else 1) * float(info.total)
+        
+      elif info.symbol != CASH_SYMBOL:
+        cash += (-1 if info.type == 'BUY' else 1) * float(info.total)
+        cur_lots = lots.get(info.symbol, [])
+        lots[info.symbol] = cur_lots
+        
+        if info.type == 'BUY':
+	  cur_lots.append([ float(info.quantity), float(info.price) ])
+
+        elif info.type == 'SELL':
+	  q = float(info.quantity)
+	  while q > 0 and len(cur_lots) > 0:
+	    can_sell = min(q, cur_lots[0][0])
+	    q -= can_sell
+	    if can_sell == cur_lots[0][0]:
+	      del(cur_lots[0])
+	      
+	    else:
+	     cur_lots[0][0] -= can_sell
+
+    for symbol in sorted(symbols):
+      if symbol != CASH_SYMBOL:
+        cost = sum([ (lot[0] * lot[1]) for lot in lots[symbol]])
+        quantity = sum([ lot[0] for lot in lots[symbol]])
+        opening_value = quantity * float(quotes[symbol].previous_close_price)
+        current_value = quantity * float(quotes[symbol].price)
+        
+        day_pl = (current_value - opening_value)
+        day_pl_percent = (day_pl / opening_value) * 100
+        pl_percent = ((current_value - cost) / cost) * 100
+        
+        positions.append({
+	    'symbol' : symbol,
+	    'name' : quotes[symbol].name,
+	    'quantity' : quantity,
+	    'price' : quotes[symbol].price,
+	    'cost_price' : (cost / quantity),
+	    'market_value' : current_value,
+	    'day_pl' : day_pl,
+	    'day_pl_percent' : day_pl_percent,
+	    'day_pl_class' : ('' if day_pl == 0 else ('pos' if day_pl > 0 else 'neg')),
+	    'pl_percent' : pl_percent,
+	    'pl_percent_class' : ('' if pl_percent == 0 else ('pos' if pl_percent > 0 else 'neg')),
+	  })
+
+    positions.append({ 'symbol' : CASH_SYMBOL, 'name' : quotes[CASH_SYMBOL].name, 'quantity' : cash, 'price' : 1.0, 
+	               'cost_price' : 1.0, 'market_value' : cash, 'day_pl' : 0, 'day_pl_percent' : 0, 'pl_percent' : 0, })
+
+    as_of_date = max([quotes[symbol].last_trade for symbol in quotes])
+    portfolio_start = min([info.as_of_date for info in transaction_infos])
+    market_value = sum([p['market_value'] for p in positions])
+    cost_basis = sum([(p['cost_price'] * p['quantity']) for p in positions])
+    pl = market_value - cost_basis
+    pl_percent = (pl / cost_basis) * 100
+    annualized_pl_percent = pl_percent / ((as_of_date.date() - portfolio_start).days / 365.0)
+    
+    for position in positions:
+      position['allocation'] = position['market_value'] / market_value * 100
+    
+    dates = []
+    payments = []
+    for info in reversed(transaction_infos):
+      if info.type == 'DEPOSIT' or info.type == 'WITHDRAW':
+        dates.append(info.as_of_date)
+        payments.append((-1 if info.type == 'DEPOSIT' else 1) * float(info.total))
+        
+    dates.append(as_of_date.date())
+    payments.append(market_value)
+    xirr_candidate = xirr(dates, payments)
+    xirr_percent = (xirr_candidate * 100) if xirr_candidate != None else 0 
+
+    context['market_value'] = market_value
+    context['cost_basis'] = cost_basis
+    context['pl'] = pl
+    context['pl_class'] = ('' if pl == 0 else ('pos' if pl > 0 else 'neg'))
+    context['pl_percent'] = pl_percent
+    context['annualized_pl_percent'] = annualized_pl_percent
+    context['xirr_percent'] = xirr_percent
+    context['xirr_percent_class'] = ('' if xirr_percent == 0 else ('pos' if xirr_percent > 0 else 'neg'))
+    context['as_of_date'] = as_of_date
+    context['portfolio_start'] = portfolio_start
+    
   return render_to_response('portfolio.html', context, context_instance = RequestContext(request))
 
 @login_required_decorator

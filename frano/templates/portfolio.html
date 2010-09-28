@@ -2,35 +2,37 @@
 
 {% block mainContent %}
 <!-- important portfolio data -->        
-  <div class="column-row">                
-    <div class="three columns">
-      <ul class="importantData">
-        <li class="name">Market Value</li>
-        <li class="value">${{ market_value|floatformat:"2" }}</li>
-        <li class="related"><strong>Cost Basis</strong> ${{ cost_basis|floatformat:"2" }}</li>
-      </ul>
+  {% if market_value %}
+    <div class="column-row">                
+      <div class="three columns">
+        <ul class="importantData">
+          <li class="name">Market Value</li>
+          <li class="value">${{ market_value|floatformat:"2" }}</li>
+          <li class="related"><strong>Cost Basis</strong> ${{ cost_basis|floatformat:"2" }}</li>
+        </ul>
+      </div>
+      
+      <div class="three columns">
+        <ul class="importantData">
+          <li class="name">Profit Loss</li>
+          <li class="value {{ pl_class }}">${{ pl|floatformat:"2" }}</li>
+          <li class="related">
+            <strong>Overall</strong> <span class="{{ pl_class }}">{{ pl_percent|floatformat:"2" }}%</span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <strong>Annualized</strong> <span class="{{ pl_class }}">{{ annualized_pl_percent|floatformat:"2" }}%</span>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="two columns">
+        <ul class="importantData">
+          <li class="name">XIRR</li>
+          <li class="value {{ xirr_percent_class }}">{{ xirr_percent|floatformat:2 }}%</li>
+          <li class="related"></li>
+        </ul>
+      </div>
     </div>
-    
-    <div class="three columns">
-      <ul class="importantData">
-        <li class="name">Profit Loss</li>
-        <li class="value {{ pl_class }}">${{ pl|floatformat:"2" }}</li>
-        <li class="related">
-          <strong>Overall</strong> <span class="{{ pl_class }}">{{ pl_percent|floatformat:"2" }}%</span>
-          &nbsp;&nbsp;&nbsp;&nbsp;
-          <strong>Annualized</strong> <span class="{{ pl_class }}">{{ annualized_pl_percent|floatformat:"2" }}%</span>
-        </li>
-      </ul>
-    </div>
-    
-    <div class="two columns">
-      <ul class="importantData">
-        <li class="name">XIRR</li>
-        <li class="value {{ xirr_percent_class }}">{{ xirr_percent|floatformat:2 }}%</li>
-        <li class="related"></li>
-      </ul>
-    </div>
-  </div>
+  {% endif %}
  
 <!-- holdings -->
   {% if positions %}             
