@@ -124,36 +124,31 @@ def portfolio(request):
     transactions.append(info)
     info.symbol_name = quotes[info.symbol].name
     info.type_text = types[info.type]
-    
-  lots = {}
-  for symbol in quotes:
-    if symbol != CASH_SYMBOL:
-      lots[symbol] = []
   
   cash = 0.0
+  lots = {}
   for info in reversed(transaction_infos):
     if info.type == 'DEPOSIT' or info.type == 'WITHDRAW' or info.type == 'ADJUST':
       cash += (-1 if info.type == 'WITHDRAW' else 1) * float(info.total)
       
     elif info.symbol != CASH_SYMBOL:
+      cash += (-1 if info.type == 'BUY' else 1) * float(info.total)
+      cur_lots = lots.get(info.symbol, [])
+      lots[info.symbol] = cur_lots
+      
       if info.type == 'BUY':
-        cash -= float(info.total)
-        lots[info.symbol].append([ float(info.quantity), float(info.price) ])
+        cur_lots.append([ float(info.quantity), float(info.price) ])
 
       elif info.type == 'SELL':
-        cash += float(info.total)
         q = float(info.quantity)
-        cur_lots = lots[info.symbol]
-        for i in range(len(cur_lots)):
-          can_sell = min(q, cur_lots[i][0])
-          cur_lots[i][0] -= can_sell
+        while q > 0 and len(cur_lots) > 0:
+          can_sell = min(q, cur_lots[0][0])
           q -= can_sell
-          if q == 0:
-            break
-          
-        for i in reversed(range(len(cur_lots))):
-          if cur_lots[i][0] == 0:
-            del(cur_lots[i])
+          if can_sell == cur_lots[0][0]:
+            del(cur_lots[0])
+            
+          else:
+           cur_lots[0][0] -= can_sell
 
   positions = []
   for symbol in sorted(symbols):
@@ -195,6 +190,18 @@ def portfolio(request):
   for position in positions:
     position['allocation'] = position['market_value'] / market_value * 100
   
+  dates = []
+  payments = []
+  for info in reversed(transaction_infos):
+    if info.type == 'DEPOSIT' or info.type == 'WITHDRAW':
+      dates.append(info.as_of_date)
+      payments.append((-1 if info.type == 'DEPOSIT' else 1) * float(info.total))
+      
+  dates.append(as_of_date.date())
+  payments.append(market_value)
+  xirr_candidate = xirr(dates, payments)
+  xirr_percent = (xirr_candidate * 100) if xirr_candidate != None else 0 
+    
   context = {
       'portfolios' : portfolios, 
       'portfolio' : portfolio,
@@ -213,6 +220,8 @@ def portfolio(request):
       'pl_class' : ('' if pl == 0 else ('pos' if pl > 0 else 'neg')),
       'pl_percent' : pl_percent,
       'annualized_pl_percent' : annualized_pl_percent,
+      'xirr_percent': xirr_percent,
+      'xirr_percent_class' : ('' if xirr_percent == 0 else ('pos' if xirr_percent > 0 else 'neg')),
       'as_of_date' : as_of_date,
       'portfolio_start' : portfolio_start,
     }
