@@ -1,4 +1,10 @@
 -------
+GS-0006
+-------
+
+Simplify transaction to position view into multiple functions, the single huge block is an issue.
+
+-------
 GS-0001
 -------
 
