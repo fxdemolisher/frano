@@ -6,16 +6,20 @@
     <div class="three columns">
       <ul class="importantData">
         <li class="name">Market Value</li>
-        <li class="value">$30,380,10</li>
-        <li class="related"><strong>Cost Basis</strong> $30,497.83</li>
+        <li class="value">${{ market_value|floatformat:"2" }}</li>
+        <li class="related"><strong>Cost Basis</strong> ${{ cost_basis|floatformat:"2" }}</li>
       </ul>
     </div>
     
     <div class="three columns">
       <ul class="importantData">
         <li class="name">Profit Loss</li>
-        <li class="value neg">-$117.73</li>
-        <li class="related"><strong>Daily %</strong> <span class="neg">-0.39%</span>&nbsp;&nbsp;&nbsp;&nbsp;<strong>Annual %</strong> <span class="neg">-0.19%</span></li>
+        <li class="value {{ pl_class }}">${{ pl|floatformat:"2" }}</li>
+        <li class="related">
+          <strong>Overall</strong> <span class="{{ pl_class }}">{{ pl_percent|floatformat:"2" }}%</span>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <strong>Annualized</strong> <span class="{{ pl_class }}">{{ annualized_pl_percent|floatformat:"2" }}%</span>
+        </li>
       </ul>
     </div>
     
@@ -45,24 +49,26 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td id="allocation"></td>
-              <td>
-                <div class="tickerSymbol">IWM</div>
-                <div class="holdingsMeta">I Shares Russell 2000 I...</div>
-              </td>
-              <td>25.00</td>
-              <td>
-                <div class="neg">$61.21</div>
-                <div class="holdingsMeta neg">$63.55</div>
-              </td>
-              <td>$4,265.55</td>
-              <td class="neg">
-                  -$120.40
-                  <div class="holdingsMeta neg">-2.55%</div>
-              </td>
-              <td class="neg">-3.47%</td>
-            </tr>
+            {% for position in positions %}
+              <tr>
+                <td id="allocation">{{ position.allocation|floatformat:'2' }}%</td>
+                <td>
+                  <div class="tickerSymbol">{{ position.symbol }}</div>
+                  <div class="holdingsMeta">{{ position.name }}</div>
+                </td>
+                <td>{{ position.quantity|floatformat:'2' }}</td>
+                <td>
+                  <div>${{ position.price|floatformat:'2' }}</div>
+                  <div class="holdingsMeta">${{ position.cost_price|floatformat:'2' }}</div>
+                </td>
+                <td>${{ position.market_value|floatformat:'2' }}</td>
+                <td class="{{ position.day_pl_class }}">
+                    ${{ position.day_pl|floatformat:'2' }}
+                    <div class="holdingsMeta {{ position.day_pl_class }}">{{ position.day_pl_percent|floatformat:'2' }}%</div>
+                </td>
+                <td class="{{ position.pl_percent_class }}">{{ position.pl_percent|floatformat:'2' }}%</td>
+              </tr>
+            {% endfor %}
           </tbody>
         </table>
       </div>
@@ -82,8 +88,6 @@
               <td>Qty</td>
               <td>Price</td>
               <td>Total</td>
-              <td>P/L %</td>
-              <td>P/L $</td>
               <td>&nbsp;</td>
             </tr>
           </thead>
@@ -92,18 +96,16 @@
             {% if transactions %}
               {% for transaction in transactions %}
                 <tr>
-                  <td><div class="transactionType {{ transaction.type_class }}">{{ transaction.type_text }}</div></td>
-                  <td>{{ transaction.info.as_of_date|date:'m/d/Y' }}</td>
+                  <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type_text }}</div></td>
+                  <td>{{ transaction.as_of_date|date:'m/d/Y' }}</td>
                   <td>
-                    <div class="tickerSymbol">{{ transaction.info.symbol }}</div>
+                    <div class="tickerSymbol">{{ transaction.symbol }}</div>
                     <div class="holdingsMeta">{{ transaction.symbol_name }}</div>
                   </td>
-                  <td>{{ transaction.info.quantity|floatformat:4 }}</td>
-                  <td>${{ transaction.info.price|floatformat:2 }}</td>
-                  <td>${{ transaction.info.total|floatformat:2 }}</td>
-                  <td class="{{ transaction.pl_class }}">{{ transaction.pl_percent }}</td>
-                  <td class="{{ transaction.pl_class }}">{{ transaction.pl }}</td>
-                  <td><a href="/deleteTransaction.html?id={{ transaction.info.id }}"><div class="icon delete"></div></a></td>
+                  <td>{{ transaction.quantity|floatformat:2 }}</td>
+                  <td>${{ transaction.price|floatformat:2 }}</td>
+                  <td>${{ transaction.total|floatformat:2 }}</td>
+                  <td><a href="/deleteTransaction.html?id={{ transaction.id }}"><div class="icon delete"></div></a></td>
                 </tr>
               {% endfor %}
               
@@ -140,8 +142,6 @@
                 <td><input type="text" name="quantity" size="5"/></td>
                 <td>$<input type="text" name="price" id="newTransactionPrice" size="5"/></td>
                 <td>$<input type="text" name="total" size="8"/></td>
-                <td> - </td>
-                <td> - </td>
                 <td><div class="icon add" id="addTransaction"></div></td>
               </tr>
             </form>

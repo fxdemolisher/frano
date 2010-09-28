@@ -22,12 +22,12 @@
       </select>
       
       <ul class="horizontallist" id="portfolioMeta">
-        {% if portfolio_start and portfolio_duration %}
-          <li><strong>Start Date:</strong></li>
-          <li></li>
+        {% if portfolio_start and as_of_date %}
+          <li><strong>As Of:</strong></li>
+          <li>{{ as_of_date|date:'m/d/Y' }}</li>
             
-          <li><strong>Duration:</strong></li>
-          <li></li>
+          <li><strong>Started On:</strong></li>
+          <li>{{ portfolio_start|date:'m/d/Y' }}</li>
         {% else %}
           <li>This portfolio is empty, please add transactions below.</li>
         {% endif %}

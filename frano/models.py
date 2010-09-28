@@ -43,7 +43,7 @@ class Transaction(models.Model):
     ordering = [ '-as_of_date', 'symbol' ]
   
   def __unicode__(self):
-    return self.as_of_date
+    return self.symbol
   
 class Quote(models.Model):
   """Price quote of a instrument"""

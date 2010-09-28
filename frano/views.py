@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 
+from frano.settings import CASH_SYMBOL
 from models import User, Portfolio, Transaction
 from services import *
 
@@ -114,30 +115,85 @@ def portfolio(request):
   
   last_page = int(math.ceil(transaction_count / 5.0))
   page = int(request.GET.get('page', 1))
-  page = page if (page > last_page) else last_page
+  page = page if (page <= last_page) else last_page
   start_with = (page - 1) * 5
   end_with = min(page * 5, transaction_count)
   
   transactions = []
   for info in transaction_infos[start_with:end_with]:
-    price_per_share = info.total / info.quantity
-    pl = (quotes[info.symbol].price - price_per_share) * info.quantity
-    pl_percent = pl / info.total * 100
+    transactions.append(info)
+    info.symbol_name = quotes[info.symbol].name
+    info.type_text = types[info.type]
     
-    transactions.append({
-      'info' : info,
-      'symbol_name' : quotes[info.symbol].name,
-      'type_class' : info.type.lower(),
-      'type_text' : types[info.type],
-      'pl' : (("$%.2f" % pl) if info.type == 'BUY' else ' - '),
-      'pl_percent' : (("%.2f%%" % pl_percent) if info.type == 'BUY' else ' - '),
-      'pl_class' : ('' if (pl == 0 or info.type != 'BUY') else ('pos' if pl > 0 else 'neg')),
-    })
-    
-  portfolio_start = None
-  for info in transaction_infos:
-    if portfolio_start == None or portfolio_start > info.as_of_date:
-      portfolio_start = info.as_of_date
+  lots = {}
+  for symbol in quotes:
+    if symbol != CASH_SYMBOL:
+      lots[symbol] = []
+  
+  cash = 0.0
+  for info in reversed(transaction_infos):
+    if info.type == 'DEPOSIT' or info.type == 'WITHDRAW' or info.type == 'ADJUST':
+      cash += (-1 if info.type == 'WITHDRAW' else 1) * float(info.total)
+      
+    elif info.symbol != CASH_SYMBOL:
+      if info.type == 'BUY':
+        cash -= float(info.total)
+        lots[info.symbol].append([ float(info.quantity), float(info.price) ])
+
+      elif info.type == 'SELL':
+        cash += float(info.total)
+        q = float(info.quantity)
+        cur_lots = lots[info.symbol]
+        for i in range(len(cur_lots)):
+          can_sell = min(q, cur_lots[i][0])
+          cur_lots[i][0] -= can_sell
+          q -= can_sell
+          if q == 0:
+            break
+          
+        for i in reversed(range(len(cur_lots))):
+          if cur_lots[i][0] == 0:
+            del(cur_lots[i])
+
+  positions = []
+  for symbol in sorted(symbols):
+    if symbol != CASH_SYMBOL:
+      cost = sum([ (lot[0] * lot[1]) for lot in lots[symbol]])
+      quantity = sum([ lot[0] for lot in lots[symbol]])
+      opening_value = quantity * float(quotes[symbol].previous_close_price)
+      current_value = quantity * float(quotes[symbol].price)
+      
+      day_pl = (current_value - opening_value)
+      day_pl_percent = (day_pl / opening_value) * 100
+      pl_percent = ((current_value - cost) / cost) * 100
+      
+      positions.append({
+          'symbol' : symbol,
+          'name' : quotes[symbol].name,
+          'quantity' : quantity,
+          'price' : quotes[symbol].price,
+          'cost_price' : (cost / quantity),
+          'market_value' : current_value,
+          'day_pl' : day_pl,
+          'day_pl_percent' : day_pl_percent,
+          'day_pl_class' : ('' if day_pl == 0 else ('pos' if day_pl > 0 else 'neg')),
+          'pl_percent' : pl_percent,
+          'pl_percent_class' : ('' if pl_percent == 0 else ('pos' if pl_percent > 0 else 'neg')),
+        })
+
+  positions.append({ 'symbol' : CASH_SYMBOL, 'name' : quotes[CASH_SYMBOL].name, 'quantity' : cash, 'price' : 1.0, 
+                     'cost_price' : 1.0, 'market_value' : cash, 'day_pl' : 0, 'day_pl_percent' : 0, 'pl_percent' : 0, })
+
+  as_of_date = max([quotes[symbol].last_trade for symbol in quotes])
+  portfolio_start = min([info.as_of_date for info in transaction_infos])
+  market_value = sum([p['market_value'] for p in positions])
+  cost_basis = sum([(p['cost_price'] * p['quantity']) for p in positions])
+  pl = market_value - cost_basis
+  pl_percent = (pl / cost_basis) * 100
+  annualized_pl_percent = pl_percent / ((as_of_date.date() - portfolio_start).days / 365.0)
+  
+  for position in positions:
+    position['allocation'] = position['market_value'] / market_value * 100
   
   context = {
       'portfolios' : portfolios, 
@@ -150,7 +206,14 @@ def portfolio(request):
       'next_page' : min(page + 1, last_page),
       'last_page' : last_page,
       'transactions' : transactions,
-      'positions' : [],
+      'positions' : positions,
+      'market_value' : market_value,
+      'cost_basis' : cost_basis,
+      'pl' : pl,
+      'pl_class' : ('' if pl == 0 else ('pos' if pl > 0 else 'neg')),
+      'pl_percent' : pl_percent,
+      'annualized_pl_percent' : annualized_pl_percent,
+      'as_of_date' : as_of_date,
       'portfolio_start' : portfolio_start,
     }
   
