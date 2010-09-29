@@ -1,4 +1,6 @@
-# Django settings for tracker project.
+# Copyright (c) 2010 Gennadiy Shafranovich
+# Licensed under the MIT license
+# see LICENSE file for copying permission.
 
 import datetime
 

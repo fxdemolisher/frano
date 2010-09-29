@@ -1,3 +1,7 @@
+// Copyright (c) 2010 Gennadiy Shafranovich
+// Licensed under the MIT license
+// see LICENSE file for copying permission.
+
 $(function() {
   $("#addNewPortfolio").click(function() {
     $("#createNewDialogue, #closeCreateNewDialogue").fadeIn();

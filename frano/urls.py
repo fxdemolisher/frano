@@ -1,3 +1,7 @@
+# Copyright (c) 2010 Gennadiy Shafranovich
+# Licensed under the MIT license
+# see LICENSE file for copying permission.
+
 from django.conf.urls.defaults import *
 from django.views.static import serve
 from settings import DEBUG

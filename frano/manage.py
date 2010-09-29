@@ -1,4 +1,9 @@
 #!/usr/bin/python
+
+# Copyright (c) 2010 Gennadiy Shafranovich
+# Licensed under the MIT license
+# see LICENSE file for copying permission.
+
 from django.core.management import execute_manager
 try:
     import settings # Assumed to be in the same directory.
