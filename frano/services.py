@@ -2,73 +2,13 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import random, hashlib, datetime, csv
+import datetime, csv
 
 from decimal import *
 from urllib import urlopen
 
-from django.shortcuts import render_to_response, redirect
-
 from frano import settings
-from models import User, Quote
-
-def get_user(request):
-  return request.session.get('username')
-
-def set_user(request, username):
-  request.session['username'] = username
-
-def login_required_decorator(view_function):
-  def view_function_decorated(request):
-    if get_user(request) == None:
-      return redirect('/login.html')
-    else:
-      return view_function(request)
-    
-  return view_function_decorated
-
-def does_username_exist(usenameToCheck):
-  return User.objects.filter(username = usenameToCheck).count() > 0
-
-def register_user(username, password):
-  user = User()
-  user.username = username
-  user.salt = generate_salt(40)
-  user.salted_hash = salted_hash(password, user.salt)
-  user.create_date = datetime.datetime.now()
-  user.save()
-  
-  return user
-
-def login_user(username, password):
-  if does_username_exist(username):
-    user = User.objects.get(username = username)
-    incoming_hash = salted_hash(password, user.salt)
-    return incoming_hash == user.salted_hash
-  
-  return False
-
-def update_user(username, newUsername, newPassword):
-  user = User.objects.get(username = username)
-  user.username = newUsername
-  
-  if newPassword != None and newPassword != '':
-    user.salted_hash = salted_hash(newPassword, user.salt)
-    
-  user.save()
-  return user
-  
-def salted_hash(password, salt):
-  sha = hashlib.new('sha1')
-  sha.update(password + "{" + salt + "}")
-  return sha.hexdigest()
-
-def generate_salt(length):
-  out = ''
-  for c in range(length):
-    out += random.choice('0123456789abcdef')
-  
-  return out
+from models import Quote
 
 def get_quote(symbolToFind):
   candidate = Quote.objects.filter(symbol = symbolToFind)
@@ -120,23 +60,3 @@ def update_quote_via_yahoo(quote):
   finally:
     u.close()
     
-def xirr(dates, payments):
-  years = [ (date - dates[0]).days / 365.0 for date in dates ]
-  residual = 1
-  step = 0.05
-  guess = 0.1
-  limit = 10000
-  while abs(residual) > 0.001 and limit > 0:
-    residual = 0
-    for i in range(len(dates)):
-      residual += payments[i] / ((1 + guess)**years[i])
-    
-    limit -= 1
-    if abs(residual) > 0.001:
-      if residual > 0:
-        guess += step
-      else:
-        guess -= step
-        step /= 2.0
-  
-  return (guess if limit > 0 else None)

@@ -12,9 +12,19 @@ from django.template import RequestContext
 from frano.settings import CASH_SYMBOL
 from models import User, Portfolio, Transaction
 from services import *
+from utilities import xirr
+
+def login_required_decorator(view_function):
+  def view_function_decorated(request):
+    if User.from_request(request) == None:
+      return redirect('/login.html')
+    else:
+      return view_function(request)
+    
+  return view_function_decorated
 
 def index(request):
-  if get_user(request) != None:
+  if User.from_request(request) != None:
     return redirect('/portfolio.html')
   
   return render_to_response('index.html', { }, context_instance = RequestContext(request))
@@ -38,9 +48,9 @@ def register(request):
       username = form.cleaned_data['username'].encode('UTF8')
       password = form.cleaned_data['password'].encode('UTF8')
       
-      if not does_username_exist(username):
-        user = register_user(username, password)
-        set_user(request, user.username)
+      if not User.username_exists(username):
+        user = User.register(username, password)
+        user.to_request(request)
         return redirect("/portfolio.html")
       
       else:
@@ -49,7 +59,7 @@ def register(request):
   return render_to_response('register.html', { 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
 
 def logout(request):
-  set_user(request, None)
+  User.clear_in_request(request)
   return redirect('/index.html')
 
 def login(request):
@@ -59,11 +69,11 @@ def login(request):
     form = UsernamePasswordForm(request.POST)
     
     if form.is_valid():
-      username = form.cleaned_data['username'].encode('UTF8')
-      password = form.cleaned_data['password'].encode('UTF8')
-      
-      if login_user(username, password):
-        set_user(request, username)
+      login_username = form.cleaned_data['username'].encode('UTF8')
+      candidate = User.objects.filter(username = login_username)
+            
+      if candidate.count() > 0 and candidate[0].check_password(form.cleaned_data['password'].encode('UTF8')):
+        candidate[0].to_request(request)
         return redirect('/portfolio.html')
       
       else:
@@ -74,6 +84,8 @@ def login(request):
 
 @login_required_decorator
 def settings(request):
+  user = User.from_request(request)
+  
   messages = []
   form = UsernamePasswordForm()
   if request.method == 'POST':
@@ -84,22 +96,28 @@ def settings(request):
       password = form.cleaned_data['password'].encode('UTF8')
       new_password = form.cleaned_data['new_password'].encode('UTF8')
       
-      if login_user(get_user(request), password):
-        user = update_user(get_user(request), username, new_password)
-        set_user(request, user.username)
+      if user.check_password(password):
+        user.username = username
+        
+        if new_password != None and new_password != '':
+          user.set_password(new_password)
+          
+        user.save()
+        
+        user.to_request(request)
         
       else :
         messages.append('Incorrect current password')
     
-  
-  portfolios = Portfolio.objects.filter(user__username__exact = get_user(request))
+  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   
   return render_to_response('settings.html', { 'portfolios' : portfolios, 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
 
 @login_required_decorator
 def portfolio(request):
+  user = User.from_request(request)
   portfolio_id = request.GET.get('id')
-  portfolios = Portfolio.objects.filter(user__username__exact = get_user(request))
+  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   
   portfolio = None
   if portfolio_id != None:
@@ -237,7 +255,7 @@ def portfolio(request):
 
 @login_required_decorator
 def create_portfolio(request):
-  user = User.objects.filter(username = get_user(request))[0]
+  user = User.from_request(request)
   portfolio_count = Portfolio.objects.filter(user__id__exact = user.id).count()
   
   name = request.POST.get('name')
@@ -253,14 +271,15 @@ def create_portfolio(request):
 
 @login_required_decorator
 def delete_portfolio(request):
+  user = User.from_request(request)
   portfolio_id = request.GET.get('id')
-  portfolio = Portfolio.objects.filter(id = portfolio_id, user__username__exact = get_user(request))[0]
+  portfolio = Portfolio.objects.filter(id = portfolio_id, user__id__exact = user.id)[0]
   portfolio.delete()
   return redirect ('/settings.html')
   
 @login_required_decorator
 def update_portfolios(request):
-  user = User.objects.filter(username = get_user(request))[0]
+  user = User.from_request(request)
   
   for field in request.POST:
     if field.startswith('name_'):
@@ -278,8 +297,9 @@ def update_portfolios(request):
 
 @login_required_decorator
 def add_transaction(request):
+  user = User.from_request(request)
   portfolio_id = request.POST.get('portfolio_id')
-  portfolio = Portfolio.objects.filter(id = portfolio_id, user__username__exact = get_user(request))[0]
+  portfolio = Portfolio.objects.filter(id = portfolio_id, user__id__exact = user.id)[0]
   
   form = TransactionForm(request.POST)
   if not form.is_valid():
@@ -301,8 +321,9 @@ def add_transaction(request):
 
 @login_required_decorator
 def delete_transaction(request):
+  user = User.from_request(request)
   transaction_id = request.GET.get('id')
-  transaction = Transaction.objects.filter(id = transaction_id, portfolio__user__username__exact = get_user(request))[0]
+  transaction = Transaction.objects.filter(id = transaction_id, portfolio__user__id__exact = user.id)[0]
   portfolio = transaction.portfolio
   transaction.delete()
   return redirect ('/portfolio.html?id=%d' % portfolio.id)

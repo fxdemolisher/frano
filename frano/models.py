@@ -4,6 +4,8 @@
 
 from django.db import models
 
+from utilities import salted_hash, generate_salt
+
 class User(models.Model):
   """A registered user in the system"""
   
@@ -14,7 +16,51 @@ class User(models.Model):
   
   def __unicode__(self):
     return self.username
-
+  
+  def to_request(self, request):
+    request.frano_user = self
+    request.session['username'] = self.username
+    
+  def check_password(self, candidatePassword):
+    incoming_hash = salted_hash(candidatePassword, self.salt)
+    return incoming_hash == self.salted_hash
+  
+  def set_password(self, new_password):
+    self.salted_hash = salted_hash(new_password, self.salt)
+    
+  @classmethod
+  def clear_in_request(cls, request):
+    request.frano_user = None
+    request.session['username'] = None
+  
+  @classmethod
+  def from_request(cls, request):
+    if hasattr(request, 'frano_user') and request.frano_user != None:
+      return request.frano_user
+    
+    name = request.session.get('username')
+    if name != None:
+      user = User.objects.filter(username = name)[0]
+      user.to_request(request)
+      return user
+    
+    return None
+  
+  @classmethod
+  def username_exists(cls, usernameToCheck):
+    return User.objects.filter(username = usenameToCheck).count() > 0
+  
+  @classmethod
+  def register(cls, username, password):
+    user = User()
+    user.username = username
+    user.salt = generate_salt(40)
+    user.salted_hash = salted_hash(password, user.salt)
+    user.create_date = datetime.datetime.now()
+    user.save()
+  
+    return user
+  
 class Portfolio(models.Model):
   """A user's portfolio"""
   
