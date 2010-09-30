@@ -45,6 +45,3 @@ INSTALLED_APPS = (
   'django.contrib.sessions',
   'frano'
 )
-
-QUOTE_TIMEOUT_DELTA = datetime.timedelta(0, 0, 0, 0, 15)
-CASH_SYMBOL = '*CASH'

@@ -2,7 +2,7 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import random, hashlib
+import hashlib, random 
 
 def salted_hash(password, salt):
   sha = hashlib.new('sha1')

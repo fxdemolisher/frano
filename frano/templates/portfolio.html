@@ -96,7 +96,7 @@
           <tbody id="holdingsTableTbody">
           
             {% if transactions %}
-              {% for transaction in transactions %}
+              {% for transaction in transactions.object_list %}
                 <tr>
                   <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type_text }}</div></td>
                   <td>{{ transaction.as_of_date|date:'m/d/Y' }}</td>
@@ -115,10 +115,10 @@
                 <td colspan="99">
                   <ul class="paging horizontallist">
                     <li><a href="/portfolio.html?id={{ portfolio.id}}&page=1"><div class="pagingButton">&lt;&lt;</div></a></li>
-                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ previous_page }}"><div class="pagingButton">&lt;</div></a></li>
-                    <li class="pagingSummary">{{ page_start }} - {{ page_end }} out of {{ total_transactions }}</li>
-                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ next_page }}"><div class="pagingButton">&gt;</div></a></li>
-                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ last_page }}"><div class="pagingButton">&gt;&gt;</div></a></li>
+                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ transactions.previous_page_number }}"><div class="pagingButton">&lt;</div></a></li>
+                    <li class="pagingSummary">{{ transactions.start_index }} - {{ transactions.end_index }} out of {{ transactions.paginator.count }}</li>
+                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ transactions.next_page_number }}"><div class="pagingButton">&gt;</div></a></li>
+                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ transactions.paginator.num_pages }}"><div class="pagingButton">&gt;&gt;</div></a></li>
                   </ul>
                 </td>
               </tr>

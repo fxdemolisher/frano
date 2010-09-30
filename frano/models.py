@@ -2,9 +2,13 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-from django.db import models
+import csv
 
-from utilities import salted_hash, generate_salt
+from datetime import datetime, timedelta
+from decimal import Decimal
+from django.db import models
+from urllib import urlopen
+from utilities import generate_salt, salted_hash 
 
 class User(models.Model):
   """A registered user in the system"""
@@ -48,7 +52,7 @@ class User(models.Model):
   
   @classmethod
   def username_exists(cls, usernameToCheck):
-    return User.objects.filter(username = usenameToCheck).count() > 0
+    return User.objects.filter(username = usernameToCheck).count() > 0
   
   @classmethod
   def register(cls, username, password):
@@ -56,7 +60,7 @@ class User(models.Model):
     user.username = username
     user.salt = generate_salt(40)
     user.salted_hash = salted_hash(password, user.salt)
-    user.create_date = datetime.datetime.now()
+    user.create_date = datetime.now()
     user.save()
   
     return user
@@ -98,6 +102,9 @@ class Transaction(models.Model):
 class Quote(models.Model):
   """Price quote of a instrument"""
   
+  TIMEOUT_DELTA = timedelta(0, 0, 0, 0, 15)
+  CASH_SYMBOL = '*CASH'
+  
   symbol = models.CharField(max_length = 5, unique = True)
   name = models.CharField(max_length = 255)
   price = models.DecimalField(max_digits = 20, decimal_places = 10)
@@ -107,3 +114,54 @@ class Quote(models.Model):
   
   def __unicode__(self):
     return self.symbol
+  
+  def refresh(self):
+    self.last_trade = datetime.now()
+    self.quote_date = datetime.now()
+      
+    if self.symbol == Quote.CASH_SYMBOL:
+      self.name = 'US Dollars'
+      self.price = Decimal('1.0')
+      self.previous_close_price = Decimal('1.0')
+            
+    else:
+      u = None
+      try:
+        u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=snl1pd1t1&e=.csv' % self.symbol)
+        row = csv.reader(u).next()
+        if len(row) != 6:
+          return
+        
+        self.name = row[1]
+        self.price = Decimal(str(row[2]))
+        self.previous_close_price = Decimal(str(0.0))
+        
+        if row[3] != 'N/A': 
+          self.previous_close_price = row[3]
+          
+        if row[4] != 'N/A' and row[5] != 'N/A':
+          month, day, year = [int(f) for f in row[4].split('/')]
+          time = datetime.strptime(row[5], '%I:%M%p')
+          last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
+          self.last_trade = last_trade
+          
+      finally:
+        if u != None:
+          u.close()
+        
+    self.save()
+    return self
+  
+  @classmethod
+  def by_symbol(cls, symbolToFind):
+    candidate = Quote.objects.filter(symbol = symbolToFind)
+    quote = None
+    if candidate.count() > 0:
+      quote = candidate[0]
+    else:
+      quote = Quote(symbol = symbolToFind)
+    
+    if quote.quote_date == None or (datetime.now() - quote.quote_date) > Quote.TIMEOUT_DELTA:
+      quote.refresh()
+          
+    return quote

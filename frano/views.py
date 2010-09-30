@@ -5,13 +5,12 @@
 import math
 
 from django import forms
+from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 
-from frano.settings import CASH_SYMBOL
-from models import User, Portfolio, Transaction
-from services import *
+from models import User, Portfolio, Transaction, Quote
 from utilities import xirr
 
 def login_required_decorator(view_function):
@@ -39,79 +38,53 @@ def legal(request):
   return render_to_response('legal.html', { }, context_instance = RequestContext(request))
 
 def register(request):
-  messages = []
-  form = UsernamePasswordForm()
-  if request.method == 'POST':
-    form = UsernamePasswordForm(request.POST)
-    
-    if form.is_valid():
-      username = form.cleaned_data['username'].encode('UTF8')
-      password = form.cleaned_data['password'].encode('UTF8')
-      
-      if not User.username_exists(username):
-        user = User.register(username, password)
-        user.to_request(request)
-        return redirect("/portfolio.html")
-      
-      else:
-        messages.append('We already have an account under that email')
-      
-  return render_to_response('register.html', { 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
+  return show_form_or_process(request, UsernamePasswordForm, process_registration, 'register.html')
+
+def process_registration(request, formData, messages, context):
+  if not User.username_exists(formData.username):
+    user = User.register(formData.username, formData.password)
+    user.to_request(request)
+    return redirect("/portfolio.html")
+  
+  else:
+    messages.append('We already have an account under that email')
 
 def logout(request):
   User.clear_in_request(request)
   return redirect('/index.html')
 
 def login(request):
-  messages = []
-  form = UsernamePasswordForm()
-  if request.method == 'POST':
-    form = UsernamePasswordForm(request.POST)
-    
-    if form.is_valid():
-      login_username = form.cleaned_data['username'].encode('UTF8')
-      candidate = User.objects.filter(username = login_username)
+  return show_form_or_process(request, UsernamePasswordForm, process_login, 'login.html')
+
+def process_login(request, formData, messages, context):
+  candidate = User.objects.filter(username = formData.username)
             
-      if candidate.count() > 0 and candidate[0].check_password(form.cleaned_data['password'].encode('UTF8')):
-        candidate[0].to_request(request)
-        return redirect('/portfolio.html')
-      
-      else:
-        messages.append('Invalid username or password')
-    
-  return render_to_response('login.html', { 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
+  if candidate.count() > 0 and candidate[0].check_password(formData.password):
+    candidate[0].to_request(request)
+    return redirect('/portfolio.html')
   
+  else:
+    messages.append('Invalid username or password')
 
 @login_required_decorator
 def settings(request):
   user = User.from_request(request)
-  
-  messages = []
-  form = UsernamePasswordForm()
-  if request.method == 'POST':
-    form = ChangeUsernamePasswordForm(request.POST)
-    
-    if form.is_valid():
-      username = form.cleaned_data['username'].encode('UTF8')
-      password = form.cleaned_data['password'].encode('UTF8')
-      new_password = form.cleaned_data['new_password'].encode('UTF8')
-      
-      if user.check_password(password):
-        user.username = username
-        
-        if new_password != None and new_password != '':
-          user.set_password(new_password)
-          
-        user.save()
-        
-        user.to_request(request)
-        
-      else :
-        messages.append('Incorrect current password')
-    
   portfolios = Portfolio.objects.filter(user__id__exact = user.id)
-  
-  return render_to_response('settings.html', { 'portfolios' : portfolios, 'form' : form, 'messages' : messages }, context_instance = RequestContext(request))
+  return show_form_or_process(request, ChangeUsernamePasswordForm, process_settings, 'settings.html', { 'user': user, 'portfolios' : portfolios })
+
+def process_settings(request, formData, messages, context):
+  user = context.get('user')
+  if user.check_password(formData.password):
+    user.username = formData.username
+    
+    if formData.new_password != None and formData.new_password != '':
+      user.set_password(formData.new_password)
+      
+    user.save()
+    user.to_request(request)
+    
+  else :
+    messages.append('Incorrect current password')
 
 @login_required_decorator
 def portfolio(request):
@@ -130,93 +103,34 @@ def portfolio(request):
     return redirect('/settings.html')
   
   transaction_infos = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
-  transaction_count = transaction_infos.count()
+  paginator = Paginator(transaction_infos, 5)
+  try: 
+    page = int(request.GET.get('page', '1'))
+  except ValueError:
+    page = 1
+  
+  transactions = paginator.page(max(1, min(page, paginator.num_pages)))
+  
   symbols = set([t.symbol for t in transaction_infos])
-  quotes = dict((symbol, get_quote(symbol)) for symbol in symbols)
+  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   types = dict(Transaction.TRANSACTION_TYPES)
+  for transaction in transactions.object_list:
+    transaction.symbol_name = quotes[transaction.symbol].name
+    transaction.type_text = types[transaction.type]
   
-  last_page = int(math.ceil(transaction_count / 5.0))
-  page = int(request.GET.get('page', 1))
-  page = page if (page <= last_page) else last_page
-  start_with = (page - 1) * 5
-  end_with = min(page * 5, transaction_count)
-  
-  transactions = []
   positions = []
 
   context = {
       'portfolios' : portfolios, 
       'portfolio' : portfolio,
-      'total_transactions' : transaction_count,
-      'page_start' : start_with + 1,
-      'page_end' : end_with,
-      'page' : page,
-      'previous_page' : max(page - 1, 1),
-      'next_page' : min(page + 1, last_page),
-      'last_page' : last_page,
       'transactions' : transactions,
       'positions' : positions,
     }
 
-  if transaction_count > 0:
-    for info in transaction_infos[start_with:end_with]:
-      transactions.append(info)
-      info.symbol_name = quotes[info.symbol].name
-      info.type_text = types[info.type]
+  if paginator.count > 0:
+    lots = get_position_lots(transaction_infos)
+    populate_positions(quotes, positions, lots)
     
-    cash = 0.0
-    lots = {}
-    for info in reversed(transaction_infos):
-      if info.type == 'DEPOSIT' or info.type == 'WITHDRAW' or info.type == 'ADJUST':
-        cash += (-1 if info.type == 'WITHDRAW' else 1) * float(info.total)
-        
-      elif info.symbol != CASH_SYMBOL:
-        cash += (-1 if info.type == 'BUY' else 1) * float(info.total)
-        cur_lots = lots.get(info.symbol, [])
-        lots[info.symbol] = cur_lots
-        
-        if info.type == 'BUY':
-	  cur_lots.append([ float(info.quantity), float(info.price) ])
-
-        elif info.type == 'SELL':
-	  q = float(info.quantity)
-	  while q > 0 and len(cur_lots) > 0:
-	    can_sell = min(q, cur_lots[0][0])
-	    q -= can_sell
-	    if can_sell == cur_lots[0][0]:
-	      del(cur_lots[0])
-	      
-	    else:
-	     cur_lots[0][0] -= can_sell
-
-    for symbol in sorted(symbols):
-      if symbol != CASH_SYMBOL:
-        cost = sum([ (lot[0] * lot[1]) for lot in lots[symbol]])
-        quantity = sum([ lot[0] for lot in lots[symbol]])
-        opening_value = quantity * float(quotes[symbol].previous_close_price)
-        current_value = quantity * float(quotes[symbol].price)
-        
-        day_pl = (current_value - opening_value)
-        day_pl_percent = (day_pl / opening_value) * 100
-        pl_percent = ((current_value - cost) / cost) * 100
-        
-        positions.append({
-	    'symbol' : symbol,
-	    'name' : quotes[symbol].name,
-	    'quantity' : quantity,
-	    'price' : quotes[symbol].price,
-	    'cost_price' : (cost / quantity),
-	    'market_value' : current_value,
-	    'day_pl' : day_pl,
-	    'day_pl_percent' : day_pl_percent,
-	    'day_pl_class' : ('' if day_pl == 0 else ('pos' if day_pl > 0 else 'neg')),
-	    'pl_percent' : pl_percent,
-	    'pl_percent_class' : ('' if pl_percent == 0 else ('pos' if pl_percent > 0 else 'neg')),
-	  })
-
-    positions.append({ 'symbol' : CASH_SYMBOL, 'name' : quotes[CASH_SYMBOL].name, 'quantity' : cash, 'price' : 1.0, 
-	               'cost_price' : 1.0, 'market_value' : cash, 'day_pl' : 0, 'day_pl_percent' : 0, 'pl_percent' : 0, })
-
     as_of_date = max([quotes[symbol].last_trade for symbol in quotes])
     portfolio_start = min([info.as_of_date for info in transaction_infos])
     market_value = sum([p['market_value'] for p in positions])
@@ -224,34 +138,95 @@ def portfolio(request):
     pl = market_value - cost_basis
     pl_percent = (pl / cost_basis) * 100
     annualized_pl_percent = pl_percent / ((as_of_date.date() - portfolio_start).days / 365.0)
+    xirr_percent = get_xirr_percent_for_transactions(transaction_infos, as_of_date, market_value)
     
-    for position in positions:
-      position['allocation'] = position['market_value'] / market_value * 100
-    
-    dates = []
-    payments = []
-    for info in reversed(transaction_infos):
-      if info.type == 'DEPOSIT' or info.type == 'WITHDRAW':
-        dates.append(info.as_of_date)
-        payments.append((-1 if info.type == 'DEPOSIT' else 1) * float(info.total))
-        
-    dates.append(as_of_date.date())
-    payments.append(market_value)
-    xirr_candidate = xirr(dates, payments)
-    xirr_percent = (xirr_candidate * 100) if xirr_candidate != None else 0 
-
     context['market_value'] = market_value
     context['cost_basis'] = cost_basis
     context['pl'] = pl
-    context['pl_class'] = ('' if pl == 0 else ('pos' if pl > 0 else 'neg'))
+    context['pl_class'] = pos_neg_css_class(pl)
     context['pl_percent'] = pl_percent
     context['annualized_pl_percent'] = annualized_pl_percent
     context['xirr_percent'] = xirr_percent
-    context['xirr_percent_class'] = ('' if xirr_percent == 0 else ('pos' if xirr_percent > 0 else 'neg'))
+    context['xirr_percent_class'] = pos_neg_css_class(xirr_percent)
     context['as_of_date'] = as_of_date
     context['portfolio_start'] = portfolio_start
     
   return render_to_response('portfolio.html', context, context_instance = RequestContext(request))
+
+def get_position_lots(transactions):
+  cash = 0.0
+  lots = {}
+  for transaction in reversed(transactions):
+    if transaction.type == 'DEPOSIT' or transaction.type == 'ADJUST' or transaction.type == 'SELL':
+      cash += float(transaction.total)
+      
+    elif transaction.type == 'WITHDRAW' or transaction.type == 'BUY':
+      cash -= float(transaction.total)
+      
+    cur_lots = lots.get(transaction.symbol, [])
+    lots[transaction.symbol] = cur_lots
+      
+    if transaction.type == 'BUY':
+      cur_lots.append([ float(transaction.quantity), float(transaction.price) ])
+
+    elif transaction.type == 'SELL':
+      q = float(transaction.quantity)
+      while q > 0 and len(cur_lots) > 0:
+        if(q < cur_lots[0][0]):
+          cur_lots[0][0] -= q
+          q = 0
+          
+        else:
+          q -= cur_lots[0][0]
+          del(cur_lots[0])
+
+  lots[Quote.CASH_SYMBOL] = [ [ cash, 1.0 ] ]
+  return lots
+
+def populate_positions(quotes, positions, lots):
+  for symbol in sorted(lots):
+    cost = sum([ (lot[0] * lot[1]) for lot in lots[symbol]])
+    quantity = sum([ lot[0] for lot in lots[symbol]])
+    opening_value = quantity * float(quotes[symbol].previous_close_price)
+    current_value = quantity * float(quotes[symbol].price)
+    
+    day_pl = (current_value - opening_value)
+    day_pl_percent = (day_pl / opening_value) * 100
+    pl_percent = ((current_value - cost) / cost) * 100
+    
+    positions.append({
+        'symbol' : symbol,
+        'name' : quotes[symbol].name,
+        'quantity' : quantity,
+        'price' : quotes[symbol].price,
+        'cost_price' : (cost / quantity),
+        'market_value' : current_value,
+        'day_pl' : day_pl,
+        'day_pl_percent' : day_pl_percent,
+        'day_pl_class' : pos_neg_css_class(day_pl),
+        'pl_percent' : pl_percent,
+        'pl_percent_class' : pos_neg_css_class(pl_percent),
+      })
+    
+  market_value = sum([p['market_value'] for p in positions])
+  for position in positions:
+    position['allocation'] = position['market_value'] / market_value * 100
+
+def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
+  dates = []
+  payments = []
+  for transaction in reversed(transactions):
+    if transaction.type == 'DEPOSIT' or transaction.type == 'WITHDRAW':
+      dates.append(transaction.as_of_date)
+      payments.append((-1 if transaction.type == 'DEPOSIT' else 1) * float(transaction.total))
+      
+  dates.append(as_of_date.date())
+  payments.append(market_value)
+  xirr_candidate = xirr(dates, payments)
+  return (xirr_candidate * 100) if xirr_candidate != None else 0 
+
+def pos_neg_css_class(value):
+  return ('' if value == 0 else ('pos' if value > 0 else 'neg'))
 
 @login_required_decorator
 def create_portfolio(request):
@@ -305,16 +280,15 @@ def add_transaction(request):
   if not form.is_valid():
     return redirect ("/portfolio.html?id=%d&invalid_transaction_input=True" % portfolio_id)
   
-  cleaned_data = form.cleaned_data
-  
+  formData = FormData(form)
   transaction = Transaction()
   transaction.portfolio = portfolio
-  transaction.type = cleaned_data['type'].encode('UTF8')
-  transaction.as_of_date = cleaned_data['as_of_date']
-  transaction.symbol = cleaned_data['symbol']
-  transaction.quantity = cleaned_data['quantity']
-  transaction.price = cleaned_data['price']
-  transaction.total = cleaned_data['total']
+  transaction.type = formData.type
+  transaction.as_of_date = formData.as_of_date
+  transaction.symbol = formData.symbol
+  transaction.quantity = formData.quantity
+  transaction.price = formData.price
+  transaction.total = formData.total
   transaction.save()
   
   return redirect ("/portfolio.html?id=%s" % portfolio_id)
@@ -327,6 +301,34 @@ def delete_transaction(request):
   portfolio = transaction.portfolio
   transaction.delete()
   return redirect ('/portfolio.html?id=%d' % portfolio.id)
+
+def show_form_or_process(request, formCls, process_function, template, context = {}):
+  messages = []
+  form = formCls()
+  if request.method == 'POST':
+    form = formCls(request.POST)
+    formData = FormData(form)
+    
+    if form.is_valid():
+      return_override = process_function(request, formData, messages, context)
+      if return_override != None:
+        return return_override
+    
+  context['form'] = form
+  context['messages'] = messages
+  return render_to_response(template, context, context_instance = RequestContext(request))
+
+class FormData():
+  def __init__(self, form):
+    self.form = form
+    
+  def __getattr__(self, name):
+    data = self.form.cleaned_data[name]
+    print name
+    if type(data) == 'unicode':
+      data = data.encode('UTF8')
+    
+    return data
 
 class UsernamePasswordForm(forms.Form):
   EMAIL_ERROR_MESSAGES = {
