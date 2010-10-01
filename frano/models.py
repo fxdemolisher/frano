@@ -3,76 +3,51 @@
 # see LICENSE file for copying permission.
 
 import csv
+import string
+import random
 
 from datetime import datetime, timedelta
 from decimal import Decimal
 from django.db import models
 from urllib import urlopen
 from utilities import generate_salt, salted_hash 
-
-class User(models.Model):
-  """A registered user in the system"""
-  
-  username = models.CharField(max_length = 255, unique = True)
-  salt = models.CharField(max_length = 40)
-  salted_hash = models.CharField(max_length = 40)
-  create_date = models.DateTimeField()
-  
-  def __unicode__(self):
-    return self.username
-  
-  def to_request(self, request):
-    request.frano_user = self
-    request.session['username'] = self.username
-    
-  def check_password(self, candidatePassword):
-    incoming_hash = salted_hash(candidatePassword, self.salt)
-    return incoming_hash == self.salted_hash
-  
-  def set_password(self, new_password):
-    self.salted_hash = salted_hash(new_password, self.salt)
-    
-  @classmethod
-  def clear_in_request(cls, request):
-    request.frano_user = None
-    request.session['username'] = None
-  
-  @classmethod
-  def from_request(cls, request):
-    if hasattr(request, 'frano_user') and request.frano_user != None:
-      return request.frano_user
-    
-    name = request.session.get('username')
-    if name != None:
-      user = User.objects.filter(username = name)[0]
-      user.to_request(request)
-      return user
-    
-    return None
-  
-  @classmethod
-  def username_exists(cls, usernameToCheck):
-    return User.objects.filter(username = usernameToCheck).count() > 0
-  
-  @classmethod
-  def register(cls, username, password):
-    user = User()
-    user.username = username
-    user.salt = generate_salt(40)
-    user.salted_hash = salted_hash(password, user.salt)
-    user.create_date = datetime.now()
-    user.save()
-  
-    return user
   
 class Portfolio(models.Model):
   """A user's portfolio"""
   
-  user = models.ForeignKey(User)
+  TOKEN_LETTERS = string.digits + string.uppercase + string.lowercase
+  
   name = models.CharField(max_length = 30)
+  token = models.CharField(max_length = 20, unique = True)
+  read_only_token = models.CharField(max_length = 20, unique = True)
+  recovery_email = models.CharField(max_length = 255, null = False)
+  create_date = models.DateTimeField()
+  
+  class Meta:
+    db_table = 'portfolio'
   
   def __unicode__(self):
-    return self.name
+    return "%s (%s)" % (self.name, self.recovery_email)
+  
+  @classmethod
+  def create(cls, name):
+    token = ''
+    for i in range(20):
+      token += random.choice(Portfolio.TOKEN_LETTERS)
+    
+    read_only_token = ''
+    for i in range(20):
+      read_only_token += random.choice(Portfolio.TOKEN_LETTERS)
+      
+    portfolio = Portfolio()
+    portfolio.name = name
+    portfolio.token = token
+    portfolio.read_only_token = read_only_token
+    portfolio.create_date = datetime.now()
+    portfolio.save()
+    
+    return portfolio
+      
   
 class Transaction(models.Model):
   """A recorded transaction in a portfolio"""
@@ -94,10 +69,11 @@ class Transaction(models.Model):
   total = models.DecimalField(max_digits = 20, decimal_places = 10)
   
   class Meta:
+    db_table = 'transaction'
     ordering = [ '-as_of_date', 'symbol' ]
   
   def __unicode__(self):
-    return self.symbol
+    return "%.f2-%s @ %.2f" % (self.quantity, self.symbol, self.price)
   
 class Quote(models.Model):
   """Price quote of a instrument"""
@@ -112,8 +88,11 @@ class Quote(models.Model):
   last_trade = models.DateTimeField()
   quote_date = models.DateTimeField()
   
+  class Meta:
+    db_table = 'quote'
+  
   def __unicode__(self):
-    return self.symbol
+    return "%s - %s" % (self.symbol, self.name)
   
   def refresh(self):
     self.last_trade = datetime.now()

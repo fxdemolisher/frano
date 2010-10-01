@@ -12,6 +12,15 @@ see LICENSE file for copying permission.
 
 */
 
+/*  --------------------------------------------------
+  =Top Bar
+  -------------------------------------------------- */
+
+    #createForm { position: relative; }
+    #createForm label { position:absolute; top: 2px; left: 5px; color:#333; font-size: 16px; } 
+    
+    #recoverForm { position: relative; }
+    #recoverForm label { position:absolute; top: 2px; left: 5px; color:#333; font-size: 16px; }
 
 /*  --------------------------------------------------
   =Portfolio
@@ -38,9 +47,10 @@ see LICENSE file for copying permission.
     /*tabular data*/
     .holdingsTable {font-size:16px;margin-top:10px;}
     .holdingsTable TD {border-bottom: solid 1px #CCC;padding:5px 2px;font-weight:bold;vertical-align:top;}
-    .holdingsTable thead TD {font-size:12px;font-weight:normal !important;}
+    .holdingsTable thead TD, .holdingsTable tfoot TD {font-size:12px;font-weight:normal !important;}
     .pagingRow TD {background-color:#E3E3E3;}
-    .addNewRow TD {background: url(/img/gradients.png) 0 0 repeat-x;padding-top:9px;border-bottom:none;}
+    .addNewRow TD {background: url(/img/gradients.png) 0 0 repeat-x;padding-top:9px;}
+    .lastRow TD { border-bottom: none; }
     
     /*buttons*/
      .addNewPortfolio {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;float:right;margin-top:42px;}
@@ -78,44 +88,11 @@ see LICENSE file for copying permission.
     .homepageFeatures STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
 
 /*  --------------------------------------------------
-  =login
-  -------------------------------------------------- */
-    .loginForm {margin-bottom:5px;padding-bottom:20px;margin-top:10px;border-bottom:solid 1px #CCC;border-bottom:none;border-right: solid 1px #CCC;}
-    .loginForm LABEL {width:120px;display:block;float:left;margin-top:5px;padding-left:35px;}
-    .loginForm INPUT {margin-top:5px;width:200px;} 
-    .loginForm BUTTON {margin-top:10px;margin-right:93px;}
-    .loginCopy {margin-top:30px;}
-    .loginCopy A {color:#3399cc;}
-    .loginCopy LI {line-height:24px;font-size:14px;}
-    .loginCopy STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
-    
-
-/*  --------------------------------------------------
-  =Register
-  -------------------------------------------------- */
-    .registerForm {margin-bottom:5px;padding-bottom:20px;margin-top:10px;border-bottom:solid 1px #CCC;}
-    .registerForm LABEL {width:120px;display:block;float:left;margin-top:5px;padding-left:35px;}
-    .registerForm INPUT {margin-top:5px;width:200px;} 
-    .registerForm BUTTON {margin-top:10px;margin-right:93px;}
-    .loginServices {margin-top:10px;margin-bottom:50px;}
-    .changeMind {display:block;text-align:center;color:#3399cc;}        
-    
-/*  --------------------------------------------------
-  =Password
-  -------------------------------------------------- */
-   /* .passwordForm {padding-100px;}*/
-    .passwordForm LABEL, .passwordForm INPUT {margin-top:5px;}
-    .passwordForm LABEL, .passwordForm INPUT, .passwordForm .addButton {float:left;margin-right:6px;}
-    
-/*  --------------------------------------------------
   =Settings
   -------------------------------------------------- */
-    .registerForm .explanatoryText {text-align:right;padding-right:90px;}
-    .updateSettingsForm {border-bottom:none;border-right: solid 1px #CCC;}
-    .portfolioOrderForm {padding-top:15px;}
-    .portfolioOrderForm INPUT {width:250px;}
-    .portfolioOrderForm .icon, .portfolioOrderForm INPUT {float:left;margin-right:8px;margin-bottom:22px;}
-    .portfolioOrderForm .addButton {margin-right:215px;}
-    .upArrow, .downArrow {width:26px;height:23px;cursor:pointer;}
-    .upArrow {background-position: 0 -114px;}
-    .downArrow {background-position:0 -140px;}
+    
+    .updateSettingsForm { margin-bottom:5px; padding-bottom:20px; margin-top:10px; }
+    .updateSettingsForm LABEL { width:120px; display:block; float:left; margin-top:5px; padding-left:35px;}
+    .updateSettingsForm INPUT { margin-top:5px; width:200px; } 
+    .updateSettingsForm BUTTON { margin-top:10px; margin-right: 92px; }
+    

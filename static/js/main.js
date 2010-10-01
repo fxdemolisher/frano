@@ -3,37 +3,45 @@
 // see LICENSE file for copying permission.
 
 $(function() {
-  $("#addNewPortfolio").click(function() {
-    $("#createNewDialogue, #closeCreateNewDialogue").fadeIn();
-    $(this).hide();
-  });
+  $("input").attr("autocomplete","off"); 
   
-  $("#closeCreateNewDialogue").click(function() {
-    $("#addNewPortfolio").show();
-    $("#createNewDialogue, #closeCreateNewDialogue").fadeOut(function() {
-      
+  scanForBannerMessages();
+  $("#banner").click(function() {
+    $(this).fadeOut(function() {
+      scanForBannerMessages();
     });
-  });
-
-  $("#itemSelector").click(function() {
-    $("#myPortfolios").css("display", "block");
-  });
+  })
   
-  $("#myPortfolios").click(function() {
-    var id = $(this).val();
-    location.href = "/portfolio.html?id=" + id;
-  });
-  
-  $("#newTransactionType").change(function() {
+  $("label.infield").inFieldLabels();
+    
+  $("#type").change(function() {
     var val = $(this).val();
+    var objs = $("#symbol, #quantity, #price");
     if(val == 'DEPOSIT' || val == 'WITHDRAW' || val == 'ADJUST') {
-      $("#newTransactionSymbol").val("*CASH");
-      $("#newTransactionPrice").val("1.00");
+      objs.attr("disabled", "disabled").val("");
+    } else {
+      objs.attr("disabled", "");
     }
   });
   
   $("#addTransaction").click(function() {
+    var type = $("#type").val();
+    if(type == 'DEPOSIT' || type == 'WITHDRAW' || type == 'ADJUST') {
+      $("#symbol").val("*CASH").attr("disabled", "");
+      $("#quantity").val($("#total").val()).attr("disabled", "");
+      $("#price").val("1").attr("disabled", "");
+    }
+    
     $('#addTransactionForm').submit();
   });
    
 });
+
+function scanForBannerMessages() {
+  var msg = $('.message').first()
+  if(msg.length > 0) {
+    $("#banner").html(msg.html() + "[need a close button]");
+    $("#banner").fadeIn();
+    msg.remove();
+  }
+}

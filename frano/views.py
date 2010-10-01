@@ -10,98 +10,89 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 
-from models import User, Portfolio, Transaction, Quote
-from utilities import xirr
+from models import Portfolio, Transaction, Quote
 
-def login_required_decorator(view_function):
-  def view_function_decorated(request):
-    if User.from_request(request) == None:
-      return redirect('/login.html')
+def portfolio_by_token_decorator(view_function):
+  def view_function_decorated(request, token):
+    read_write_candidate = Portfolio.objects.filter(token__exact = token)
+    portfolio = None
+    read_only = True
+    
+    if read_write_candidate.count() == 1:
+      portfolio = read_write_candidate[0]
+      read_only = False
+      
     else:
-      return view_function(request)
+      read_only_candidate = Portfolio.objects.filter(read_only_token__exact = token)
+      if read_only_candidate.count() == 1:
+        portfolio = read_only_candidate[0]
+    
+    if portfolio == None:
+      return redirect("/index.html?notFound=true")
+    
+    else:
+      return view_function(request, portfolio, read_only)
+    
+  return view_function_decorated
+
+def redirect_to_view_if_read_only_decorator(view_function):
+  def view_function_decorated(request, portfolio, read_only):
+    if read_only:
+      return redirect("/%s/view.html" % portfolio.token)
+    
+    else:
+      return view_function(request, portfolio)
     
   return view_function_decorated
 
 def index(request):
-  if User.from_request(request) != None:
-    return redirect('/portfolio.html')
-  
   return render_to_response('index.html', { }, context_instance = RequestContext(request))
-
-def about(request):
-  return render_to_response('about.html', { }, context_instance = RequestContext(request))
-
-def feedback(request):
-  return render_to_response('feedback.html', { }, context_instance = RequestContext(request))
 
 def legal(request):
   return render_to_response('legal.html', { }, context_instance = RequestContext(request))
 
-def register(request):
-  return show_form_or_process(request, UsernamePasswordForm, process_registration, 'register.html')
+def feedback(request):
+  return render_to_response('feedback.html', { }, context_instance = RequestContext(request))
 
-def process_registration(request, formData, messages, context):
-  if not User.username_exists(formData.username):
-    user = User.register(formData.username, formData.password)
-    user.to_request(request)
-    return redirect("/portfolio.html")
+def create_portfolio(request):
+  name = request.POST.get('name')
+  if name == None or name == '':
+    return redirect('/index.html?nameRequired=true')
   
-  else:
-    messages.append('We already have an account under that email')
+  portfolio = Portfolio.create(name)
+  return redirect ('/%s/settings.html' % (portfolio.token))
 
-def logout(request):
-  User.clear_in_request(request)
-  return redirect('/index.html')
-
-def login(request):
-  return show_form_or_process(request, UsernamePasswordForm, process_login, 'login.html')
-
-def process_login(request, formData, messages, context):
-  candidate = User.objects.filter(username = formData.username)
-            
-  if candidate.count() > 0 and candidate[0].check_password(formData.password):
-    candidate[0].to_request(request)
-    return redirect('/portfolio.html')
+@portfolio_by_token_decorator
+@redirect_to_view_if_read_only_decorator
+def settings(request, portfolio):
+  form = SettingsForm()
+  if request.method == 'POST':
+    form = SettingsForm(request.POST)
+    
+    if form.is_valid():
+      portfolio.name = form.cleaned_data['name'].encode('UTF8')
+      portfolio.recovery_email = form.cleaned_data['email'].encode('UTF8')
+      portfolio.save()
   
-  else:
-    messages.append('Invalid username or password')
+  return render_to_response('settings.html', { 'portfolio' : portfolio, 'form' : form }, context_instance = RequestContext(request))
 
-@login_required_decorator
-def settings(request):
-  user = User.from_request(request)
-  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
-  return show_form_or_process(request, ChangeUsernamePasswordForm, process_settings, 'settings.html', { 'user': user, 'portfolios' : portfolios })
-
-def process_settings(request, formData, messages, context):
-  user = context.get('user')
-  if user.check_password(formData.password):
-    user.username = formData.username
-    
-    if formData.new_password != None and formData.new_password != '':
-      user.set_password(formData.new_password)
-      
-    user.save()
-    user.to_request(request)
-    
-  else :
-    messages.append('Incorrect current password')
-
-@login_required_decorator
-def portfolio(request):
-  user = User.from_request(request)
-  portfolio_id = request.GET.get('id')
-  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
+class SettingsForm(forms.Form):
+  NAME_ERROR_MESSAGES = {
+    'required' : 'Please enter a portfolio name',
+    'max_length' : 'Name cannot be longer than 255 characters',
+  }
   
-  portfolio = None
-  if portfolio_id != None:
-    portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
-    
-  elif portfolios.count() > 0:
-    portfolio = portfolios[0]
-    
-  if portfolio == None:
-    return redirect('/settings.html')
+  EMAIL_ERROR_MESSAGES = {
+    'required' : 'Please enter your email address',
+    'invalid' : 'Please enter a valid email address',
+    'max_length' : 'Email cannot be longer than 255 characters',
+  }
   
+  name = forms.CharField(max_length = 255, error_messages = NAME_ERROR_MESSAGES)
+  email = forms.EmailField(max_length = 255, error_messages = EMAIL_ERROR_MESSAGES)
+
+@portfolio_by_token_decorator
+def view_portfolio(request, portfolio, read_only):
   transaction_infos = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
   paginator = Paginator(transaction_infos, 5)
   try: 
@@ -111,7 +102,7 @@ def portfolio(request):
   
   transactions = paginator.page(max(1, min(page, paginator.num_pages)))
   
-  symbols = set([t.symbol for t in transaction_infos])
+  symbols = set([t.symbol for t in transaction_infos] + [ Quote.CASH_SYMBOL ])
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   types = dict(Transaction.TRANSACTION_TYPES)
   for transaction in transactions.object_list:
@@ -121,8 +112,8 @@ def portfolio(request):
   positions = []
 
   context = {
-      'portfolios' : portfolios, 
       'portfolio' : portfolio,
+      'read_only' : read_only,
       'transactions' : transactions,
       'positions' : positions,
     }
@@ -133,11 +124,18 @@ def portfolio(request):
     
     as_of_date = max([quotes[symbol].last_trade for symbol in quotes])
     portfolio_start = min([info.as_of_date for info in transaction_infos])
-    market_value = sum([p['market_value'] for p in positions])
+    
     cost_basis = sum([(p['cost_price'] * p['quantity']) for p in positions])
+    market_value = sum([p['market_value'] for p in positions])
+    opening_market_value = sum([p['opening_market_value'] for p in positions])
+    
     pl = market_value - cost_basis
-    pl_percent = (pl / cost_basis) * 100
+    pl_percent = ((pl / cost_basis) * 100) if cost_basis != 0 else 0
     annualized_pl_percent = pl_percent / ((as_of_date.date() - portfolio_start).days / 365.0)
+    
+    day_pl = market_value - opening_market_value
+    day_pl_percent = ((day_pl / opening_market_value) * 100) if opening_market_value != 0 else 0
+    
     xirr_percent = get_xirr_percent_for_transactions(transaction_infos, as_of_date, market_value)
     
     context['market_value'] = market_value
@@ -145,6 +143,9 @@ def portfolio(request):
     context['pl'] = pl
     context['pl_class'] = pos_neg_css_class(pl)
     context['pl_percent'] = pl_percent
+    context['day_pl'] = day_pl
+    context['day_pl_class'] = pos_neg_css_class(day_pl)
+    context['day_pl_percent'] = day_pl_percent
     context['annualized_pl_percent'] = annualized_pl_percent
     context['xirr_percent'] = xirr_percent
     context['xirr_percent_class'] = pos_neg_css_class(xirr_percent)
@@ -185,22 +186,25 @@ def get_position_lots(transactions):
 
 def populate_positions(quotes, positions, lots):
   for symbol in sorted(lots):
+    print quotes[symbol]
     cost = sum([ (lot[0] * lot[1]) for lot in lots[symbol]])
     quantity = sum([ lot[0] for lot in lots[symbol]])
     opening_value = quantity * float(quotes[symbol].previous_close_price)
     current_value = quantity * float(quotes[symbol].price)
     
     day_pl = (current_value - opening_value)
-    day_pl_percent = (day_pl / opening_value) * 100
-    pl_percent = ((current_value - cost) / cost) * 100
+    day_pl_percent = ((day_pl / opening_value) * 100) if opening_value != 0 else 0
+    pl_percent = (((current_value - cost) / cost) * 100) if cost != 0 else 0
+    cost_price = (cost / quantity) if quantity > 0 else 0
     
     positions.append({
         'symbol' : symbol,
         'name' : quotes[symbol].name,
         'quantity' : quantity,
         'price' : quotes[symbol].price,
-        'cost_price' : (cost / quantity),
+        'cost_price' : cost_price,
         'market_value' : current_value,
+        'opening_market_value' : opening_value,
         'day_pl' : day_pl,
         'day_pl_percent' : day_pl_percent,
         'day_pl_class' : pos_neg_css_class(day_pl),
@@ -228,128 +232,52 @@ def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
 def pos_neg_css_class(value):
   return ('' if value == 0 else ('pos' if value > 0 else 'neg'))
 
-@login_required_decorator
-def create_portfolio(request):
-  user = User.from_request(request)
-  portfolio_count = Portfolio.objects.filter(user__id__exact = user.id).count()
+def xirr(dates, payments):
+  years = [ (date - dates[0]).days / 365.0 for date in dates ]
+  residual = 1
+  step = 0.05
+  guess = 0.1
+  limit = 10000
+  while abs(residual) > 0.001 and limit > 0:
+    residual = 0
+    for i in range(len(dates)):
+      residual += payments[i] / ((1 + guess)**years[i])
+    
+    limit -= 1
+    if abs(residual) > 0.001:
+      if residual > 0:
+        guess += step
+      else:
+        guess -= step
+        step /= 2.0
   
-  name = request.POST.get('name')
-  if name == None or name == '':
-    name = 'Default-%d' % (portfolio_count)
-  
-  portfolio = Portfolio()
-  portfolio.user = user
-  portfolio.name = name
-  portfolio.save()
-  
-  return redirect ('/portfolio.html?portfolioId=%d' % (portfolio.id))
+  return (guess if limit > 0 else None)
 
-@login_required_decorator
-def delete_portfolio(request):
-  user = User.from_request(request)
-  portfolio_id = request.GET.get('id')
-  portfolio = Portfolio.objects.filter(id = portfolio_id, user__id__exact = user.id)[0]
-  portfolio.delete()
-  return redirect ('/settings.html')
-  
-@login_required_decorator
-def update_portfolios(request):
-  user = User.from_request(request)
-  
-  for field in request.POST:
-    if field.startswith('name_'):
-      portfolio_id = field[len('name_'):]
-      name = request.POST.get(field)
-      
-      portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
-      if portfolio.user.id != user.id:
-        return HttpResponse(status = 500)
-      
-      portfolio.name = name
-      portfolio.save()
-      
-  return redirect ('/settings.html')
+@portfolio_by_token_decorator
+@redirect_to_view_if_read_only_decorator
+def remove_portfolio(request, portfolio):
+  portfolio.delete();
+  return redirect("/index.html?removed=true")
 
-@login_required_decorator
-def add_transaction(request):
-  user = User.from_request(request)
-  portfolio_id = request.POST.get('portfolio_id')
-  portfolio = Portfolio.objects.filter(id = portfolio_id, user__id__exact = user.id)[0]
-  
+@portfolio_by_token_decorator
+@redirect_to_view_if_read_only_decorator
+def add_transaction(request, portfolio):
   form = TransactionForm(request.POST)
   if not form.is_valid():
-    return redirect ("/portfolio.html?id=%d&invalid_transaction_input=True" % portfolio_id)
+    return redirect("/%s/view.html?invalidTransaction=true" % portfolio.token)
   
-  formData = FormData(form)
   transaction = Transaction()
   transaction.portfolio = portfolio
-  transaction.type = formData.type
-  transaction.as_of_date = formData.as_of_date
-  transaction.symbol = formData.symbol
-  transaction.quantity = formData.quantity
-  transaction.price = formData.price
-  transaction.total = formData.total
+  transaction.type = form.cleaned_data.get('type').encode('UTF-8')
+  transaction.as_of_date = form.cleaned_data.get('as_of_date')
+  transaction.symbol = form.cleaned_data.get('symbol').encode('UTF-8')
+  transaction.quantity = form.cleaned_data.get('quantity')
+  transaction.price = form.cleaned_data.get('price')
+  transaction.total = form.cleaned_data.get('total')
   transaction.save()
   
-  return redirect ("/portfolio.html?id=%s" % portfolio_id)
+  return redirect("/%s/view.html" % portfolio.token)
 
-@login_required_decorator
-def delete_transaction(request):
-  user = User.from_request(request)
-  transaction_id = request.GET.get('id')
-  transaction = Transaction.objects.filter(id = transaction_id, portfolio__user__id__exact = user.id)[0]
-  portfolio = transaction.portfolio
-  transaction.delete()
-  return redirect ('/portfolio.html?id=%d' % portfolio.id)
-
-def show_form_or_process(request, formCls, process_function, template, context = {}):
-  messages = []
-  form = formCls()
-  if request.method == 'POST':
-    form = formCls(request.POST)
-    formData = FormData(form)
-    
-    if form.is_valid():
-      return_override = process_function(request, formData, messages, context)
-      if return_override != None:
-        return return_override
-    
-  context['form'] = form
-  context['messages'] = messages
-  return render_to_response(template, context, context_instance = RequestContext(request))
-
-class FormData():
-  def __init__(self, form):
-    self.form = form
-    
-  def __getattr__(self, name):
-    data = self.form.cleaned_data[name]
-    print name
-    if type(data) == 'unicode':
-      data = data.encode('UTF8')
-    
-    return data
-
-class UsernamePasswordForm(forms.Form):
-  EMAIL_ERROR_MESSAGES = {
-      'required' : 'Please enter your email address',
-      'invalid' : 'Please enter a valid email address',
-      'max_length' : 'Email cannot be longer than 100 characters',
-    }
-
-  PASSWORD_ERROR_MESSAGES = {
-      'required' : 'Please enter your password',
-      'min_length' : 'Passwords cannot be shorter than 6 characters',
-      'max_length' : 'Passwords cannot be longer than 20 characters',
-    }
-
-  username = forms.EmailField(max_length = 100, error_messages = EMAIL_ERROR_MESSAGES)
-  password = forms.CharField(min_length = 6, max_length = 20, error_messages = PASSWORD_ERROR_MESSAGES)
-
-
-class ChangeUsernamePasswordForm(UsernamePasswordForm):
-  new_password = forms.CharField(required = False, min_length = 6, max_length = 20, error_messages = UsernamePasswordForm.PASSWORD_ERROR_MESSAGES)
-  
 class TransactionForm(forms.Form):
   type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
   as_of_date = forms.DateField()
@@ -357,3 +285,11 @@ class TransactionForm(forms.Form):
   quantity = forms.DecimalField(min_value = 0.01)
   price = forms.DecimalField(min_value = 0.01)
   total = forms.DecimalField(min_value = 0.01)
+
+@portfolio_by_token_decorator
+@redirect_to_view_if_read_only_decorator
+def remove_transaction(request, portfolio):
+  transaction_id = request.GET.get('id')
+  transaction = Transaction.objects.filter(id = transaction_id, portfolio__id__exact = portfolio.id)[0]
+  transaction.delete()
+  return redirect("/%s/view.html" % portfolio.token)

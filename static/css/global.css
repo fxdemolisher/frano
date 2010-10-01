@@ -71,7 +71,7 @@ see LICENSE file for copying permission.
     .addButton {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;float:right;}
     #mainContent BUTTON { -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.2);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.2);}
     
-    #logout, #signin {margin-top:-10px;background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF;}
+    .navButton {margin-top:-10px;background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px;}
     
     
  /* --------------------------------------------------
@@ -106,8 +106,8 @@ see LICENSE file for copying permission.
  /* --------------------------------------------------
   =Navigation
   -------------------------------------------------- */
-    #nav {height:60px;background-color:#222;margin-bottom:5px;}
-    .userLinks {width:400px;float:right;font-size:11px;color:#FFF;padding-top:15px;white-space:nowrap;position:absolute;right:0;}
+    #nav {height:50px;background-color:#222;margin-bottom:5px;}
+    .userLinks {float:right;font-size:17px;color:#FFF;padding-top:15px;white-space:nowrap;right:0;}
     .userLinks INPUT {width:155px;margin-top:-3px;margin-bottom:5px;}
     .loginHelperIcons {width:285px;}
     .loginHelperIcons .icon {float:right;width:10px;height:10px;margin-right:5px;}
@@ -119,6 +119,7 @@ see LICENSE file for copying permission.
     .legal {font-size:11px;text-align:center;}
     #banner {text-align:center;padding:8px;z-index:99;background-color:#ffff99;-moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);height:20px;position:fixed;left:0;top:0;width:100%;color:#666633;display:none;}
     #banner A {color:blue;}
+    .message { display: none; }
     
  /* --------------------------------------------------
   =Icons

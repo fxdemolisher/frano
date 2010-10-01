@@ -1,78 +1,129 @@
-{% extends "base_secure.html" %}
+{% extends "base.html" %}
 
-{% block mainContent %}
-<!-- important portfolio data -->        
-  {% if market_value %}
-    <div class="column-row">                
-      <div class="three columns">
-        <ul class="importantData">
-          <li class="name">Market Value</li>
-          <li class="value">${{ market_value|floatformat:"2" }}</li>
-          <li class="related"><strong>Cost Basis</strong> ${{ cost_basis|floatformat:"2" }}</li>
-        </ul>
-      </div>
+{% block title %}Frano: {{ portfolio.name }}{% endblock %}
+
+{% block pageHeader %}
+  <div class="six columns">
+    <div class="pageHeading">{{ portfolio.name }}</div>
+    <br style="clear:both;"/>
+     
+    <ul class="horizontallist" id="portfolioMeta">
+      {% if portfolio_start and as_of_date %}
+        <li><strong>As Of:</strong></li>
+        <li>{{ as_of_date|date:'m/d/Y' }}</li>
+          
+        <li><strong>Started On:</strong></li>
+        <li>{{ portfolio_start|date:'m/d/Y' }}</li>
+      {% else %}
+        <li>This portfolio is empty, please add transactions below.</li>
+      {% endif %}
       
-      <div class="three columns">
-        <ul class="importantData">
-          <li class="name">Profit Loss</li>
-          <li class="value {{ pl_class }}">${{ pl|floatformat:"2" }}</li>
-          <li class="related">
-            <strong>Overall</strong> <span class="{{ pl_class }}">{{ pl_percent|floatformat:"2" }}%</span>
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <strong>Annualized</strong> <span class="{{ pl_class }}">{{ annualized_pl_percent|floatformat:"2" }}%</span>
-          </li>
-        </ul>
-      </div>
+    </ul>
       
-      <div class="two columns">
-        <ul class="importantData">
-          <li class="name">XIRR</li>
-          <li class="value {{ xirr_percent_class }}">{{ xirr_percent|floatformat:2 }}%</li>
-          <li class="related"></li>
-        </ul>
-      </div>
+  </div>
+  
+  {% if not read_only %}
+    <div class="one columns">
+      <form action="/{{ portfolio.token }}/view.html">
+        <button class="homepageButton">Portfolio</button>
+      </form>
+    </div>
+    <div class="one columns">
+      <form action="/{{ portfolio.token }}/settings.html">
+        <button class="homepageButton">Settings</button>
+      </form>
     </div>
   {% endif %}
- 
+{% endblock %}
+
+{% block mainContent %}
+
+  {% if request.GET.invalidTransaction %}
+    <div class="message">Invalid data for transaction, please correct and try again.</div>
+  {% endif %}
+
+<!-- important portfolio data -->
+  {% if market_value %}
+    <div id="mainContent" >        
+      <div class="column-row">                
+        <div class="three columns">
+          <ul class="importantData">
+            <li class="name">Market Value</li>
+            <li class="value">${{ market_value|floatformat:"2" }}</li>
+            <li class="related"><strong>Cost Basis</strong> ${{ cost_basis|floatformat:"2" }}</li>
+          </ul>
+        </div>
+        
+        <div class="three columns">
+          <ul class="importantData">
+            <li class="name">Profit Loss</li>
+            <li class="value {{ pl_class }}">${{ pl|floatformat:"2" }}</li>
+            <li class="related">
+              <strong>Overall</strong> <span class="{{ pl_class }}">{{ pl_percent|floatformat:"2" }}%</span>
+              &nbsp;&nbsp;&nbsp;&nbsp;
+              <strong>Annualized</strong> <span class="{{ pl_class }}">{{ annualized_pl_percent|floatformat:"2" }}%</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="two columns">
+          <ul class="importantData">
+            <li class="name">XIRR</li>
+            <li class="value {{ xirr_percent_class }}">{{ xirr_percent|floatformat:2 }}%</li>
+            <li class="related"></li>
+          </ul>
+        </div>
+      </div>
+    
 <!-- holdings -->
-  {% if positions %}             
-    <div class="column-row">
-      <div class="eight columns">
-        <table class="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
-          <thead>
-            <tr>
-              <td>% of Allocation</td>
-              <td>Symbol/Name</td>
-              <td>Qty</td>
-              <td>Price/Cost</td>
-              <td>Mkt Value</td>                                
-              <td>Day's P/L</td>
-              <td>P/L %</td>
-            </tr>
-          </thead>
-          <tbody>
-            {% for position in positions %}
+      <div class="column-row">
+        <div class="eight columns">
+          <table class="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+            <thead>
               <tr>
-                <td id="allocation">{{ position.allocation|floatformat:'2' }}%</td>
-                <td>
-                  <div class="tickerSymbol">{{ position.symbol }}</div>
-                  <div class="holdingsMeta">{{ position.name }}</div>
-                </td>
-                <td>{{ position.quantity|floatformat:'2' }}</td>
-                <td>
-                  <div>${{ position.price|floatformat:'2' }}</div>
-                  <div class="holdingsMeta">${{ position.cost_price|floatformat:'2' }}</div>
-                </td>
-                <td>${{ position.market_value|floatformat:'2' }}</td>
-                <td class="{{ position.day_pl_class }}">
+                <td>% of Allocation</td>
+                <td>Symbol/Name</td>
+                <td>Qty</td>
+                <td>Price/Cost</td>
+                <td>Mkt Value</td>                                
+                <td>Day's P/L</td>
+                <td>P/L %</td>
+              </tr>
+            </thead>
+            <tbody>
+              {% for position in positions %}
+                <tr>
+                  <td id="allocation">{{ position.allocation|floatformat:'2' }}%</td>
+                  <td>
+                    <div class="tickerSymbol">{{ position.symbol }}</div>
+                    <div class="holdingsMeta">{{ position.name }}</div>
+                  </td>
+                  <td>{{ position.quantity|floatformat:'2' }}</td>
+                  <td>
+                    <div>${{ position.price|floatformat:'2' }}</div>
+                    <div class="holdingsMeta">${{ position.cost_price|floatformat:'2' }}</div>
+                  </td>
+                  <td>${{ position.market_value|floatformat:'2' }}</td>
+                  <td class="{{ position.day_pl_class }}">
                     ${{ position.day_pl|floatformat:'2' }}
                     <div class="holdingsMeta {{ position.day_pl_class }}">{{ position.day_pl_percent|floatformat:'2' }}%</div>
+                  </td>
+                  <td class="{{ position.pl_percent_class }}">{{ position.pl_percent|floatformat:'2' }}%</td>
+                </tr>
+              {% endfor %}
+              
+              <tr class="lastRow">
+                <td colspan="4">&nbsp;</td>
+                <td>${{ market_value|floatformat:'2' }}</td>
+                <td class="{{ day_pl_class }}">
+                  ${{ day_pl|floatformat:'2' }}
+                  <div class="holdingsMeta {{ day_pl_class }}">{{ day_pl_percent|floatformat:'2' }}%</div>
                 </td>
-                <td class="{{ position.pl_percent_class }}">{{ position.pl_percent|floatformat:'2' }}%</td>
+                <td class="{{ pl_class }}">{{ pl_percent|floatformat:'2' }}%</td>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   {% endif %}
@@ -82,20 +133,20 @@
     <div class="column-row">
       <div class="eight columns">
         <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
-          <thead>
-            <tr>
-              <td>Type</td>
-              <td>Date</td>
-              <td>Symbol</td>
-              <td>Qty</td>
-              <td>Price</td>
-              <td>Total</td>
-              <td>&nbsp;</td>
-            </tr>
-          </thead>
-          <tbody id="holdingsTableTbody">
-          
-            {% if transactions %}
+          {% if transactions.object_list %}
+            <thead>
+              <tr>
+                <td>Type</td>
+                <td>Date</td>
+                <td>Symbol</td>
+                <td>Qty</td>
+                <td>Price</td>
+                <td>Total</td>
+                <td>&nbsp;</td>
+              </tr>
+            </thead>
+            <tbody id="holdingsTableTbody">
+            
               {% for transaction in transactions.object_list %}
                 <tr>
                   <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type_text }}</div></td>
@@ -107,53 +158,62 @@
                   <td>{{ transaction.quantity|floatformat:2 }}</td>
                   <td>${{ transaction.price|floatformat:2 }}</td>
                   <td>${{ transaction.total|floatformat:2 }}</td>
-                  <td><a href="/deleteTransaction.html?id={{ transaction.id }}"><div class="icon delete"></div></a></td>
+                  <td>
+                    {% if not read_only %}
+                      <a href="/{{ portfolio.token }}/removeTransaction.html?id={{ transaction.id }}"><div class="icon delete"></div></a>
+                    {% endif %}
+                  </td>
                 </tr>
               {% endfor %}
               
               <tr class="pagingRow">
                 <td colspan="99">
                   <ul class="paging horizontallist">
-                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page=1"><div class="pagingButton">&lt;&lt;</div></a></li>
-                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ transactions.previous_page_number }}"><div class="pagingButton">&lt;</div></a></li>
+                    <li><a href="/{{portfolio.token}}/view.html?id={{ portfolio.id}}&page=1"><div class="pagingButton">&lt;&lt;</div></a></li>
+                    <li><a href="/{{portfolio.token}}/view.html?id={{ portfolio.id}}&page={{ transactions.previous_page_number }}"><div class="pagingButton">&lt;</div></a></li>
                     <li class="pagingSummary">{{ transactions.start_index }} - {{ transactions.end_index }} out of {{ transactions.paginator.count }}</li>
-                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ transactions.next_page_number }}"><div class="pagingButton">&gt;</div></a></li>
-                    <li><a href="/portfolio.html?id={{ portfolio.id}}&page={{ transactions.paginator.num_pages }}"><div class="pagingButton">&gt;&gt;</div></a></li>
+                    <li><a href="/{{portfolio.token}}/view.html?id={{ portfolio.id}}&page={{ transactions.next_page_number }}"><div class="pagingButton">&gt;</div></a></li>
+                    <li><a href="/{{portfolio.token}}/view.html?id={{ portfolio.id}}&page={{ transactions.paginator.num_pages }}"><div class="pagingButton">&gt;&gt;</div></a></li>
                   </ul>
                 </td>
               </tr>
-              
-            {% endif %}
-   
-            <form action="addTransaction.html" method="post" id="addTransactionForm">
-              <input type="hidden" name="portfolio_id" value="{{ portfolio.id }}" />
-              
+            </tbody>
+          {% endif %}
+          
+          {% if not read_only %}
+            <tfoot>
               <tr class="addNewRow">
-                <td>
-                  <select name="type" id="newTransactionType">
-                    <option></option>
-                    <option value="BUY">Buy</option>
-                    <option value="SELL">Sell</option>
-                    <option value="DEPOSIT">Deposit Cash</option>
-                    <option value="WITHDRAW">Withdraw Cash</option>
-                    <option value="ADJUST">Adjust Cash</option>
-                  </select>
-                </td>
-                <td><input type="text" name="as_of_date" size="8" style="float:left;"/><div class="icon calendar"></div></td>
-                <td><input type="text" name="symbol" id="newTransactionSymbol" size="5"/></td>
-                <td><input type="text" name="quantity" size="5"/></td>
-                <td>$<input type="text" name="price" id="newTransactionPrice" size="5"/></td>
-                <td>$<input type="text" name="total" size="8"/></td>
-                <td><div class="icon add" id="addTransaction"></div></td>
+                <td>Type</td>
+                <td>Date</td>
+                <td>Symbol</td>
+                <td>Qty</td>
+                <td>Price</td>
+                <td>Total</td>
+                <td>&nbsp;</td>
               </tr>
-            </form>
-            
-            {% if request.GET.invalid_transaction_input %}
-              <tr>
-                <td colspan="9">Invalid input for new transaction, please re-enter</td>
-              </tr>
-            {% endif %}
-          </tbody>
+              <form action="/{{portfolio.token}}/addTransaction.html" method="post" id="addTransactionForm">
+                <tr class="lastRow">
+                  <td>
+                    <select name="type" id="type">
+                      <option></option>
+                      <option value="BUY">Buy</option>
+                      <option value="SELL">Sell</option>
+                      <option value="DEPOSIT">Deposit Cash</option>
+                      <option value="WITHDRAW">Withdraw Cash</option>
+                      <option value="ADJUST">Adjust Cash</option>
+                    </select>
+                  </td>
+                  <td><input type="text" name="as_of_date" size="8" style="float:left;"/><div class="icon calendar"></div></td>
+                  <td><input type="text" name="symbol" id="symbol" size="5"/></td>
+                  <td><input type="text" name="quantity" id="quantity" size="5"/></td>
+                  <td>$<input type="text" name="price" id="price" size="5"/></td>
+                  <td>$<input type="text" name="total" id="total" size="8"/></td>
+                  <td><div class="icon add" id="addTransaction"></div></td>
+                </tr>
+              </form>
+            </tfoot>
+          {% endif %}
+
         </table>
       </div>
     </div>

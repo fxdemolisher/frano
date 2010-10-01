@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/css/layout.css" type="text/css"/>
     {% block extraCss %}{% endblock %}
     <script language="javascript" type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery.infieldlabel.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
     {% block extraJs %}{% endblock %}
   </head>
@@ -21,33 +22,47 @@
     <div id="container">
       <div id="nav" class="column-row">
         <a href="/">
-          <div class="two columns">
+          <div class="one columns">
             <h1>Frano</h1>
           </div>
         </a>
-        <div class="six columns">
+        <div class="seven columns">
           <div class="userLinks">
-            {% block navBar %}{% endblock %}
+            <ul class="horizontallist">
+              <li>Track a new portfolio:</li>
+              <li id="createForm">
+                <form action="/createPortfolio.html" method="post">
+                  <label for="name" class="infield">Portfolio Name</label>
+                  <input type="text" name="name" id="name" value="" />
+                  <button class="navButton">Create</button>
+                </form>
+              </li>
+              <li>Recover links:</li>
+              <li id="recoverForm">
+                <form action="/recoverPortfolio.html" method="post">
+                  <label for="email" class="infield">Email</label>
+                  <input type="text" name="email" id="email" value="" />
+                  <button class="navButton">Send</button>
+                </form>
+              </li>  
+            </ul>
           </div>
         </div>
       </div>    
     
 <!-- header row -->    
       <div id="header" class="column-row">
-        {% block headerRow %}{% endblock %}
+        {% block pageHeader %}{% endblock %}
       </div>
 <!-- END: header row -->
 
 <!-- main content -->        
-      <div id="mainContent" >
-        {% block mainContent %}{% endblock %}
-      </div>
+      {% block mainContent %}{% endblock %}
 <!-- END: main content -->
     
 <!-- footer -->
       <div class="column-row">
         <div class="eight columns legal">
-          <a href="/about.html">About</a> &nbsp;|&nbsp; 
           <a href="/feedback.html">Feedback</a> &nbsp;|&nbsp; 
           <a href="/legal.html">Legal</a>
           <br/><br/>

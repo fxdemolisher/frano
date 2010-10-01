@@ -1,77 +1,83 @@
-{% extends "base_secure.html" %}
+{% extends "base.html" %}
 
-{% block loggedInHeader %}
+{% block title %}Frano: {{ portfolio.name }} - Settings{% endblock %}
+
+{% block pageHeader %}
   <div class="six columns">
-    <div class="pageHeading">Settings</div>
-    <br style="clear:both;"/>
-     
-    <ul class="horizontallist" id="portfolioMeta">
-      <li>You may use this screen to re-order your <a href="/portfolio.html">portfolios</a> or change your password</li>
-    </ul>
+    <div class="pageHeading">{{ portfolio.name }} - Settings</div>
+    <br style="clear:both;"/> 
+  </div>
+  <div class="one columns">
+    <form action="/{{ portfolio.token }}/view.html">
+      <button class="homepageButton">Portfolio</button>
+    </form>
+  </div>
+  <div class="one columns">
+    <form action="/{{ portfolio.token }}/settings.html">
+      <button class="homepageButton">Settings</button>
+    </form>
   </div>
 {% endblock %}
 
 {% block mainContent %}
-  <div class="column-row">                
-    <div class="four columns">
-      <h2>Change Your Email or Password</h2>
-      <div class="registerForm updateSettingsForm">
-        {% for message in messages %}
-          {{ message }}
-          <br/>
-        {% endfor %}
-      
-        <form action="/settings.html" method="post">
-          <label for="username">Enter your email</label>
-          <input type="text" name="username" id="" value="{{ request.session.username }}"/>
-          {{ form.errors.username }}
-          <br class="clear"/>
-           
-          <label for="current_password">Current password</label>
-          <input type="password" name="password" id="" value=""/>
-          {{ form.errors.password }}
-          <br class="clear"/>
-           
-          <label for="new_password">New password</label>
-          <input type="password" name="new_password" id="" value=""/>
-          {{ form.errors.new_password }}
-          <br class="clear"/>
-           
-          <div class="explanatoryText">Leave new password blank if you are keeping your existing one</div>
-            
-          <button class="addButton">Save Changes</button>
-          <br class="clear"/>
-        </form>
+  <div id="mainContent" >
+    <div class="column-row">                
+      <div class="six columns">
+        <h2>The links for this portfolio are:</h2>
+        
+        <br class="clear" />
+        
+        <strong>Read/Write Link &mdash; </strong> <a href="http://{{ request.META.HTTP_HOST }}/{{ portfolio.token }}/view.html">http://{{ request.META.HTTP_HOST }}/{{ portfolio.token }}/view.html</a>
+        <br class="clear" />
+        
+        <strong>Read-Only Link &mdash; </strong> <a href="http://{{ request.META.HTTP_HOST }}/{{ portfolio.read_only_token }}/view.html">http://{{ request.META.HTTP_HOST }}/{{ portfolio.read_only_token }}/view.html</a>
+        <br class="clear" />
+        
       </div>
-    </div>
-  
-    <div class="four columns">
-      <h2>Manage Portfolios</h2>
-      <div class="portfolioOrderForm">
+      <br class="clear"/>
+      <br class="clear"/>
       
-        {% if not portfolios %}
-          You do not have any portfolios, add some using the button above.
-        {% else %}
-          <form action="/updatePortfolios.html" method="post">
-          
-            {% for portfolio in portfolios %}
-              <input type="text" name="name_{{ portfolio.id }}" value="{{ portfolio.name }}"/><a href="/deletePortfolio.html?id={{ portfolio.id }}"><div class="icon delete"></div></a>
-              <br class="clear"/>
-              
-            {% endfor %}
-          
+      <div class="four columns">
+        <h2>Settings:</h2>
+        <div class="updateSettingsForm">
+        
+          <form action="/{{ portfolio.token }}/settings.html" method="post">
+            <label for="name">Portfolio Name</label>
+            <input type="text" name="name" value="{{ portfolio.name }}"/>
+            {{ form.errors.name }}
+            <br class="clear"/>
+            
+            <label for="email">Recovery Email</label>
+            <input type="text" name="email" value="{{ portfolio.recovery_email }}"/>
+            {{ form.errors.email }}
+            <br class="clear"/>
+             
             <button class="addButton">Save Changes</button>
+            <br class=" clear"/>
+          </form>
+        </div>
+      </div>
+      <br class="clear"/>
+      
+      <div class="three columns">
+        <h2>Remove this portfolio:</h2>
+        <div class="updateSettingsForm">
+          NOTE: This action cannot be undone.
+          <br class="clear" />
+        
+          <form action="/{{ portfolio.token }}/remove.html" method="post">
+            <button class="addButton">Remove</button>
             <br class="clear"/>
           </form>
-        {% endif %}
-          
+        </div>
       </div>
+  
     </div>
   </div>
 {% endblock %}
 
 {% comment %}
-Copyright (c) 2010 Gennadiy Shafranovich
-Licensed under the MIT license
-see LICENSE file for copying permission.
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
 {% endcomment %}
