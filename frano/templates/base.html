@@ -5,9 +5,14 @@
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="/css/global.css" type="text/css"/>
     <link rel="stylesheet" href="/css/layout.css" type="text/css"/>
+    <link rel="stylesheet" href="/css/ui-lightness/jquery-ui-1.8.5.custom.css" type="text/css"/>
+    <link rel="stylesheet" href="/css/validationEngine.jquery.1.7.css" type="text/css"/>
     {% block extraCss %}{% endblock %}
     <script language="javascript" type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery-ui-1.8.5.custom.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.infieldlabel.min.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine-en.1.7.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
     {% block extraJs %}{% endblock %}
   </head>
@@ -31,17 +36,17 @@
             <ul class="horizontallist">
               <li>Track a new portfolio:</li>
               <li id="createForm">
-                <form action="/createPortfolio.html" method="post">
+                <form action="/createPortfolio.html" method="post" id="createPortfolioForm">
                   <label for="name" class="infield">Portfolio Name</label>
-                  <input type="text" name="name" id="name" value="" />
+                  <input type="text" name="name" id="name" value="" class="validate[required,length[4,30],noSpecialCharacters]"/>
                   <button class="navButton">Create</button>
                 </form>
               </li>
               <li>Recover links:</li>
               <li id="recoverForm">
-                <form action="/recoverPortfolio.html" method="post">
+                <form action="/recoverPortfolio.html" method="post" id="recoverPortfolioForm">
                   <label for="email" class="infield">Email</label>
-                  <input type="text" name="email" id="email" value="" />
+                  <input type="text" name="email" id="email" value="" class="validate[required,length[3,200],email]"/>
                   <button class="navButton">Send</button>
                 </form>
               </li>  
@@ -64,13 +69,17 @@
       <div class="column-row">
         <div class="eight columns legal">
           <a href="/feedback.html">Feedback</a> &nbsp;|&nbsp; 
-          <a href="/legal.html">Legal</a>
+          <a href="/legal.html">Legal</a> &nbsp;|&nbsp;
+         <a href="http://github.com/fxdemolisher/frano" target="_blank">Source Code @ GitHub</a>
           <br/><br/>
           
-          &copy; 2010; <a href="http://www.carelessmusings.com" target="_blank">Gennadiy Shafranovich</a>,
+          Designed by <a href="#" target="_blank">Todd Faulls</a>.
+          <br/>
+          
+          &copy; 2010 <a href="http://www.carelessmusings.com" target="_blank">Gennadiy Shafranovich</a>,
           Licensed under the <a href="http://github.com/fxdemolisher/frano/blob/develop/LICENSE" target="_blank">MIT Software License</a>.
           <br/>
-          Designed by <a href="#" target="_blank">Todd Faulls.</a>
+          
         </div>
       </div>
 <!-- END: footer -->

@@ -14,6 +14,7 @@ urlpatterns = patterns('frano.views',
   (r'^legal.html', 'legal'),
   (r'^feedback.html', 'feedback'),
   (r'^createPortfolio.html', 'create_portfolio'),
+  (r'^recoverPortfolio.html', 'recover_portfolio'),
   (r'^(?P<token>\w{20})/settings.html', 'settings'),
   (r'^(?P<token>\w{20})/view.html', 'view_portfolio'),
   (r'^(?P<token>\w{20})/remove.html', 'remove_portfolio'),
@@ -22,7 +23,7 @@ urlpatterns = patterns('frano.views',
 )
 
 if DEBUG:
-  dir = os.path.realpath('./../static')
+  dir = os.path.realpath('./static')
   urlpatterns += patterns('django.views.static',
     (r'^css/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/css' }),
     (r'^img/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/img' }),

@@ -6,6 +6,7 @@ import math
 
 from django import forms
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
@@ -61,6 +62,23 @@ def create_portfolio(request):
   
   portfolio = Portfolio.create(name)
   return redirect ('/%s/settings.html' % (portfolio.token))
+
+def recover_portfolio(request):
+  email = request.POST.get('email')
+  candidates = Portfolio.objects.filter(recovery_email = email)
+  if candidates.count() == 0:
+    return redirect('/index.html?emailNotFound=true')
+  
+  text = 'The following is a list of your portfolios in the Frano system and their links:<br/><br/>\n'
+  for portfolio in candidates:
+    text += 'Portfolio: %s<br/>\n' % portfolio.name
+    text += 'Read/Write: http://%s/%s/view.html<br/>\n' % ( request.META['HTTP_HOST'], portfolio.token)
+    text += 'Read-Only: http://%s/%s/view.html<br/><br/>\n' % ( request.META['HTTP_HOST'], portfolio.read_only_token)
+    
+  print text
+  send_mail('[Frano] Portfolio(s) recovery emails', text, 'info@frano.carelessmusings.com', [ email ], fail_silently = True)
+  
+  return redirect('/index.html?mailSent=true')
 
 @portfolio_by_token_decorator
 @redirect_to_view_if_read_only_decorator

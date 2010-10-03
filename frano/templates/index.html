@@ -24,6 +24,14 @@
       <div class="message">Your portfolio has been removed</div>
     {% endif %}
     
+    {% if request.GET.emailNotFound %}
+      <div class="message">Your email was not found in the system</div>
+    {% endif %}
+    
+    {% if request.GET.mailSent %}
+      <div class="message">Your recovery email has been sent</div>
+    {% endif %}
+    
     <div class="column-row">                
       <div class="eight columns">
         <div class="homepageCopy">

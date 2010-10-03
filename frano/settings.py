@@ -4,39 +4,30 @@
 
 import datetime
 
-DEBUG = True
-TEMPLATE_DEBUG = True
+import os, glob
 
+# base db set up, the rest is in environment specific setting files
 DATABASE_ENGINE = 'mysql'
-DATABASE_NAME = 'frano'
-DATABASE_USER = 'tracker'
-DATABASE_PASSWORD = 'trackmystocks'
-DATABASE_HOST = 'localhost'
-DATABASE_PORT = '3306'
 DATABASE_OPTIONS = { "init_command" : "SET storage_engine=INNODB" }
 
+# locale set up
 TIME_ZONE = 'America/New_York'
 LANGUAGE_CODE = 'en-us'
 USE_I18N = False
 
-SECRET_KEY = '&1*y2=g+h57qxa&qct#z6+408l5$i5p7&cjp6)@@nfqwtrxn3&'
-
-TEMPLATE_LOADERS = (
-  'django.template.loaders.app_directories.load_template_source',
-)
-
+# template set up
+TEMPLATE_LOADERS = ( 'django.template.loaders.app_directories.load_template_source', )
 TEMPLATE_DIRS = ( )
+TEMPLATE_CONTEXT_PROCESSORS = ( 'django.core.context_processors.request', )
 
-TEMPLATE_CONTEXT_PROCESSORS = (
-  'django.core.context_processors.request',
-)
-
-MIDDLEWARE_CLASSES = (
-  'django.middleware.common.CommonMiddleware',
-)
-
+# middleware and app set up
+MIDDLEWARE_CLASSES = ( 'django.middleware.common.CommonMiddleware', )
 ROOT_URLCONF = 'frano.urls'
+INSTALLED_APPS = ( 'frano' )
 
-INSTALLED_APPS = (
-  'frano'
-)
+# load external settings
+settings_dir = os.path.realpath('./settings')
+settings_files = glob.glob(os.path.join(settings_dir, '*.py'))
+settings_files.sort()
+for f in settings_files:
+  execfile(os.path.abspath(f))

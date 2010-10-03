@@ -17,10 +17,16 @@ see LICENSE file for copying permission.
   -------------------------------------------------- */
 
     #createForm { position: relative; }
-    #createForm label { position:absolute; top: 2px; left: 5px; color:#333; font-size: 16px; } 
+    #createForm LABEL { top: 2px; left: 5px; } 
     
     #recoverForm { position: relative; }
-    #recoverForm label { position:absolute; top: 2px; left: 5px; color:#333; font-size: 16px; }
+    #recoverForm LABEL { top: 2px; left: 5px; }
+    
+    .transactionField { position: relative; }
+    .transactionField LABEL { top: 3px; left: 5px; }
+    .transactionField LABEL.dollarLabel { left: 11px; }
+    
+    LABEL.infield { position: absolute; color: #333; font-size: 16px; cursor: text; }
 
 /*  --------------------------------------------------
   =Portfolio
@@ -47,7 +53,7 @@ see LICENSE file for copying permission.
     /*tabular data*/
     .holdingsTable {font-size:16px;margin-top:10px;}
     .holdingsTable TD {border-bottom: solid 1px #CCC;padding:5px 2px;font-weight:bold;vertical-align:top;}
-    .holdingsTable thead TD, .holdingsTable tfoot TD {font-size:12px;font-weight:normal !important;}
+    .holdingsTable thead TD {font-size:12px;font-weight:normal !important;}
     .pagingRow TD {background-color:#E3E3E3;}
     .addNewRow TD {background: url(/img/gradients.png) 0 0 repeat-x;padding-top:9px;}
     .lastRow TD { border-bottom: none; }
@@ -95,4 +101,11 @@ see LICENSE file for copying permission.
     .updateSettingsForm LABEL { width:120px; display:block; float:left; margin-top:5px; padding-left:35px;}
     .updateSettingsForm INPUT { margin-top:5px; width:200px; } 
     .updateSettingsForm BUTTON { margin-top:10px; margin-right: 92px; }
-    
+
+/*  --------------------------------------------------
+  =Legal
+  -------------------------------------------------- */
+  
+    .legalCopy A {color:#3399cc;}
+    .legalCopy LI {line-height:24px;font-size:14px;}
+    .legalCopy STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
