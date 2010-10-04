@@ -156,7 +156,8 @@ def view_portfolio(request, portfolio, read_only):
     
     pl = market_value - cost_basis
     pl_percent = ((pl / cost_basis) * 100) if cost_basis != 0 else 0
-    annualized_pl_percent = pl_percent / ((as_of_date.date() - portfolio_start).days / 365.0)
+    days = (as_of_date.date() - portfolio_start).days
+    annualized_pl_percent = (pl_percent / (days / 365.0)) if days != 0 else 0
     
     day_pl = market_value - opening_market_value
     day_pl_percent = ((day_pl / opening_market_value) * 100) if opening_market_value != 0 else 0
