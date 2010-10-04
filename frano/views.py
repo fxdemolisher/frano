@@ -12,6 +12,7 @@ from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 
 from models import Portfolio, Transaction, Quote
+from settings import BUILD_VERSION, BUILD_DATETIME
 
 def portfolio_by_token_decorator(view_function):
   def view_function_decorated(request, token):
@@ -45,6 +46,12 @@ def redirect_to_view_if_read_only_decorator(view_function):
       return view_function(request, portfolio)
     
   return view_function_decorated
+
+def build_settings_context(context):
+  return { 
+      'BUILD_VERSION' : BUILD_VERSION,
+      'BUILD_DATETIME' : BUILD_DATETIME,
+    }
 
 def index(request):
   return render_to_response('index.html', { }, context_instance = RequestContext(request))

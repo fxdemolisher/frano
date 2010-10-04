@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from django.db import models
 from urllib import urlopen
-from utilities import generate_salt, salted_hash 
   
 class Portfolio(models.Model):
   """A user's portfolio"""

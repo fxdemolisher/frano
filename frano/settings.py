@@ -2,9 +2,11 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import datetime
+import datetime, os, glob
 
-import os, glob
+# build info
+BUILD_VERSION = '0.1'
+BUILD_DATETIME = datetime.datetime(2010, 10, 4, 13, 36, 0)
 
 # base db set up, the rest is in environment specific setting files
 DATABASE_ENGINE = 'mysql'
@@ -18,7 +20,10 @@ USE_I18N = False
 # template set up
 TEMPLATE_LOADERS = ( 'django.template.loaders.app_directories.load_template_source', )
 TEMPLATE_DIRS = ( )
-TEMPLATE_CONTEXT_PROCESSORS = ( 'django.core.context_processors.request', )
+TEMPLATE_CONTEXT_PROCESSORS =  ( 
+    'django.core.context_processors.request', 
+    'frano.views.build_settings_context',
+  )
 
 # middleware and app set up
 MIDDLEWARE_CLASSES = ( 'django.middleware.common.CommonMiddleware', )
