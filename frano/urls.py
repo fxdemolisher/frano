@@ -23,7 +23,8 @@ urlpatterns = patterns('frano.views',
 )
 
 if DEBUG:
-  dir = os.path.realpath('./static')
+  dir = os.path.realpath(os.path.dirname(__file__)) + "/static/"
+  print dir
   urlpatterns += patterns('django.views.static',
     (r'^css/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/css' }),
     (r'^img/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/img' }),

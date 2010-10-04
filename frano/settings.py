@@ -31,8 +31,8 @@ ROOT_URLCONF = 'frano.urls'
 INSTALLED_APPS = ( 'frano' )
 
 # load external settings
-settings_dir = os.path.realpath('./settings')
-settings_files = glob.glob(os.path.join(settings_dir, '*.py'))
+settings_dir = os.path.realpath(os.path.dirname(__file__))
+settings_files = glob.glob(os.path.join(settings_dir, 'settings/*.py'))
 settings_files.sort()
 for f in settings_files:
   execfile(os.path.abspath(f))
