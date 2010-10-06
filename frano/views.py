@@ -76,14 +76,14 @@ def recover_portfolio(request):
   if candidates.count() == 0:
     return redirect('/index.html?emailNotFound=true')
   
-  text = 'The following is a list of your portfolios in the Frano system and their links:<br/><br/>\n'
+  text = 'The following is a list of your portfolios in the Frano system and their links:\n\n'
   for portfolio in candidates:
-    text += 'Portfolio: %s<br/>\n' % portfolio.name
-    text += 'Read/Write: http://%s/%s/view.html<br/>\n' % ( request.META['HTTP_HOST'], portfolio.token)
-    text += 'Read-Only: http://%s/%s/view.html<br/><br/>\n' % ( request.META['HTTP_HOST'], portfolio.read_only_token)
+    text += 'Portfolio: %s\n' % portfolio.name
+    text += 'Read/Write: http://%s/%s/view.html\n' % ( request.META['HTTP_HOST'], portfolio.token)
+    text += 'Read-Only: http://%s/%s/view.html\n\n' % ( request.META['HTTP_HOST'], portfolio.read_only_token)
     
   print text
-  send_mail('[Frano] Portfolio(s) recovery emails', text, 'info@frano.carelessmusings.com', [ email ], fail_silently = True)
+  send_mail('[Frano] Portfolio(s) recovery emails', text, 'gennadiy@apps.carelessmusings.com', [ email ], fail_silently = True)
   
   return redirect('/index.html?mailSent=true')
 

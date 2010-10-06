@@ -206,18 +206,10 @@ server {
  
   access_log /var/log/nginx/frano.access.log ;
   
-  location ~* ^.+\.(mpg|avi|mp3|swf|zip|tgz|gz|rar|bz2|doc|xls|exe|ppt|txt|tar|mid|midi|wav|rtf|mpeg)$ {
-    access_log off;
-    break;
-  }
-  
-  location ~* ^.+\.(jpg|jpeg|gif|png|ico|css|bmp|js)$ {
-    expires 1d;
-    break;
-  }
-
   location ~ ^/(css|js|img)/.*$ {
     root /var/lib/django/frano/static/;
+    access_log off;
+    expires 1d;
   }
  
   location / {
