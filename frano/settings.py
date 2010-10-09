@@ -22,13 +22,25 @@ TEMPLATE_LOADERS = ( 'django.template.loaders.app_directories.load_template_sour
 TEMPLATE_DIRS = ( )
 TEMPLATE_CONTEXT_PROCESSORS =  ( 
     'django.core.context_processors.request', 
-    'frano.views.build_settings_context',
+    'frano.views.standard_settings_context',
   )
 
 # middleware and app set up
-MIDDLEWARE_CLASSES = ( 'django.middleware.common.CommonMiddleware', )
 ROOT_URLCONF = 'frano.urls'
-INSTALLED_APPS = ( 'frano' )
+MIDDLEWARE_CLASSES = ( 
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware', 
+  )
+
+INSTALLED_APPS = ( 
+    'django.contrib.sessions', 
+    'frano' 
+  )
+
+# session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 
 # load external settings
 settings_dir = os.path.realpath(os.path.dirname(__file__))

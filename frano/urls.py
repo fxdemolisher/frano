@@ -13,18 +13,19 @@ urlpatterns = patterns('frano.views',
   (r'^index.html', 'index'),
   (r'^legal.html', 'legal'),
   (r'^feedback.html', 'feedback'),
-  (r'^createPortfolio.html', 'create_portfolio'),
-  (r'^recoverPortfolio.html', 'recover_portfolio'),
-  (r'^(?P<token>\w{20})/settings.html', 'settings'),
-  (r'^(?P<token>\w{20})/view.html', 'view_portfolio'),
-  (r'^(?P<token>\w{20})/remove.html', 'remove_portfolio'),
-  (r'^(?P<token>\w{20})/addTransaction.html', 'add_transaction'),
-  (r'^(?P<token>\w{20})/removeTransaction.html', 'remove_transaction'),
+  (r'^login.html', 'login'),
+  (r'^logout.html', 'logout'),
+#  (r'^createPortfolio.html', 'create_portfolio'),
+#  (r'^recoverPortfolio.html', 'recover_portfolio'),
+#  (r'^(?P<token>\w{20})/settings.html', 'settings'),
+#  (r'^(?P<token>\w{20})/view.html', 'view_portfolio'),
+#  (r'^(?P<token>\w{20})/remove.html', 'remove_portfolio'),
+#  (r'^(?P<token>\w{20})/addTransaction.html', 'add_transaction'),
+#  (r'^(?P<token>\w{20})/removeTransaction.html', 'remove_transaction'),
 )
 
 if DEBUG:
   dir = os.path.realpath(os.path.dirname(__file__)) + "/static/"
-  print dir
   urlpatterns += patterns('django.views.static',
     (r'^css/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/css' }),
     (r'^img/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/img' }),

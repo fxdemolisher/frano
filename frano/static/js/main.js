@@ -12,9 +12,6 @@ $(function() {
     });
   })
   
-  $("#createPortfolioForm").validationEngine({ promptPosition: 'centerRight' });
-  $("#recoverPortfolioForm").validationEngine({ promptPosition: 'centerRight' });
-  
   $("label.infield").inFieldLabels();
     
   $("#type").change(function() {
@@ -28,11 +25,6 @@ $(function() {
       objs.attr("disabled", "");
       labels.show();
     }
-  });
-  
-  $("input#as_of_date").datepicker({
-    constrainInput: true,
-    maxDate: 0
   });
   
   $("#addTransaction").click(function() {
