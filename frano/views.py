@@ -106,6 +106,17 @@ def logout(request):
   del(request.session['user_id'])
   return redirect("/index.html")
 
+def delete_sample_position(request):
+  remove_symbol = request.GET.get('symbol')
+  short_infos = request.session.get('sample_transactions', DEFAULT_SAMPLE_TRANSACTIONS)
+  for i in range(len(short_infos)):
+    if short_infos[i][0] == remove_symbol:
+      del(short_infos[i])
+      break
+  
+  request.session['sample_transactions'] = short_infos
+  return redirect("/index.html")
+  
 #--------\
 #  FORMS |
 #--------/
@@ -122,9 +133,6 @@ DEFAULT_SAMPLE_TRANSACTIONS = [
     [ 'EEM', 2331, 42.87 ],
     [ 'GLD', 1112, 89.91 ],
     [ 'TIP', 905, 110.42 ],
-    [ 'FXE', 388, 154.60 ],
-    [ 'FXB', 100, 199.00 ],
-    [ 'FXA', 221, 90.07 ],
   ]
 
 def get_sample_transactions(request):
