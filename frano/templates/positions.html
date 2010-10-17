@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load frano_filters %}
+
+{% block title %}Frano: {{ portfolio.name }} - Positions{% endblock %}
+
+{% block pageHeading %}{{ portfolio.name}} - Positions{% endblock %}
+
+{% block mainContent %}
+  <div id="mainContent" >
+    {% include "inc_summary.html" %}
+    {% include "inc_positions.html" %}
+  </div>
+{% endblock %}
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}

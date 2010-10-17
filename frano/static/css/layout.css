@@ -26,7 +26,7 @@ see LICENSE file for copying permission.
     .transactionField LABEL { top: 3px; left: 5px; }
     .transactionField LABEL.dollarLabel { left: 11px; }
     
-    LABEL.infield { position: absolute; color: #333; font-size: 16px; cursor: text; }
+    LABEL.infield { position: absolute; color: #333; font-size: 16px; cursor: text; opacity: .6; }
 
 /*  --------------------------------------------------
   =Portfolio
@@ -97,10 +97,10 @@ see LICENSE file for copying permission.
   =Settings
   -------------------------------------------------- */
     
-    .updateSettingsForm { margin-bottom:5px; padding-bottom:20px; margin-top:10px; }
-    .updateSettingsForm LABEL { width:120px; display:block; float:left; margin-top:5px; padding-left:35px;}
-    .updateSettingsForm INPUT { margin-top:5px; width:200px; } 
-    .updateSettingsForm BUTTON { margin-top:10px; margin-right: 92px; }
+    .portfolioForm { margin-bottom:5px; padding-bottom:20px; margin-top:10px; }
+    .portfolioForm LABEL { width:120px; display:block; float:left; margin-top:5px; padding-left:35px;}
+    .portfolioForm INPUT { margin-top:5px; width:200px; } 
+    .portfolioForm BUTTON { margin-top:10px; margin-right: 92px; }
 
 /*  --------------------------------------------------
   =Legal

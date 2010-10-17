@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load frano_filters %}
 
 {% block title %}Frano: Portfolio Management Improved{% endblock %}
 
@@ -12,69 +13,27 @@
 {% block mainContent %}
   <div id="mainContent" >
   
-    {% if request.GET.nameRequired %}
-      <div class="message">A portfolio name is required.</div>
-    {% endif %}
-    
-    {% if request.GET.notFound %}
-      <div class="message">Invalid token, no portfolio found</div>
-    {% endif %}
-    
-    {% if request.GET.removed %}
-      <div class="message">Your portfolio has been removed</div>
-    {% endif %}
-    
-    {% if request.GET.emailNotFound %}
-      <div class="message">Your email was not found in the system</div>
-    {% endif %}
-    
-    {% if request.GET.mailSent %}
-      <div class="message">Your recovery email has been sent</div>
+    {% if request.GET.loginFailed %}
+      <div class="message">Login Failed...sorry :(</div>
     {% endif %}
     
     <div class="column-row">                
       <div class="eight columns">
         <div class="homepageCopy">
-          <strong class="highlight">Frano strips away all the bullshit and shows you what you really want to know about your portfolio.</strong>
+          <strong class="highlight">No marketing, no bullshit, just portfolios</strong>
           <br/>
-          We strip down your portfolio to a few basic statistics: 
-          How is your money allocated?
-          How much did it cost you? 
-          How much are you making? 
-          What is the time weighted return?
-          We keep your portfolio anonymous yes accessible.
+          Here's a sample portfolio for you to play around with. It is valid for the current session. If you wish to track your own portlios, simply sign in and
+          enter your data. Happy Tracking.
         </div>
       </div>
     </div>
-    <div class="column-row" style="margin-bottom:0;">                
-      <div class="four columns">
-        <div class="homepageImg"></div>
-        <br class="clear"/>
-      </div>
-      <div class="four columns">
-        <div class="homepageFeatures">
-          <ul>
-            <li>
-              <strong>No logins, No passwords</strong>
-              We do not ask you to sign up, simply create a portfolio and bookmark the URL, you can always go back to it when you need.
-            </li>
-            <li>
-              <strong>Simple Setup</strong>
-              You will need to know the cost basis of positions in your portfolio and how much cash you have. Thats it!!!
-            </li>
-            <li>
-              <strong>Easy Sharing</strong>
-              We provide you a special URL you can use to show your portfolio to others, without them being able to change
-              anything about it. 
-            </li>
-            <li>
-              <strong>How Do I Start?</strong>
-              Use the form at the top of the page to create your portfolio. 
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    
+    {% include "inc_summary.html" %}
+    {% include "inc_positions.html" %}
+  </div>
+  
+  <div id="content" >
+    {% include "inc_transactions.html" %}
   </div>
 {% endblock %}
 

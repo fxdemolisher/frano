@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load frano_filters %}
+
+{% block title %}Frano: {{ portfolio.name }} - Transactions{% endblock %}
+
+{% block pageHeading %}{{ portfolio.name}} - Transactions{% endblock %}
+
+{% block mainContent %}
+  <div id="mainContent" >
+    {% include "inc_transactions.html" %}
+  </div>
+{% endblock %}
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}

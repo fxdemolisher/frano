@@ -5,18 +5,24 @@
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="/css/global.css" type="text/css"/>
     <link rel="stylesheet" href="/css/layout.css" type="text/css"/>
-    <link rel="stylesheet" href="/css/ui-lightness/jquery-ui-1.8.5.custom.css" type="text/css"/>
     <link rel="stylesheet" href="/css/validationEngine.jquery.1.7.css" type="text/css"/>
-    {% block extraCss %}{% endblock %}
+
     <script language="javascript" type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
-    <script language="javascript" type="text/javascript" src="/js/jquery-ui-1.8.5.custom.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.infieldlabel.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine-en.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
-    {% block extraJs %}{% endblock %}
+    
+    <script type="text/javascript">
+      var rpxJsHost = (("https:" == document.location.protocol) ? "https://" : "http://static.");
+      document.write(unescape("%3Cscript src='" + rpxJsHost + "rpxnow.com/js/lib/rpx.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+      RPXNOW.overlay = true;
+      RPXNOW.language_preference = 'en';
+    </script>
+    
   </head>
-
   <body>
 
 <!-- banner -->    
@@ -31,33 +37,50 @@
             <h1>Frano</h1>
           </div>
         </a>
-        <div class="seven columns">
+        <div class="five columns">
           <div class="userLinks">
             <ul class="horizontallist">
-              <li>Track a new portfolio:</li>
-              <li id="createForm">
-                <form action="/createPortfolio.html" method="post" id="createPortfolioForm">
-                  <label for="name" class="infield">Portfolio Name</label>
-                  <input type="text" name="name" id="name" value="" class="validate[required,length[4,30],noSpecialCharacters]"/>
-                  <button class="navButton">Create</button>
-                </form>
-              </li>
-              <li>Recover links:</li>
-              <li id="recoverForm">
-                <form action="/recoverPortfolio.html" method="post" id="recoverPortfolioForm">
-                  <label for="email" class="infield">Email</label>
-                  <input type="text" name="email" id="email" value="" class="validate[required,length[3,200],email]"/>
-                  <button class="navButton">Send</button>
-                </form>
-              </li>  
+              {% if user %}
+                <li>Portfolio:</li>
+                <li>
+                  <select id="portfolio" style="width: 222px;">
+                    <option value=""></option>
+                    {% for a_portfolio in portfolios %}
+                      <option value="{{ a_portfolio.id }}" {% ifequal a_portfolio.id portfolio.id %}selected="selected"{% endifequal %}>{{ a_portfolio.name }}</option>
+                    {% endfor %}
+                  </select>
+                </li>
+                  
+                {% ifequal portfolio.user.id user.id %}
+                  <li>&nbsp;</li>
+                  <li><form action="/{{ portfolio.id}}/positions.html"><button class="navButton">Positions</button></form></li>
+                  <li><form action="/{{ portfolio.id}}/transactions.html"><button class="navButton">Transactions</button></form></li>
+                  <li><form action="/{{ portfolio.id}}/settings.html" method="post"><button class="navButton">Settings</button></form></li>
+                {% endifequal %}
+              {% endif %}
+            </ul>
+          </div>
+          
+        </div>
+        <div class="two columns">
+          <div class="userLinks">
+            <ul class="horizontallist">
+              {% if not user %}
+                <li><a class="rpxnow" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html"><button class="navButton">Sign In</button></a></li>
+              {% else %}
+                <li><form action="/createPortfolio.html"><button class="navButton">Create a Portfolio</button></form></li>
+                <li><form action="/logout.html"><button class="navButton">Sign Out</button></form></li>
+              {% endif %} 
             </ul>
           </div>
         </div>
       </div>    
-    
+
 <!-- header row -->    
       <div id="header" class="column-row">
-        {% block pageHeader %}{% endblock %}
+        <div class="six columns">
+          <div class="pageHeading">{% block pageHeading %}{% endblock %}</div>
+        </div>
       </div>
 <!-- END: header row -->
 

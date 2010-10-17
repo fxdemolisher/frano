@@ -12,14 +12,11 @@ $(function() {
     });
   })
   
-  $("#createPortfolioForm").validationEngine({ promptPosition: 'centerRight' });
-  $("#recoverPortfolioForm").validationEngine({ promptPosition: 'centerRight' });
-  
-  $("label.infield").inFieldLabels();
+  $("label.infield").inFieldLabels({ fadeOpacity: .1, finalOpacity: 0.5 });
     
   $("#type").change(function() {
     var val = $(this).val();
-    var objs = $("#symbol, #quantity, #price");
+    var objs = $("#symbol, #price, #comission");
     var labels = objs.siblings('label')
     if(val == 'DEPOSIT' || val == 'WITHDRAW' || val == 'ADJUST') {
       objs.attr("disabled", "disabled").val("");
@@ -30,24 +27,53 @@ $(function() {
     }
   });
   
-  $("input#as_of_date").datepicker({
-    constrainInput: true,
-    maxDate: 0
+  $("#addTransactionForm input").keypress(function(e) {
+    if(e.keyCode == 13) {
+      e.preventDefault()
+      $("#addTransactionForm").submit();
+    }
   });
   
-  $("#addTransaction").click(function() {
+  $("#addTransaction").click(function () {
+    $("#addTransactionForm").submit();
+  });
+  
+  $("#addTransactionForm").submit(function() {
     var type = $("#type").val();
     if(type == 'DEPOSIT' || type == 'WITHDRAW' || type == 'ADJUST') {
       $("#symbol").val("*CASH").attr("disabled", "");
-      $("#quantity").val($("#total").val()).attr("disabled", "");
       $("#price").val("1").attr("disabled", "");
     }
-    
-    $('#addTransactionForm').submit();
   });
   
-  $("#addTransactionForm").validationEngine({ });
-   
+  $("#addTransactionForm").validationEngine({
+    inlineValidation: false
+  });
+  
+  $("#deleteTransaction").click(function (e) {
+    if(!confirm('Are you sure you wish to remove this transaction?')) {
+      e.preventDefault();
+    }
+  });
+  
+  $("#portfolioForm").validationEngine({
+    inlineValidation: false
+  });
+  
+  $("#portfolio").change(function () {
+    if ($(this).val() == '') {
+      location.href = "/index.html"
+    } else {
+      location.href = "/" + $(this).val() + "/positions.html"
+    }
+  });
+  
+  $("#deletePortfolio").click(function (e) {
+    if(!confirm('Are you sure you wish to remove this portfolio?')) {
+      e.preventDefault();
+    }
+  });
+  
 });
 
 function scanForBannerMessages() {

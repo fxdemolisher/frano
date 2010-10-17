@@ -10,47 +10,58 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from django.db import models
 from urllib import urlopen
+
+class User(models.Model):
+  open_id = models.CharField(max_length = 255, unique = True)
+  email = models.CharField(max_length = 255, unique = True, null = True)
+  create_date = models.DateTimeField()
+  
+  class Meta:
+    db_table = 'user'
+  
+  def __unicode__(self):
+    return "%s - %s" % (self.email, self.open_id)
+  
+  @classmethod
+  def create(cls, open_id, email):
+    user = User()
+    user.open_id = open_id
+    user.email = email
+    user.create_date = datetime.now()
+    user.save()
+    
+    return user
   
 class Portfolio(models.Model):
-  """A user's portfolio"""
-  
   TOKEN_LETTERS = string.digits + string.uppercase + string.lowercase
   
+  user = models.ForeignKey(User)
   name = models.CharField(max_length = 30)
-  token = models.CharField(max_length = 20, unique = True)
   read_only_token = models.CharField(max_length = 20, unique = True)
-  recovery_email = models.CharField(max_length = 255, null = False)
   create_date = models.DateTimeField()
   
   class Meta:
     db_table = 'portfolio'
   
   def __unicode__(self):
-    return "%s (%s)" % (self.name, self.recovery_email)
+    return "%s" % (self.name)
   
   @classmethod
-  def create(cls, name):
-    token = ''
-    for i in range(20):
-      token += random.choice(Portfolio.TOKEN_LETTERS)
-    
+  def create(cls, user, name):
     read_only_token = ''
     for i in range(20):
       read_only_token += random.choice(Portfolio.TOKEN_LETTERS)
       
     portfolio = Portfolio()
+    portfolio.user = user
     portfolio.name = name
-    portfolio.token = token
     portfolio.read_only_token = read_only_token
     portfolio.create_date = datetime.now()
     portfolio.save()
     
     return portfolio
-      
   
 class Transaction(models.Model):
-  """A recorded transaction in a portfolio"""
-  
   TRANSACTION_TYPES = (
     ('BUY', 'Buy'),
     ('SELL', 'Sell'),
@@ -75,8 +86,6 @@ class Transaction(models.Model):
     return "%.f2-%s @ %.2f" % (self.quantity, self.symbol, self.price)
   
 class Quote(models.Model):
-  """Price quote of a instrument"""
-  
   TIMEOUT_DELTA = timedelta(0, 0, 0, 0, 15)
   CASH_SYMBOL = '*CASH'
   
@@ -105,21 +114,21 @@ class Quote(models.Model):
     else:
       u = None
       try:
-        u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=snl1pd1t1&e=.csv' % self.symbol)
+        u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=sl1pd1t1n&e=.csv' % self.symbol)
         row = csv.reader(u).next()
-        if len(row) != 6:
+        if len(row) < 6:
           return
         
-        self.name = row[1]
-        self.price = Decimal(str(row[2]))
+        self.name = row[5]
+        self.price = Decimal(str(row[1]))
         self.previous_close_price = Decimal(str(0.0))
         
-        if row[3] != 'N/A': 
-          self.previous_close_price = row[3]
+        if row[2] != 'N/A': 
+          self.previous_close_price = row[2]
           
-        if row[4] != 'N/A' and row[5] != 'N/A':
-          month, day, year = [int(f) for f in row[4].split('/')]
-          time = datetime.strptime(row[5], '%I:%M%p')
+        if row[3] != 'N/A' and row[4] != 'N/A':
+          month, day, year = [int(f) for f in row[3].split('/')]
+          time = datetime.strptime(row[4], '%I:%M%p')
           last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
           self.last_trade = last_trade
           
