@@ -2,12 +2,13 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import json, math
+import json, math, random
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from urllib import urlopen
 
-#from django import forms
+from django import forms
 #from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
@@ -16,6 +17,12 @@ from django.template import RequestContext
 from models import User, Portfolio, Transaction, Quote
 from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 
+#-------------\
+#  CONSTANTS  |
+#-------------/
+
+SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
+
 #--------------\
 #  DECORATORS  |
 #--------------/
@@ -23,24 +30,46 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 def standard_settings_context(request):
   user_id = request.session.get('user_id')
   user = None
+  portfolios = None
   if user_id != None:
     user = User.objects.filter(id = user_id)[0]
+    portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   
   return { 
       'BUILD_VERSION' : BUILD_VERSION,
       'BUILD_DATETIME' : BUILD_DATETIME,
       'user' : user,
+      'portfolios' : portfolios
     }
 
+def portfolio_manipilation_decorator(view_function):
+  def view_function_decorated(request, portfolio_id, **args):
+    portfolio_id = int(portfolio_id)
+    sample_portfolio_id = request.session.get('sample_portfolio_id')
+    user_id = request.session.get('user_id')
+    
+    if portfolio_id == sample_portfolio_id:
+      portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
+      return view_function(request, portfolio, True, **args)
+      
+    elif user_id != None:
+      portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
+      if portfolio.user.id == user_id:
+        return view_function(request, portfolio = portfolio, is_sample = False, **args)
+      
+    return HttpResponseServerError("bad porfolio")
+    
+  return view_function_decorated
+
 def login_required_decorator(view_function):
-  def view_function_decorated(request):
+  def view_function_decorated(request, **args):
     user_id = request.session.get('user_id')
     if user_id == None:
       return redirect("/index.html")
     
     else:
       user = User.objects.filter(id = user_id)[0]
-      return view_function(request, user)
+      return view_function(request, user = user, **args)
     
   return view_function_decorated
 
@@ -49,13 +78,14 @@ def login_required_decorator(view_function):
 #---------/
 
 def index(request):
-  transactions = get_sample_transactions(request)
+  portfolio = get_sample_portfolio(request)
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   positions = get_positions(symbols, quotes, transactions)
   summary = get_summary(positions, transactions)
   
-  return render_to_response('index.html', { 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
+  return render_to_response('index.html', { 'portfolio' : portfolio, 'positions': positions, 'transactions' : transactions, 'summary' : summary }, context_instance = RequestContext(request))
 
 def legal(request):
   return render_to_response('legal.html', { }, context_instance = RequestContext(request))
@@ -87,77 +117,181 @@ def login(request):
     email = profile['email'] if profile.has_key('email') else None
     candidate = User.objects.filter(open_id = identifier)
     user = None
+    portfolio = None
+    target = 'settings'
     if candidate.count() == 0:
       user = User.create(identifier, email)
+      portfolio = Portfolio.create(user, 'Default')
       
     else:
       user = candidate[0]
+      portfolio = Portfolio.objects.filter(user__id__exact = user.id)[0]
+      target = 'positions'
       
     request.session['user_id'] = user.id
+    return redirect("/%d/%s.html" % (portfolio.id, target))
     
   finally:
     if u != None:
       u.close()
-      
-  return redirect("/account.html")
-
+  
 def logout(request):
   request.session['user_id'] = None
   del(request.session['user_id'])
   return redirect("/index.html")
 
-def delete_sample_position(request):
-  remove_symbol = request.GET.get('symbol')
-  short_infos = request.session.get('sample_transactions', DEFAULT_SAMPLE_TRANSACTIONS)
-  for i in range(len(short_infos)):
-    if short_infos[i][0] == remove_symbol:
-      del(short_infos[i])
-      break
+@login_required_decorator
+def create_portfolio(request, user):
+  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
+  new_name = 'Default-%d' % (len(portfolios) + 1)
+  portfolio = Portfolio.create(user, new_name)
+  return redirect('/%d/settings.html' % portfolio.id)
   
-  request.session['sample_transactions'] = short_infos
-  return redirect("/index.html")
+@portfolio_manipilation_decorator
+def add_transaction(request, portfolio, is_sample):
+  form = TransactionForm(request.POST)
+  if form.is_valid():
+    comission = form.cleaned_data.get('comission')
+    if comission == None:
+      comission = Decimal('0')
+    
+    transaction = Transaction()
+    transaction.portfolio = portfolio
+    transaction.type = form.cleaned_data.get('type').encode('UTF-8')
+    transaction.as_of_date = form.cleaned_data.get('as_of_date')
+    transaction.symbol = form.cleaned_data.get('symbol').encode('UTF-8')
+    transaction.quantity = form.cleaned_data.get('quantity')
+    transaction.price = form.cleaned_data.get('price')
+    transaction.total = (transaction.quantity * transaction.price) + comission
+    transaction.save()
   
+  return redirect_to_portfolio('transactions', portfolio, is_sample)
+
+@portfolio_manipilation_decorator
+def remove_transaction(request, portfolio, is_sample, transaction_id):
+  transaction = Transaction.objects.filter(id = transaction_id)[0]
+  if transaction.portfolio.id == portfolio.id:
+    transaction.delete()
+    
+  return redirect_to_portfolio('transactions', portfolio, is_sample) 
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_settings(request, portfolio, is_sample, user):
+  return render_to_response('settings.html', { 'portfolio' : portfolio }, context_instance = RequestContext(request))
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_positions(request, user, portfolio, is_sample):
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
+  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
+  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
+  positions = get_positions(symbols, quotes, transactions)
+  summary = get_summary(positions, transactions)
+  
+  return render_to_response('positions.html', { 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_update(request, user, portfolio, is_sample):
+  form = PortfolioForm(request.POST)
+  if form.is_valid():
+    portfolio.name = form.cleaned_data.get('name')
+    portfolio.save()
+  
+  return redirect_to_portfolio('settings', portfolio, is_sample)  
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_remove(request, user, portfolio, is_sample):
+  portfolio.delete()
+  
+  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
+  return redirect_to_portfolio('positions', portfolios[0], False)
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_transactions(request, user, portfolio, is_sample):
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
+  return render_to_response('transactions.html', { 'portfolio' : portfolio, 'transactions': transactions }, context_instance = RequestContext(request))
+
+def portfolio_read_only(request, read_only_token):
+  portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
+  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
+  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
+  positions = get_positions(symbols, quotes, transactions)
+  summary = get_summary(positions, transactions)
+  
+  return render_to_response('read_only.html', { 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
+
 #--------\
 #  FORMS |
 #--------/
+
+class TransactionForm(forms.Form):
+  type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
+  as_of_date = forms.DateField()
+  symbol = forms.CharField(min_length = 1, max_length = 5)
+  quantity = forms.DecimalField(min_value = 0.01)
+  price = forms.DecimalField(min_value = 0.01)
+  comission = forms.DecimalField(min_value = 0.01, required = False)
+
+class PortfolioForm(forms.Form):
+  name = forms.CharField(min_length = 3, max_length = 50)
 
 #-------------\
 #  UTILITIES  |
 #-------------/
 
 DEFAULT_SAMPLE_TRANSACTIONS = [
-    [ Quote.CASH_SYMBOL, 1000000, 1.0 ],
-    [ 'SPY', 1514, 132.08 ],
-    [ 'IWM', 1481, 67.48 ],
-    [ 'EFA', 2879, 69.46 ],
-    [ 'EEM', 2331, 42.87 ],
-    [ 'GLD', 1112, 89.91 ],
-    [ 'TIP', 905, 110.42 ],
+    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 5, 1),   'type' : 'DEPOSIT',  'quantity' : '100000', 'price' : '1.0' },
+    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 5, 3),   'type' : 'BUY',      'quantity' : '125',    'price' : '119.14' },
+    { 'symbol' : 'EFA',             'as_of_date' : date(2010, 6, 29),  'type' : 'BUY',      'quantity' : '427',    'price' : '46.83' },
+    { 'symbol' : 'AGG',             'as_of_date' : date(2010, 8, 5),   'type' : 'BUY',      'quantity' : '368',    'price' : '106.86' },
+    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 8, 17),  'type' : 'BUY',      'quantity' : '137',    'price' : '109.01' },
+    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 10, 1),  'type' : 'WITHDRAW', 'quantity' : '10000',  'price' : '1.0' },
   ]
 
-def get_sample_transactions(request):
-  short_infos = request.session.get('sample_transactions', DEFAULT_SAMPLE_TRANSACTIONS)
-  request.session['sample_transactions'] = short_infos
+def get_sample_portfolio(request):
+  portfolio_id = request.session.get('sample_portfolio_id')
+  if portfolio_id != None:
+    return Portfolio.objects.filter(id = portfolio_id)[0]
   
-  transactions = []
-  for info in short_infos:
+  user = get_sample_user()
+  portfolio = Portfolio()
+  portfolio.user = user
+  portfolio.name = 'SAMPLE #%d' % random.randint(100000000, 999999999)
+  portfolio.read_only_token = portfolio.name
+  portfolio.create_date = datetime.now()
+  portfolio.save()
+  
+  for sample_transaction in DEFAULT_SAMPLE_TRANSACTIONS:
     transaction = Transaction()
-    transaction.as_of_date = datetime.now().date()
-    transaction.symbol = info[0]
-    transaction.quantity = abs(info[1])
-    transaction.price = info[2]
-    transaction.total = transaction.quantity * transaction.price 
-    
-    if transaction.symbol == Quote.CASH_SYMBOL:
-      transaction.type = ('DEPOSIT' if info[1] >= 0 else 'WITHDRAW')
-      
-    else:
-      transaction.type = ('BUY' if info[1] >= 0 else 'SELL')
-      
-    transactions.append(transaction)
-      
-  return transactions
-      
+    transaction.portfolio = portfolio
+    transaction.type = sample_transaction['type']
+    transaction.as_of_date = sample_transaction['as_of_date']
+    transaction.symbol = sample_transaction['symbol']
+    transaction.quantity = Decimal(sample_transaction['quantity'])
+    transaction.price = Decimal(sample_transaction['price'])
+    transaction.total = transaction.quantity * transaction.price
+    transaction.save()
+  
+  request.session['sample_portfolio_id'] = portfolio.id
+  return portfolio
+  
+def get_sample_user():
+  candidate = User.objects.filter(open_id = SAMPLE_USER_OPEN_ID)
+  if candidate.count() == 1:
+    return candidate[0]
+  
+  else:
+    user = User()
+    user.open_id = SAMPLE_USER_OPEN_ID
+    user.email = SAMPLE_USER_OPEN_ID
+    user.create_date = datetime.now()
+    user.save()
+    return user
     
 def get_positions(symbols, quotes, transactions):
   lots = get_lots(symbols, transactions)
@@ -226,8 +360,8 @@ def get_lots(symbols, transactions):
   return lots
 
 def get_summary(positions, transactions):
-  as_of_date = max([position.as_of_date for position in positions])
-  start_date = min([transaction.as_of_date for transaction in transactions])
+  as_of_date = max([position.as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
+  start_date = min([transaction.as_of_date for transaction in transactions]) if len(transactions) > 0 else datetime.now().date()
     
   cost_basis = 0
   market_value = 0
@@ -275,7 +409,13 @@ def xirr(dates, payments):
   
   return (guess if limit > 0 else None)
 
+def redirect_to_portfolio(action, portfolio, is_sample):
+  if is_sample:
+    return redirect("/index.html")
   
+  else:
+    return redirect("/%d/%s.html" % (portfolio.id, action))
+
 #-----------------\
 #  VALUE OBJECTS  |
 #-----------------/
@@ -327,192 +467,3 @@ class Summary:
     self.day_pl_percent = ((self.day_pl / opening_market_value) * 100) if opening_market_value != 0 else 0
     self.days = (as_of_date.date() - start_date).days
     self.annualized_pl_percent = (self.pl_percent / (self.days / 365.0)) if self.days != 0 else 0
-
-#def portfolio_by_token_decorator(view_function):
-#  def view_function_decorated(request, token):
-#    read_write_candidate = Portfolio.objects.filter(token__exact = token)
-#    portfolio = None
-#    read_only = True
-#    
-#    if read_write_candidate.count() == 1:
-#      portfolio = read_write_candidate[0]
-#      read_only = False
-#      
-#    else:
-#      read_only_candidate = Portfolio.objects.filter(read_only_token__exact = token)
-#      if read_only_candidate.count() == 1:
-#        portfolio = read_only_candidate[0]
-#    
-#    if portfolio == None:
-#      return redirect("/index.html?notFound=true")
-#    
-#    else:
-#      return view_function(request, portfolio, read_only)
-#    
-#  return view_function_decorated
-#
-
-
-#
-#
-#def create_portfolio(request):
-#  name = request.POST.get('name')
-#  if name == None or name == '':
-#    return redirect('/index.html?nameRequired=true')
-#  
-#  portfolio = Portfolio.create(name)
-#  return redirect ('/%s/settings.html' % (portfolio.token))
-#
-#def recover_portfolio(request):
-#  email = request.POST.get('email')
-#  candidates = Portfolio.objects.filter(recovery_email = email)
-#  if candidates.count() == 0:
-#    return redirect('/index.html?emailNotFound=true')
-#  
-#  text = 'The following is a list of your portfolios in the Frano system and their links:\n\n'
-#  for portfolio in candidates:
-#    text += 'Portfolio: %s\n' % portfolio.name
-#    text += 'Read/Write: http://%s/%s/view.html\n' % ( request.META['HTTP_HOST'], portfolio.token)
-#    text += 'Read-Only: http://%s/%s/view.html\n\n' % ( request.META['HTTP_HOST'], portfolio.read_only_token)
-#    
-#  print text
-#  send_mail('[Frano] Portfolio(s) recovery emails', text, 'gennadiy@apps.carelessmusings.com', [ email ], fail_silently = True)
-#  
-#  return redirect('/index.html?mailSent=true')
-#
-#@portfolio_by_token_decorator
-#@redirect_to_view_if_read_only_decorator
-#def settings(request, portfolio):
-#  form = SettingsForm()
-#  if request.method == 'POST':
-#    form = SettingsForm(request.POST)
-#    
-#    if form.is_valid():
-#      portfolio.name = form.cleaned_data['name'].encode('UTF8')
-#      portfolio.recovery_email = form.cleaned_data['email'].encode('UTF8')
-#      portfolio.save()
-#  
-#  return render_to_response('settings.html', { 'portfolio' : portfolio, 'form' : form }, context_instance = RequestContext(request))
-#
-#class SettingsForm(forms.Form):
-#  NAME_ERROR_MESSAGES = {
-#    'required' : 'Please enter a portfolio name',
-#    'max_length' : 'Name cannot be longer than 255 characters',
-#  }
-#  
-#  EMAIL_ERROR_MESSAGES = {
-#    'required' : 'Please enter your email address',
-#    'invalid' : 'Please enter a valid email address',
-#    'max_length' : 'Email cannot be longer than 255 characters',
-#  }
-#  
-#  name = forms.CharField(max_length = 255, error_messages = NAME_ERROR_MESSAGES)
-#  email = forms.EmailField(max_length = 255, error_messages = EMAIL_ERROR_MESSAGES)
-#
-#@portfolio_by_token_decorator
-#def view_portfolio(request, portfolio, read_only):
-#  transaction_infos = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
-#  paginator = Paginator(transaction_infos, 5)
-#  try: 
-#    page = int(request.GET.get('page', '1'))
-#  except ValueError:
-#    page = 1
-#  
-#  transactions = paginator.page(max(1, min(page, paginator.num_pages)))
-#  
-#  symbols = set([t.symbol for t in transaction_infos] + [ Quote.CASH_SYMBOL ])
-#  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
-#  types = dict(Transaction.TRANSACTION_TYPES)
-#  for transaction in transactions.object_list:
-#    transaction.symbol_name = quotes[transaction.symbol].name
-#    transaction.type_text = types[transaction.type]
-#  
-#  positions = []
-#
-#  context = {
-#      'portfolio' : portfolio,
-#      'read_only' : read_only,
-#      'transactions' : transactions,
-#      'positions' : positions,
-#    }
-#
-#  if paginator.count > 0:
-#    lots = get_position_lots(transaction_infos)
-#    populate_positions(quotes, positions, lots)
-#    
-#    as_of_date = max([quotes[symbol].last_trade for symbol in quotes])
-#    portfolio_start = min([info.as_of_date for info in transaction_infos])
-#    
-#    cost_basis = sum([(p['cost_price'] * p['quantity']) for p in positions])
-#    market_value = sum([p['market_value'] for p in positions])
-#    opening_market_value = sum([p['opening_market_value'] for p in positions])
-#    
-#    pl = market_value - cost_basis
-#    pl_percent = ((pl / cost_basis) * 100) if cost_basis != 0 else 0
-#    days = (as_of_date.date() - portfolio_start).days
-#    annualized_pl_percent = (pl_percent / (days / 365.0)) if days != 0 else 0
-#    
-#    day_pl = market_value - opening_market_value
-#    day_pl_percent = ((day_pl / opening_market_value) * 100) if opening_market_value != 0 else 0
-#    
-#    xirr_percent = get_xirr_percent_for_transactions(transaction_infos, as_of_date, market_value)
-#    
-#    context['market_value'] = market_value
-#    context['cost_basis'] = cost_basis
-#    context['pl'] = pl
-#    context['pl_class'] = pos_neg_css_class(pl)
-#    context['pl_percent'] = pl_percent
-#    context['day_pl'] = day_pl
-#    context['day_pl_class'] = pos_neg_css_class(day_pl)
-#    context['day_pl_percent'] = day_pl_percent
-#    context['annualized_pl_percent'] = annualized_pl_percent
-#    context['xirr_percent'] = xirr_percent
-#    context['xirr_percent_class'] = pos_neg_css_class(xirr_percent)
-#    context['as_of_date'] = as_of_date
-#    context['portfolio_start'] = portfolio_start
-#    
-#  return render_to_response('portfolio.html', context, context_instance = RequestContext(request))
-#
-#
-
-
-#@portfolio_by_token_decorator
-#@redirect_to_view_if_read_only_decorator
-#def remove_portfolio(request, portfolio):
-#  portfolio.delete();
-#  return redirect("/index.html?removed=true")
-#
-#@portfolio_by_token_decorator
-#@redirect_to_view_if_read_only_decorator
-#def add_transaction(request, portfolio):
-#  form = TransactionForm(request.POST)
-#  if not form.is_valid():
-#    return redirect("/%s/view.html?invalidTransaction=true" % portfolio.token)
-#  
-#  transaction = Transaction()
-#  transaction.portfolio = portfolio
-#  transaction.type = form.cleaned_data.get('type').encode('UTF-8')
-#  transaction.as_of_date = form.cleaned_data.get('as_of_date')
-#  transaction.symbol = form.cleaned_data.get('symbol').encode('UTF-8')
-#  transaction.quantity = form.cleaned_data.get('quantity')
-#  transaction.price = form.cleaned_data.get('price')
-#  transaction.total = form.cleaned_data.get('total')
-#  transaction.save()
-#  
-#  return redirect("/%s/view.html" % portfolio.token)
-#
-#class TransactionForm(forms.Form):
-#  type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
-#  as_of_date = forms.DateField()
-#  symbol = forms.CharField(min_length = 1, max_length = 5)
-#  quantity = forms.DecimalField(min_value = 0.01)
-#  price = forms.DecimalField(min_value = 0.01)
-#  total = forms.DecimalField(min_value = 0.01)
-#
-#@portfolio_by_token_decorator
-#@redirect_to_view_if_read_only_decorator
-#def remove_transaction(request, portfolio):
-#  transaction_id = request.GET.get('id')
-#  transaction = Transaction.objects.filter(id = transaction_id, portfolio__id__exact = portfolio.id)[0]
-#  transaction.delete()
-#  return redirect("/%s/view.html" % portfolio.token)

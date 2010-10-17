@@ -44,7 +44,7 @@ class Portfolio(models.Model):
     db_table = 'portfolio'
   
   def __unicode__(self):
-    return "%s (%s)" % (self.name, self.recovery_email)
+    return "%s" % (self.name)
   
   @classmethod
   def create(cls, user, name):

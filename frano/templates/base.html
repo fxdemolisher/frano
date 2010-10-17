@@ -37,24 +37,50 @@
             <h1>Frano</h1>
           </div>
         </a>
-        <div class="seven columns">
+        <div class="five columns">
           <div class="userLinks">
             <ul class="horizontallist">
-              <li>
-                {% if not user %}
-                  <a class="rpxnow" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html"><button class="navButton">Sign In</button></a>
-                {% else %}
-                  <a href="/logout.html"><button class="navButton">Sign Out</button></a>
-                {% endif %} 
-              </li>  
+              {% if user %}
+                <li>Portfolio:</li>
+                <li>
+                  <select id="portfolio" style="width: 222px;">
+                    <option value=""></option>
+                    {% for a_portfolio in portfolios %}
+                      <option value="{{ a_portfolio.id }}" {% ifequal a_portfolio.id portfolio.id %}selected="selected"{% endifequal %}>{{ a_portfolio.name }}</option>
+                    {% endfor %}
+                  </select>
+                </li>
+                  
+                {% ifequal portfolio.user.id user.id %}
+                  <li>&nbsp;</li>
+                  <li><form action="/{{ portfolio.id}}/positions.html"><button class="navButton">Positions</button></form></li>
+                  <li><form action="/{{ portfolio.id}}/transactions.html"><button class="navButton">Transactions</button></form></li>
+                  <li><form action="/{{ portfolio.id}}/settings.html" method="post"><button class="navButton">Settings</button></form></li>
+                {% endifequal %}
+              {% endif %}
+            </ul>
+          </div>
+          
+        </div>
+        <div class="two columns">
+          <div class="userLinks">
+            <ul class="horizontallist">
+              {% if not user %}
+                <li><a class="rpxnow" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html"><button class="navButton">Sign In</button></a></li>
+              {% else %}
+                <li><form action="/createPortfolio.html"><button class="navButton">Create a Portfolio</button></form></li>
+                <li><form action="/logout.html"><button class="navButton">Sign Out</button></form></li>
+              {% endif %} 
             </ul>
           </div>
         </div>
       </div>    
-    
+
 <!-- header row -->    
       <div id="header" class="column-row">
-        {% block pageHeader %}{% endblock %}
+        <div class="six columns">
+          <div class="pageHeading">{% block pageHeading %}{% endblock %}</div>
+        </div>
       </div>
 <!-- END: header row -->
 

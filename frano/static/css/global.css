@@ -120,6 +120,7 @@ see LICENSE file for copying permission.
     #banner {text-align:center;padding:8px;z-index:99;background-color:#ffff99;-moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);height:20px;position:fixed;left:0;top:0;width:100%;color:#666633;display:none;}
     #banner A {color:blue;}
     .message { display: none; }
+    .hidden { display: none; }
     
  /* --------------------------------------------------
   =Icons
