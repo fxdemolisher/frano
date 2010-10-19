@@ -5,8 +5,8 @@
 import datetime, os, glob
 
 # build info
-BUILD_VERSION = '0.1'
-BUILD_DATETIME = datetime.datetime(2010, 10, 4, 13, 36, 0)
+BUILD_VERSION = '0.2'
+BUILD_DATETIME = datetime.datetime(2010, 10, 17, 18, 0, 0)
 
 # base db set up, the rest is in environment specific setting files
 DATABASE_ENGINE = 'mysql'
