@@ -118,7 +118,7 @@ def login(request):
     candidate = User.objects.filter(open_id = identifier)
     user = None
     portfolio = None
-    target = 'settings'
+    target = 'transactions'
     if candidate.count() == 0:
       user = User.create(identifier, email)
       portfolio = Portfolio.create(user, 'Default')
@@ -145,7 +145,7 @@ def create_portfolio(request, user):
   portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   new_name = 'Default-%d' % (len(portfolios) + 1)
   portfolio = Portfolio.create(user, new_name)
-  return redirect('/%d/settings.html' % portfolio.id)
+  return redirect('/%d/transactions.html' % portfolio.id)
   
 @portfolio_manipilation_decorator
 def add_transaction(request, portfolio, is_sample):
