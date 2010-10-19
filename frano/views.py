@@ -223,7 +223,7 @@ def portfolio_read_only(request, read_only_token):
   positions = get_positions(symbols, quotes, transactions)
   summary = get_summary(positions, transactions)
   
-  return render_to_response('read_only.html', { 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
+  return render_to_response('read_only.html', { 'supress_navigation' : True, 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
 
 #--------\
 #  FORMS |

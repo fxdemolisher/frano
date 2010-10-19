@@ -12,6 +12,10 @@ $(function() {
     });
   })
   
+  $(".navButton").click(function (e) {
+    
+  });
+  
   $("label.infield").inFieldLabels({ fadeOpacity: .1, finalOpacity: 0.5 });
     
   $("#type").change(function() {

@@ -68,11 +68,24 @@ see LICENSE file for copying permission.
         text-shadow:1px 1px .5px rgba(0,0,0,.5);
         cursor:pointer;
     }
+    
+    .buttonLink {
+        text-align:center;
+        padding: 4px 6px 7px 6px;
+        -moz-border-radius: 3px;
+        -webkit-border-radius: 3px;
+        -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);
+        -webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);
+        text-shadow: 1px 1px .5px rgba(0,0,0,.5);
+        cursor:pointer;
+        text-decoration: none;
+    }
+    
     .addButton {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;float:right;}
     #mainContent BUTTON { -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.2);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.2);}
     
     .navButton {margin-top:-10px;background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px;}
-    
+    .navLink {margin-top:-10px;background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px; } 
     
  /* --------------------------------------------------
   =Structure
@@ -108,7 +121,6 @@ see LICENSE file for copying permission.
   -------------------------------------------------- */
     #nav {height:50px;background-color:#222;margin-bottom:5px;}
     .userLinks {float:right;font-size:17px;color:#FFF;padding-top:15px;white-space:nowrap;right:0;}
-    .userLinks INPUT {width:155px;margin-top:-3px;margin-bottom:5px;}
     .loginHelperIcons {width:285px;}
     .loginHelperIcons .icon {float:right;width:10px;height:10px;margin-right:5px;}
     #nav H1 {width:67px;height:33px;text-indent:-10000px;overflow:hidden;background: url(/img/logo.gif) left top no-repeat;  -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);}
