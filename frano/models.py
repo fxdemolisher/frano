@@ -9,6 +9,7 @@ import random
 from datetime import datetime, timedelta
 from decimal import Decimal
 from django.db import models
+from exceptions import StopIteration
 from urllib import urlopen
 
 class User(models.Model):
@@ -152,3 +153,25 @@ class Quote(models.Model):
       quote.refresh()
           
     return quote
+  
+  @classmethod
+  def historical_price_by_symbol(cls, symbol, asOfDate):
+    u = None
+    price = 0.0
+    try:
+      u = urlopen('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (symbol, (asOfDate.month - 1), asOfDate.day, asOfDate.year, (asOfDate.month - 1), asOfDate.day, asOfDate.year))
+      reader = csv.reader(u)
+      reader.next() # skip header
+      try:
+        row = reader.next()
+        if row != None:
+          price = float(row[6])
+          
+      except StopIteration:
+        pass 
+      
+    finally:
+      if u != None:
+        u.close()
+        
+    return price

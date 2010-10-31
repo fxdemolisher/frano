@@ -1,59 +1,8 @@
 {% load frano_filters %}
 
-<div class="column-row">
-  <div class="eight columns">
-    
-    <form action="/{{portfolio.id}}/addTransaction.html" method="post" id="addTransactionForm">
-      <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
-        <tbody>
-          <tr class="addNewRow">
-            <td>
-              <select name="type" id="type" class="validate[required]">
-                <option>---Type---</option>
-                <option value="BUY">Buy</option>
-                <option value="SELL">Sell</option>
-                <option value="DEPOSIT">Deposit Cash</option>
-                <option value="WITHDRAW">Withdraw Cash</option>
-                <option value="ADJUST">Adjust Cash</option>
-              </select>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield" for="as_of_date">Date</label>
-                <input type="text" name="as_of_date" id="as_of_date" size="8" class="validate[required]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield" for="symbol">Symbol</label>
-                <input type="text" name="symbol" id="symbol" size="5" class="validate[required,length[1,5],noSpecialCharacters]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield" for="quantity">Qty</label>
-                <input type="text" name="quantity" id="quantity" size="5" class="validate[required,length[1,9],onlyNumber]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield dollarLabel" for="price">Price</label>
-                $<input type="text" name="price" id="price" size="5" class="validate[required,length[1,9],onlyNumber]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield dollarLabel" for="comission">Comission</label>
-                $<input type="text" name="comission" id="comission" size="8" class="validate[length[0,9],onlyNumber]"/>
-              </div>    
-            </td>
-            <td><div class="icon add" id="addTransaction"></div></td>
-          </tr>
-        </tbody>
-      </table>
-    </form>
-    
-    {% if transactions %}
+<div id="content" >
+  <div class="column-row">
+    <div class="eight columns">
       <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
         <thead>
           <tr>
@@ -80,10 +29,9 @@
               <td><a href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div id="deleteTransaction" class="icon delete"></div></a></td>
             </tr>
           {% endfor %}
-
+  
         </tbody>
       </table>
-    {% endif %}
-    
+    </div>
   </div>
 </div>

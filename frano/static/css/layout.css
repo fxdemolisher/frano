@@ -22,12 +22,6 @@ see LICENSE file for copying permission.
     #recoverForm { position: relative; }
     #recoverForm LABEL { top: 2px; left: 5px; }
     
-    .transactionField { position: relative; }
-    .transactionField LABEL { top: 3px; left: 5px; }
-    .transactionField LABEL.dollarLabel { left: 11px; }
-    
-    LABEL.infield { position: absolute; color: #333; font-size: 16px; cursor: text; opacity: .6; }
-
 /*  --------------------------------------------------
   =Portfolio
   -------------------------------------------------- */
@@ -109,3 +103,15 @@ see LICENSE file for copying permission.
     .legalCopy A {color:#3399cc;}
     .legalCopy LI {line-height:24px;font-size:14px;}
     .legalCopy STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
+    
+/*  --------------------------------------------------
+  =Transactions
+  -------------------------------------------------- */
+    
+    .transactionsCopy {line-height:24px;font-size:17px;}
+    .transactionsCopy .highlight {color:#F90;font-weight:bold;}
+    .transactionsCopy STRONG { font-weight: bolder; }
+    
+    .typeButton {background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF;font-size:14px; width: 80px; }
+    .typeButtonOn {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;}
+    

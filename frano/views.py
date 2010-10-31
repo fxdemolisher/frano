@@ -39,7 +39,8 @@ def standard_settings_context(request):
       'BUILD_VERSION' : BUILD_VERSION,
       'BUILD_DATETIME' : BUILD_DATETIME,
       'user' : user,
-      'portfolios' : portfolios
+      'portfolios' : portfolios,
+      'today' : datetime.now(),
     }
 
 def portfolio_manipilation_decorator(view_function):
@@ -224,6 +225,10 @@ def portfolio_read_only(request, read_only_token):
   summary = get_summary(positions, transactions)
   
   return render_to_response('read_only.html', { 'supress_navigation' : True, 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
+
+def price_quote(request):
+  asOf = date(int(request.GET.get('year')), int(request.GET.get('month')), int(request.GET.get('day')))
+  return HttpResponse("{ \"price\": %f }" % (Quote.historical_price_by_symbol(request.GET.get('symbol'), asOf)), mimetype="application/json")
 
 #--------\
 #  FORMS |

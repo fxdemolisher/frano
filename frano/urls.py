@@ -24,6 +24,7 @@ urlpatterns = patterns('frano.views',
   (r'^(?P<portfolio_id>\d+)/positions.html', 'portfolio_positions'),
   (r'^(?P<portfolio_id>\d+)/transactions.html', 'portfolio_transactions'),
   (r'^(?P<read_only_token>\w{20})/', 'portfolio_read_only'),
+  (r'^priceQuote.json', 'price_quote'),
 )
 
 if DEBUG:

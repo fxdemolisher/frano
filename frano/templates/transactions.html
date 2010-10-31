@@ -6,9 +6,12 @@
 {% block pageHeading %}{{ portfolio.name}} - Transactions{% endblock %}
 
 {% block mainContent %}
-  <div id="mainContent" >
+  {% include "inc_transactionForm.html" %}
+
+  {% if transactions %}
     {% include "inc_transactions.html" %}
-  </div>
+  {% endif %}
+
 {% endblock %}
 
 {% comment %}

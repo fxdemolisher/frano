@@ -32,9 +32,11 @@
     {% include "inc_positions.html" %}
   </div>
   
-  <div id="content" >
+  {% include "inc_transactionForm.html" %}
+
+  {% if transactions %}
     {% include "inc_transactions.html" %}
-  </div>
+  {% endif %}
 {% endblock %}
 
 {% comment %}
