@@ -124,14 +124,41 @@ $(function() {
     });
   });
   
-  $(".inline-editable").mouseenter(function() { toggleEditPrompt($(this), true); });
-  $(".inline-editable").mouseleave(function() { toggleEditPrompt($(this), false); });
-  $(".inline-editable").click(function() { toggleEditPrompt($(this), false); });
+  $(".inline-editable").mouseenter(function() { toggleEditPrompt($(this), ".inline-editable-prompt", true); });
+  $(".inline-editable").mouseleave(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
+  $(".inline-editable").click(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
   
-  $("#portfolioForm").validationEngine({
-    inlineValidation: false,
-    scroll: false
+  $(".edit-portfolio").each(function() {
+    var holder = $(this)
+    var id = holder.attr("id").substring('edit_'.length);
+    var oldValue = holder.html();
+    holder.editable(function(value, settings) {
+      $.post('/' + id + '/setName.json', { name : value }, function(data, textStatus) {
+        if(data.success == 'True') {
+          var dropdown = $("#portfolio").get(0);
+          $(dropdown.options[dropdown.selectedIndex]).html(value);
+          val = value;
+        } else {
+          alert("Something went wrong...sorry");
+          val = oldValue;
+        }
+        
+        holder.html(val);
+      }, 'json');
+      
+      return "Saving..."
+    }, {
+      tooltip   : 'Click to edit...',
+      onblur    : 'submit',
+      cssclass  : 'edit-portfolio-form',
+      width     : '160',
+      height    : '28'
+    });
   });
+  
+  $(".edit-portfolio").mouseenter(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", true); });
+  $(".edit-portfolio").mouseleave(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
+  $(".edit-portfolio").click(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
   
   $("#portfolio").change(function () {
     if ($(this).val() == '') {
@@ -163,8 +190,8 @@ function valueToFloat(selector, defaultValue) {
   return (isNaN(out) ? defaultValue : out);
 }
 
-function toggleEditPrompt(holder, state) {
-  var prompt = holder.siblings(".inline-editable-prompt");
+function toggleEditPrompt(holder, promptClass,  state) {
+  var prompt = holder.siblings(promptClass);
   if(holder.children('form').length == 0 && state) {
     prompt.css("visibility", "visible");
   } else {

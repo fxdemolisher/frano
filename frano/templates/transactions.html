@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% load frano_filters %}
 
-{% block title %}Frano: {{ portfolio.name }} - Transactions{% endblock %}
+{% block title %}Frano: Transactions - {{ portfolio.name }}{% endblock %}
 
-{% block pageHeading %}{{ portfolio.name}} - Transactions{% endblock %}
+{% block pageHeading %}
+  <div>
+    Transactions - 
+    <div class="edit-portfolio" id="edit_{{ portfolio.id }}">{{ portfolio.name }}</div>
+    <div class="edit-portfolio-prompt">click to edit</div>
+  </div>
+{% endblock %}
 
 {% block mainContent %}
   {% include "inc_transactionForm.html" %}

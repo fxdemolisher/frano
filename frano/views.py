@@ -216,11 +216,6 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
 
 @login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_settings(request, portfolio, is_sample, user):
-  return render_to_response('settings.html', { 'portfolio' : portfolio }, context_instance = RequestContext(request))
-
-@login_required_decorator
-@portfolio_manipilation_decorator
 def portfolio_positions(request, user, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
@@ -232,13 +227,15 @@ def portfolio_positions(request, user, portfolio, is_sample):
 
 @login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_update(request, user, portfolio, is_sample):
+def portfolio_set_name(request, user, portfolio, is_sample):
   form = PortfolioForm(request.POST)
+  success = False
   if form.is_valid():
     portfolio.name = form.cleaned_data.get('name')
     portfolio.save()
+    success = True
   
-  return redirect_to_portfolio('settings', portfolio, is_sample)  
+  return HttpResponse("{ \"success\": \"%s\" }" % success)  
 
 @login_required_decorator
 @portfolio_manipilation_decorator

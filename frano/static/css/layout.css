@@ -22,6 +22,11 @@ see LICENSE file for copying permission.
     #recoverForm { position: relative; }
     #recoverForm LABEL { top: 2px; left: 5px; }
     
+    .edit-portfolio { display: inline; }
+    .edit-portfolio-prompt { font-weight: normal; font-style: italic; font-size: 14px; visibility: hidden; display: inline; color: #FFFFFF; vertical-align: middle; }
+    .edit-portfolio-form { display: inline; }
+    .edit-portfolio-form INPUT { font-size: 28px; }
+    
 /*  --------------------------------------------------
   =Portfolio
   -------------------------------------------------- */
@@ -72,6 +77,10 @@ see LICENSE file for copying permission.
     .delete {background-position:0 0;cursor:pointer;}
     .calendar {background-position:-22px 0;cursor:pointer;margin-left:3px;}
     .add {background-position:0 -22px;cursor:pointer;}
+    
+    .readOnlyCopy {line-height:24px;font-size:17px; margin: 0; }
+    .readOnlyCopy .highlight {color:#F90;font-weight:bold;}
+    .readOnlyCopy STRONG { font-weight: bolder; }
     
 /*  --------------------------------------------------
   =Homepage

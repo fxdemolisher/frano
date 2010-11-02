@@ -46,7 +46,7 @@ see LICENSE file for copying permission.
    .pos {color:#3C3;}
    .neg {color:#C33;}
    .explanatoryText {font-size:12px;color:#999;}
-   .pageHeading {font-size:50px;color:#FFF;float:left;}
+   .pageHeading {font-size:40px;color:#FFF;float:left;height: 49px;}
     H2 {font-size:24px;}
  /* --------------------------------------------------
   =Lists
