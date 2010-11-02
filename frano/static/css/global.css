@@ -85,7 +85,10 @@ see LICENSE file for copying permission.
     #mainContent BUTTON { -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.2);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.2);}
     
     .navButton {margin-top:-10px;background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px;}
-    .navLink {margin-top:-10px;background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px; } 
+    .navLink {margin-top:-10px;background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px; }
+    
+    .inline-editable { display: inline; }
+    .inline-editable-prompt { font-weight: normal; font-style: italic; font-size: 12px; margin-top: 4px; visibility: hidden;} 
     
  /* --------------------------------------------------
   =Structure

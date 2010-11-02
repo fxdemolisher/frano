@@ -176,6 +176,44 @@ def remove_transaction(request, portfolio, is_sample, transaction_id):
     
   return redirect_to_portfolio('transactions', portfolio, is_sample) 
 
+@portfolio_manipilation_decorator
+def update_transaction(request, portfolio, is_sample, transaction_id):
+  transaction = Transaction.objects.filter(id = transaction_id)[0]
+  success = False
+  if transaction.portfolio.id == portfolio.id:
+    form = UpdateTransactionForm(request.POST)
+    if form.is_valid():
+      current_comission = transaction.total - (transaction.price * transaction.quantity)
+      
+      as_of_date = form.cleaned_data.get('date')
+      if as_of_date != None:
+        transaction.as_of_date = as_of_date
+        
+      symbol = form.cleaned_data.get('symbol')
+      if symbol != None and symbol != '':
+        transaction.symbol = symbol.encode('UTF-8')
+        
+      quantity = form.cleaned_data.get('quantity')
+      if quantity != None:
+        transaction.quantity = quantity
+        transaction.total = (transaction.price * transaction.quantity) + current_comission
+      
+      price = form.cleaned_data.get('price')
+      if price != None:
+        transaction.price = price
+        transaction.total = (transaction.price * transaction.quantity) + current_comission
+      
+      total = form.cleaned_data.get('total')
+      if total != None:
+        transaction.total = total
+        if transaction.symbol == Quote.CASH_SYMBOL:
+          transaction.quantity = transaction.total
+      
+      transaction.save()
+      success = True
+    
+  return HttpResponse("{ \"success\": \"%s\" }" % success)
+
 @login_required_decorator
 @portfolio_manipilation_decorator
 def portfolio_settings(request, portfolio, is_sample, user):
@@ -241,6 +279,13 @@ class TransactionForm(forms.Form):
   quantity = forms.DecimalField(min_value = 0.01)
   price = forms.DecimalField(min_value = 0.01)
   comission = forms.DecimalField(min_value = 0.01, required = False)
+
+class UpdateTransactionForm(forms.Form):
+  date = forms.DateField(required = False)
+  symbol = forms.CharField(required = False, min_length = 1, max_length = 5)
+  quantity = forms.DecimalField(required = False, min_value = 0.01)
+  price = forms.DecimalField(required = False, min_value = 0.01)
+  total = forms.DecimalField(required = False, min_value = 0.01)
 
 class PortfolioForm(forms.Form):
   name = forms.CharField(min_length = 3, max_length = 50)
