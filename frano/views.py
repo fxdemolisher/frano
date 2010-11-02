@@ -4,7 +4,7 @@
 
 import json, math, random
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from urllib import urlopen
 
@@ -13,6 +13,7 @@ from django import forms
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
+from django.contrib.sessions.models import Session
 
 from models import User, Portfolio, Transaction, Quote
 from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
@@ -312,6 +313,12 @@ def get_sample_portfolio(request):
   portfolio.read_only_token = portfolio.name
   portfolio.create_date = datetime.now()
   portfolio.save()
+  
+  # poor man's cleanup processes, every 100 new portfolios created on the front page
+  if portfolio.id % 100 == 0:
+    Session.objects.filter(expire_date__lte = datetime.now()).delete()
+    cutoff_date = datetime.now() - timedelta(weeks = 2)
+    Portfolio.objects.filter(user__id__exact = user.id, create_date__lte = cutoff_date).delete()
   
   for sample_transaction in DEFAULT_SAMPLE_TRANSACTIONS:
     transaction = Transaction()
