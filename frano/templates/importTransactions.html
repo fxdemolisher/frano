@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load frano_filters %}
+
+{% block title %}Frano: Transactions - Import - {{ portfolio.name }}{% endblock %}
+
+{% block pageHeading %}
+  <div>
+    Transactions - Import - 
+    <div class="edit-portfolio" id="edit_{{ portfolio.id }}">{{ portfolio.name }}</div>
+    <div class="edit-portfolio-prompt">click to edit</div>
+  </div>
+{% endblock %}
+
+{% block mainContent %}
+  
+  <div id="content" >
+    <div class="column-row">
+      <div class="eight columns">
+        <div class="transactionsCopy">
+          <strong class="highlight">Use this form to import transactions into your portfolio:</strong>
+          <br class="clear" />
+        </div>
+        
+        <form action="/{{portfolio.id}}/importTransactions.html" method="post" id="importTransactionsForm" enctype="multipart/form-data">
+          <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <td>Type:</td>
+                <td>File:</td>
+                <td>&nbsp;</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <select name="type">
+                    <option value="FRANO">Native Format (Frano)</option>
+                    <option value="GOOGLE">Google Finance</option>
+                    <option value="AMERITRADE">Ameritrade</option>
+                  </select>
+                </td>
+                <td><input type="file" name="file" /></td>
+                <td><button class="importButton">Preview Transactions</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  {% if transactions %}
+    <div id="content" >
+      <div class="column-row">
+        <div class="eight columns">
+          <div class="transactionsCopy">
+            Found <strong>{{ transactions|length }}</strong> transactions in your file. 
+            <br class="clear" />
+            
+            Below is a preview, exclude any transactions you do not wish to be imported and submit the rest below.
+            <br class="clear" />
+          </div>
+        
+          <form action="/{{portfolio.id}}/processImportTransactions.html" method="post">
+            <input type="hidden" name="form-TOTAL_FORMS" value="{{ transactions|length }}" />
+            <input type="hidden" name="form-INITIAL_FORMS" value="{{ transactions|length }}" />
+            <input type="hidden" name="form-MAX_NUM_FORMS" value="{{ transactions|length }}" />
+          
+            <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+              <thead>
+                <tr>
+                  <td>Type</td>
+                  <td>Date</td>
+                  <td>Symbol</td>
+                  <td>Qty</td>
+                  <td>Price</td>
+                  <td>Total</td>
+                  <td>Exclude</td>
+                </tr>
+              </thead>
+              <tbody id="holdingsTableTbody">
+                
+                {% for transaction in transactions %}
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-type" value="{{ transaction.type }}" />
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-as_of_date" value="{{ transaction.as_of_date|date:'m/d/Y' }}" />
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-symbol" value="{{ transaction.symbol }}" />
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-quantity" value="{{ transaction.quantity }}" />
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-price" value="{{ transaction.price }}" />
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-total" value="{{ transaction.total }}" />
+                  
+                  <tr>
+                    <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type }}</div></td>
+                    <td>{{ transaction.as_of_date|date:'m/d/Y' }}</td>
+                    <td>{{ transaction.symbol }}</td>
+                    <td>{{ transaction.quantity|num_format }}</td>
+                    <td>${{ transaction.price|num_format }}</td>
+                    <td>${{ transaction.total|num_format }}</td>
+                    <td><input type="checkbox" name="form-{{ forloop.counter0 }}-exclude" value="true" /></td>
+                  </tr>
+                {% endfor %}
+  
+                <tr><td colspan="7"><button class="importButton">Import Transactions</button></td></tr>
+                  
+              </tbody>
+            </table>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}

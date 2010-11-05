@@ -12,7 +12,7 @@
             <td>Qty</td>
             <td>Price</td>
             <td>Total</td>
-            <td>&nbsp;</td>
+            <td class="exportTransactions"><a href="/{{portfolio.id}}/exportTransactions.csv"><img src="/img/csv-export.gif">Export as CSV</a></td>
             <td>&nbsp;</td>
           </tr>
         </thead>
@@ -50,11 +50,12 @@
                 <div class="inline-editable-prompt">click to edit</div>
               </td>
               <td><a href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div id="deleteTransaction" class="icon delete"></div></a></td>
+              <td>&nbsp;</td>
             </tr>
           {% endfor %}
   
           <tr class="pagingRow">
-            <td colspan="7">
+            <td colspan="8">
               <ul class="paging horizontallist">
                 <li><a href="?page=1"><div class="pagingButton">&lt;&lt;</div></a></li>
                 <li><a href="?page={{ transactions.previous_page_number }}"><div class="pagingButton">&lt;</div></a></li>

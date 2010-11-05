@@ -123,3 +123,9 @@ see LICENSE file for copying permission.
     .typeButton {background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF;font-size:14px; width: 80px; }
     .typeButtonOn {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;}
     
+    .exportTransactions { width: 100px; }
+    .exportTransactions A { font-size: 12px; text-decoration: none; color: #3333CC; }
+    .exportTransactions A IMG { vertical-align: text-top; }
+    
+    .importButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: text-top; }
+    

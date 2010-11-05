@@ -2,7 +2,7 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import json, math, random
+import codecs, csv, json, math, random
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -10,6 +10,7 @@ from urllib import urlopen
 
 from django import forms
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
@@ -23,6 +24,16 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 #-------------/
 
 SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
+FRANO_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TYPE', 'SYMBOL', 'QUANTITY', 'PRICE', 'TOTAL' ]
+GOOGLE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Name', 'Type', 'Date', 'Shares', 'Price', 'Cash value', 'Commission', 'Notes' ]
+
+
+GOOGLE_TRANSACTION_TYPE_MAP = {
+    'Buy' : 'BUY',
+    'Sell' : 'SELL',
+    'Deposit Cash' : 'DEPOSIT',
+    'Withdraw Cash' : 'WITHDRAW',
+  }
 
 #--------------\
 #  DECORATORS  |
@@ -81,7 +92,7 @@ def login_required_decorator(view_function):
 
 def index(request):
   portfolio = get_sample_portfolio(request)
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   positions = get_positions(symbols, quotes, transactions)
@@ -161,18 +172,20 @@ def create_portfolio(request, user):
 def add_transaction(request, portfolio, is_sample):
   form = TransactionForm(request.POST)
   if form.is_valid():
-    comission = form.cleaned_data.get('comission')
-    if comission == None:
-      comission = Decimal('0')
+    commission = form.cleaned_data.get('commission')
+    if commission == None:
+      commission = Decimal('0')
+    
+    type = form.cleaned_data.get('type').encode('UTF-8')
     
     transaction = Transaction()
     transaction.portfolio = portfolio
-    transaction.type = form.cleaned_data.get('type').encode('UTF-8')
+    transaction.type = type
     transaction.as_of_date = form.cleaned_data.get('as_of_date')
     transaction.symbol = form.cleaned_data.get('symbol').encode('UTF-8')
     transaction.quantity = form.cleaned_data.get('quantity')
     transaction.price = form.cleaned_data.get('price')
-    transaction.total = (transaction.quantity * transaction.price) + comission
+    transaction.total = (transaction.quantity * transaction.price) + commission
     transaction.save()
   
   return redirect_to_portfolio('transactions', portfolio, is_sample)
@@ -192,7 +205,7 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
   if transaction.portfolio.id == portfolio.id:
     form = UpdateTransactionForm(request.POST)
     if form.is_valid():
-      current_comission = transaction.total - (transaction.price * transaction.quantity)
+      current_commission = transaction.total - (transaction.price * transaction.quantity)
       
       as_of_date = form.cleaned_data.get('date')
       if as_of_date != None:
@@ -205,12 +218,12 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
       quantity = form.cleaned_data.get('quantity')
       if quantity != None:
         transaction.quantity = quantity
-        transaction.total = (transaction.price * transaction.quantity) + current_comission
+        transaction.total = (transaction.price * transaction.quantity) + current_commission
       
       price = form.cleaned_data.get('price')
       if price != None:
         transaction.price = price
-        transaction.total = (transaction.price * transaction.quantity) + current_comission
+        transaction.total = (transaction.price * transaction.quantity) + current_commission
       
       total = form.cleaned_data.get('total')
       if total != None:
@@ -226,7 +239,7 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
 @login_required_decorator
 @portfolio_manipilation_decorator
 def portfolio_positions(request, user, portfolio, is_sample):
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   positions = get_positions(symbols, quotes, transactions)
@@ -257,7 +270,7 @@ def portfolio_remove(request, user, portfolio, is_sample):
 @login_required_decorator
 @portfolio_manipilation_decorator
 def portfolio_transactions(request, user, portfolio, is_sample):
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   paginator = Paginator(transactions, 10)
   try:
     page = int(request.GET.get('page', '1'))
@@ -281,6 +294,56 @@ def price_quote(request):
   asOf = date(int(request.GET.get('year')), int(request.GET.get('month')), int(request.GET.get('day')))
   return HttpResponse("{ \"price\": %f }" % (Quote.historical_price_by_symbol(request.GET.get('symbol'), asOf)), mimetype="application/json")
 
+@login_required_decorator
+@portfolio_manipilation_decorator
+def export_transactions(request, user, portfolio, is_sample):
+  response = HttpResponse(mimetype = 'text/csv')
+  response['Content-Disposition'] = 'attachment; filename=transactions-%s-%s.csv' % (portfolio.name, datetime.now().strftime('%Y%m%d'))
+
+  writer = csv.writer(response)
+  writer.writerow(FRANO_TRANSACTION_EXPORT_HEADER)
+  
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
+  for transaction in transactions:
+    writer.writerow([transaction.as_of_date.strftime('%m/%d/%Y'), transaction.type, transaction.symbol, transaction.quantity, transaction.price, transaction.total])
+
+  return response
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def import_transactions(request, user, portfolio, is_sample):
+  transactions = None
+  if request.method == 'POST':
+    form = ImportForm(request.POST, request.FILES)
+    if form.is_valid():
+      type = request.POST.get('type')
+      transactions = parse_transactions(type, request.FILES['file'])
+    
+  return render_to_response('importTransactions.html', { 'portfolio' : portfolio, 'transactions' : transactions}, context_instance = RequestContext(request))  
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def process_import_transactions(request, user, portfolio, is_sample):
+  formset = ImportTransactionFormSet(request.POST)
+  if not formset.is_valid():
+    raise Exception('Invalid import set');
+  
+  for form in formset.forms:
+    cd = form.cleaned_data
+    
+    if not cd.get('exclude'):
+      transaction = Transaction()
+      transaction.portfolio = portfolio
+      transaction.type = cd.get('type').encode('UTF-8')
+      transaction.as_of_date = cd.get('as_of_date')
+      transaction.symbol = cd.get('symbol').encode('UTF-8')
+      transaction.quantity = cd.get('quantity')
+      transaction.price = cd.get('price')
+      transaction.total = cd.get('total')
+      transaction.save()
+    
+  return redirect_to_portfolio('transactions', portfolio, is_sample)
+
 #--------\
 #  FORMS |
 #--------/
@@ -291,7 +354,7 @@ class TransactionForm(forms.Form):
   symbol = forms.CharField(min_length = 1, max_length = 5)
   quantity = forms.DecimalField(min_value = 0.01)
   price = forms.DecimalField(min_value = 0.01)
-  comission = forms.DecimalField(min_value = 0.01, required = False)
+  commission = forms.DecimalField(min_value = 0.01, required = False)
 
 class UpdateTransactionForm(forms.Form):
   date = forms.DateField(required = False)
@@ -302,6 +365,27 @@ class UpdateTransactionForm(forms.Form):
 
 class PortfolioForm(forms.Form):
   name = forms.CharField(min_length = 3, max_length = 50)
+  
+class ImportForm(forms.Form):
+  TYPE_CHOICES = [
+      ('FRANO', u'FRANO'), 
+      ('GOOGLE', u'GOOGLE'),
+      ('AMERITRADE', u'AMERITRADE'),
+    ]
+  
+  type = forms.ChoiceField(choices = TYPE_CHOICES)
+  file = forms.FileField()
+  
+class ImportTransactionForm(forms.Form):
+  type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
+  as_of_date = forms.DateField()
+  symbol = forms.CharField(min_length = 1, max_length = 5)
+  quantity = forms.DecimalField(min_value = 0.01)
+  price = forms.DecimalField(min_value = 0.01)
+  total = forms.DecimalField(min_value = 0.01)
+  exclude = forms.BooleanField(required = False)
+
+ImportTransactionFormSet = formset_factory(ImportTransactionForm)
 
 #-------------\
 #  UTILITIES  |
@@ -484,7 +568,100 @@ def redirect_to_portfolio(action, portfolio, is_sample):
   
   else:
     return redirect("/%d/%s.html" % (portfolio.id, action))
+  
+def parse_transactions(type, file):
+  parsed = None
+  if type == 'FRANO':
+    reader = csv.reader(file)
+    verify_transaction_file_header(reader, FRANO_TRANSACTION_EXPORT_HEADER)
+    parsed = parse_frano_transactions(reader)
+    
+  elif type == 'GOOGLE':
+    reader = csv.reader(codecs.iterdecode(file, 'utf_8_sig'))
+    verify_transaction_file_header(reader, GOOGLE_TRANSACTION_EXPORT_HEADER)
+    parsed = parse_google_transactions(reader)
+    
+  elif type == 'AMERITRADE':
+    reader = csv.reader(file)
+    parsed = parse_ameritrade_transactions(reader)
 
+  transactions = []
+  for row in parsed:
+    transaction = Transaction()
+    transaction.as_of_date = row['date']
+    transaction.type = row['type']
+    transaction.symbol = row['symbol']
+    transaction.quantity = row['quantity']
+    transaction.price = row['price']
+    transaction.total = row['total']
+    
+    transactions.append(transaction)
+    
+  return transactions
+
+def verify_transaction_file_header(reader, required_header):
+  header = reader.next()
+  if len(header) != len(required_header):
+    raise Exception('Header mismatch for transaction file')
+  
+  for i in range(len(required_header)):
+    if header[i] != required_header[i]:
+      raise Exception("Header mismatch at %d: %s <> %s" % (i, header[i], required_header[i]))
+    
+def parse_frano_transactions(reader):
+  parsed = []
+  for row in reader:
+    parsed.append({
+        'date' : datetime.strptime(row[0], '%m/%d/%Y'),
+        'type' : row[1],
+        'symbol' : row[2],
+        'quantity' : Decimal(row[3]),
+        'price' : Decimal(row[4]),
+        'total' : Decimal(row[5]),
+      });
+      
+  return parsed
+
+def parse_google_transactions(reader):
+  parsed = []
+  for row in reader:
+    type = GOOGLE_TRANSACTION_TYPE_MAP.get(row[2])
+    if type == None:
+      raise Exception("Unknown transaction type in google finance file: %s" % row[2])
+    
+    if type == 'DEPOSIT' or type == 'WITHDRAW':
+      symbol = Quote.CASH_SYMBOL
+      quantity = abs(Decimal(row[6]))
+      price = Decimal('1.0')
+      commission = Decimal('0')
+      
+    else:
+      symbol = row[0]
+      quantity = Decimal(row[4])
+      price = Decimal(row[5])
+      commission = Decimal(row[7])
+    
+    commission_multiplier = Decimal('1.0')
+    if type == 'SELL':
+      commission_multiplier = Decimal('-1.0')
+    
+    print type
+    print commission_multiplier
+    
+    parsed.append({
+        'date' : datetime.strptime(row[3], '%b %d, %Y'),
+        'type' : type,
+        'symbol' : symbol,
+        'quantity' : quantity,
+        'price' : price,
+        'total' : ((quantity * price) + (commission_multiplier * commission)),
+      });
+      
+  return parsed
+
+def parse_ameritrade_transactions(reader):
+  return [] # TODO
+  
 #-----------------\
 #  VALUE OBJECTS  |
 #-----------------/

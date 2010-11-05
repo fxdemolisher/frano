@@ -84,7 +84,7 @@ class Transaction(models.Model):
     ordering = [ '-as_of_date', 'symbol' ]
   
   def __unicode__(self):
-    return "%.f2-%s @ %.2f" % (self.quantity, self.symbol, self.price)
+    return "%.2f-%s @ %.2f" % (self.quantity, self.symbol, self.price)
   
 class Quote(models.Model):
   TIMEOUT_DELTA = timedelta(0, 0, 0, 0, 15)

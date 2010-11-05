@@ -4,12 +4,13 @@
   <div class="column-row">
     <div class="eight columns">
       <div class="transactionsCopy">
-        <strong class="highlight">Use this form to record transactions in your portfolio:</strong>
-        <br/>
-        
+        <strong class="highlight">Use this form to record transactions in your portfolio or use the</strong>
+        <a href="/{{portfolio.id}}/importTransactions.html" class="buttonLink importButton">Import Tool</a>
+        <br class="clear" />
+      
         Buys and Sells will automatically adjust the amount of cash in your portfolio, so make sure you record your deposits first. Also,
         if you want to reconcile the amount of cash without affecting the XIRR, use the Adjust Cash transaction type.
-        <br/> 
+        <br class="clear" />
       </div>
       
       <form action="/{{portfolio.id}}/addTransaction.html" method="post" id="addTransactionForm">
@@ -37,7 +38,7 @@
               <td>Symbol:</td>
               <td>Quantity:</td>
               <td>Price:</td>
-              <td>Comission:</td>
+              <td>Commission:</td>
               <td>Total:</td>
               <td>&nbsp;</td>
             </tr>
@@ -50,7 +51,7 @@
                 $<input type="text" name="price" id="price" size="8" class="securitiesField validate[required,length[1,9],onlyNumber]"/>
                 <img src="/img/icon_search.gif" style="cursor: pointer;" id="priceLookup" />
               </td>
-              <td>$<input type="text" name="comission" id="comission" size="5" class="securitiesField validate[length[0,9],onlyNumber]"/></td>
+              <td>$<input type="text" name="commission" id="commission" size="5" class="securitiesField validate[length[0,9],onlyNumber]"/></td>
               
               <td>
                 <input type="hidden" name="symbol" value="*CASH" class="cashField" disabled="disabled" />
