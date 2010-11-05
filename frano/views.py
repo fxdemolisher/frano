@@ -9,7 +9,7 @@ from decimal import Decimal
 from urllib import urlopen
 
 from django import forms
-#from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
@@ -86,6 +86,14 @@ def index(request):
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   positions = get_positions(symbols, quotes, transactions)
   summary = get_summary(positions, transactions)
+  
+  paginator = Paginator(transactions, 10)
+  try:
+    page = int(request.GET.get('page', '1'))
+  except ValueError:
+    page = 1
+  
+  transactions = paginator.page(max(1, min(page, paginator.num_pages)))
   
   return render_to_response('index.html', { 'portfolio' : portfolio, 'positions': positions, 'transactions' : transactions, 'summary' : summary }, context_instance = RequestContext(request))
 
@@ -250,6 +258,13 @@ def portfolio_remove(request, user, portfolio, is_sample):
 @portfolio_manipilation_decorator
 def portfolio_transactions(request, user, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date')
+  paginator = Paginator(transactions, 10)
+  try:
+    page = int(request.GET.get('page', '1'))
+  except ValueError:
+    page = 1
+  
+  transactions = paginator.page(max(1, min(page, paginator.num_pages)))
   return render_to_response('transactions.html', { 'portfolio' : portfolio, 'transactions': transactions }, context_instance = RequestContext(request))
 
 def portfolio_read_only(request, read_only_token):

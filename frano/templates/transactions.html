@@ -14,7 +14,7 @@
 {% block mainContent %}
   {% include "inc_transactionForm.html" %}
 
-  {% if transactions %}
+  {% if transactions.object_list %}
     {% include "inc_transactions.html" %}
   {% endif %}
 

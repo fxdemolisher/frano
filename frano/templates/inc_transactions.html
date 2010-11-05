@@ -18,7 +18,7 @@
         </thead>
         <tbody id="holdingsTableTbody">
           
-          {% for transaction in transactions %}
+          {% for transaction in transactions.object_list %}
             <tr>
               <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type }}</div></td>
               <td>
@@ -52,6 +52,18 @@
               <td><a href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div id="deleteTransaction" class="icon delete"></div></a></td>
             </tr>
           {% endfor %}
+  
+          <tr class="pagingRow">
+            <td colspan="7">
+              <ul class="paging horizontallist">
+                <li><a href="?page=1"><div class="pagingButton">&lt;&lt;</div></a></li>
+                <li><a href="?page={{ transactions.previous_page_number }}"><div class="pagingButton">&lt;</div></a></li>
+                <li class="pagingSummary">{{ transactions.start_index }} - {{ transactions.end_index }} out of {{ transactions.paginator.count }} Transactions</li>
+                <li><a href="?page={{ transactions.next_page_number }}"><div class="pagingButton">&gt;</div></a></li>
+                <li><a href="?page={{ transactions.paginator.num_pages }}"><div class="pagingButton">&gt;&gt;</div></a></li>
+              </ul>
+            </td>
+          </tr>
   
         </tbody>
       </table>
