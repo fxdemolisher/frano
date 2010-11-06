@@ -2,7 +2,7 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import codecs, csv, json, math, random
+import json, math, random
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -16,6 +16,7 @@ from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.contrib.sessions.models import Session
 
+from import_export import transactions_as_csv, parse_transactions
 from models import User, Portfolio, Transaction, Quote
 from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 
@@ -24,16 +25,6 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 #-------------/
 
 SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
-FRANO_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TYPE', 'SYMBOL', 'QUANTITY', 'PRICE', 'TOTAL' ]
-GOOGLE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Name', 'Type', 'Date', 'Shares', 'Price', 'Cash value', 'Commission', 'Notes' ]
-
-
-GOOGLE_TRANSACTION_TYPE_MAP = {
-    'Buy' : 'BUY',
-    'Sell' : 'SELL',
-    'Deposit Cash' : 'DEPOSIT',
-    'Withdraw Cash' : 'WITHDRAW',
-  }
 
 #--------------\
 #  DECORATORS  |
@@ -300,18 +291,11 @@ def export_transactions(request, user, portfolio, is_sample):
   response = HttpResponse(mimetype = 'text/csv')
   response['Content-Disposition'] = 'attachment; filename=transactions-%s-%s.csv' % (portfolio.name, datetime.now().strftime('%Y%m%d'))
 
-  writer = csv.writer(response)
-  writer.writerow(FRANO_TRANSACTION_EXPORT_HEADER)
-  
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
-  for transaction in transactions:
-    writer.writerow([transaction.as_of_date.strftime('%m/%d/%Y'), transaction.type, transaction.symbol, transaction.quantity, transaction.price, transaction.total])
-
+  transactions_as_csv(response, portfolio)
   return response
 
-@login_required_decorator
 @portfolio_manipilation_decorator
-def import_transactions(request, user, portfolio, is_sample):
+def import_transactions(request, portfolio, is_sample):
   transactions = None
   if request.method == 'POST':
     form = ImportForm(request.POST, request.FILES)
@@ -321,9 +305,8 @@ def import_transactions(request, user, portfolio, is_sample):
     
   return render_to_response('importTransactions.html', { 'portfolio' : portfolio, 'transactions' : transactions}, context_instance = RequestContext(request))  
 
-@login_required_decorator
 @portfolio_manipilation_decorator
-def process_import_transactions(request, user, portfolio, is_sample):
+def process_import_transactions(request, portfolio, is_sample):
   formset = ImportTransactionFormSet(request.POST)
   if not formset.is_valid():
     raise Exception('Invalid import set');
@@ -568,99 +551,6 @@ def redirect_to_portfolio(action, portfolio, is_sample):
   
   else:
     return redirect("/%d/%s.html" % (portfolio.id, action))
-  
-def parse_transactions(type, file):
-  parsed = None
-  if type == 'FRANO':
-    reader = csv.reader(file)
-    verify_transaction_file_header(reader, FRANO_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_frano_transactions(reader)
-    
-  elif type == 'GOOGLE':
-    reader = csv.reader(codecs.iterdecode(file, 'utf_8_sig'))
-    verify_transaction_file_header(reader, GOOGLE_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_google_transactions(reader)
-    
-  elif type == 'AMERITRADE':
-    reader = csv.reader(file)
-    parsed = parse_ameritrade_transactions(reader)
-
-  transactions = []
-  for row in parsed:
-    transaction = Transaction()
-    transaction.as_of_date = row['date']
-    transaction.type = row['type']
-    transaction.symbol = row['symbol']
-    transaction.quantity = row['quantity']
-    transaction.price = row['price']
-    transaction.total = row['total']
-    
-    transactions.append(transaction)
-    
-  return transactions
-
-def verify_transaction_file_header(reader, required_header):
-  header = reader.next()
-  if len(header) != len(required_header):
-    raise Exception('Header mismatch for transaction file')
-  
-  for i in range(len(required_header)):
-    if header[i] != required_header[i]:
-      raise Exception("Header mismatch at %d: %s <> %s" % (i, header[i], required_header[i]))
-    
-def parse_frano_transactions(reader):
-  parsed = []
-  for row in reader:
-    parsed.append({
-        'date' : datetime.strptime(row[0], '%m/%d/%Y'),
-        'type' : row[1],
-        'symbol' : row[2],
-        'quantity' : Decimal(row[3]),
-        'price' : Decimal(row[4]),
-        'total' : Decimal(row[5]),
-      });
-      
-  return parsed
-
-def parse_google_transactions(reader):
-  parsed = []
-  for row in reader:
-    type = GOOGLE_TRANSACTION_TYPE_MAP.get(row[2])
-    if type == None:
-      raise Exception("Unknown transaction type in google finance file: %s" % row[2])
-    
-    if type == 'DEPOSIT' or type == 'WITHDRAW':
-      symbol = Quote.CASH_SYMBOL
-      quantity = abs(Decimal(row[6]))
-      price = Decimal('1.0')
-      commission = Decimal('0')
-      
-    else:
-      symbol = row[0]
-      quantity = Decimal(row[4])
-      price = Decimal(row[5])
-      commission = Decimal(row[7])
-    
-    commission_multiplier = Decimal('1.0')
-    if type == 'SELL':
-      commission_multiplier = Decimal('-1.0')
-    
-    print type
-    print commission_multiplier
-    
-    parsed.append({
-        'date' : datetime.strptime(row[3], '%b %d, %Y'),
-        'type' : type,
-        'symbol' : symbol,
-        'quantity' : quantity,
-        'price' : price,
-        'total' : ((quantity * price) + (commission_multiplier * commission)),
-      });
-      
-  return parsed
-
-def parse_ameritrade_transactions(reader):
-  return [] # TODO
   
 #-----------------\
 #  VALUE OBJECTS  |
