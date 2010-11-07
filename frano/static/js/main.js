@@ -160,11 +160,19 @@ $(function() {
   $(".edit-portfolio").mouseleave(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
   $(".edit-portfolio").click(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
   
-  $("#portfolio").change(function () {
+  var previousSelectedPortfolio;
+  $("#portfolio").focus(function() {
+    previousSelectedPortfolio = $(this).val();
+  }).change(function () {
     if ($(this).val() == '') {
       location.href = "/index.html"
     } else {
-      location.href = "/" + $(this).val() + "/positions.html"
+      var tester = new RegExp("^(.*/)" + previousSelectedPortfolio + "(/\\w+\\.html)$", "gi");
+      if(tester.exec(location.href) != null) {
+        location.href = location.href.replace(tester, "$1" + $(this).val() + "$2")
+      } else {
+        location.href = "/" + $(this).val() + "/positions.html"
+      }
     }
   });
   

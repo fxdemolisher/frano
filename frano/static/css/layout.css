@@ -39,11 +39,11 @@ see LICENSE file for copying permission.
     /*forms*/
     #myPortfolios {position:absolute;top:52px;font-size:50px;display:none;}
     /*lists*/
-    .importantData {color:#000;}
-    .importantData .name {font-size:13px;font-weight:bold;}
-    .importantData .value {font-size:45px;margin-bottom:7px;}
-    .importantData .related {color:#666;}
-    .importantData .related STRONG {font-weight:bold;}
+    .importantData {color:#000; white-space:nowrap;}
+    .importantData .name {font-size:14px;font-weight:bold; white-space:nowrap;}
+    .importantData .value {font-size:40px;margin-bottom:7px; white-space:nowrap;}
+    .importantData .related {color:#666; white-space:nowrap;}
+    .importantData .related STRONG {font-weight:bold; white-space:nowrap;}
     
     .paging {padding-left: 305px; margin: 0 auto;font-size:15px;white-space:nowrap;}
     .pagingButton {background: url(/img/gradients.png) 0 -43px repeat-x;padding:5px;cursor:pointer;color:#FFF;cursor:pointer;-moz-border-radius: 3px;-webkit-border-radius: 3px;}
