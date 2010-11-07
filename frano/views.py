@@ -468,7 +468,6 @@ def get_positions(symbols, quotes, transactions):
   return positions
 
 def get_lots(symbols, transactions):
-  print transactions
   cash = 0.0
   first_cash_date = None
   lots = dict([(symbol, []) for symbol in symbols])
@@ -490,7 +489,6 @@ def get_lots(symbols, transactions):
       q = float(transaction.quantity)
       while q > 0 and len(cur_lots) > 0:
         first_lot = cur_lots[0]
-        print first_lot
         if(q < first_lot.quantity):
           first_lot.quantity -= q
           q = 0
