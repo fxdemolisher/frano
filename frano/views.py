@@ -352,8 +352,11 @@ class PortfolioForm(forms.Form):
 class ImportForm(forms.Form):
   TYPE_CHOICES = [
       ('FRANO', u'FRANO'), 
+      ('CHARLES', u'CHARLES'),
       ('GOOGLE', u'GOOGLE'),
+      ('SCOTTRADE', u'SCOTTRADE'),
       ('AMERITRADE', u'AMERITRADE'),
+      ('ZECCO', u'ZECCO'),
     ]
   
   type = forms.ChoiceField(choices = TYPE_CHOICES)
@@ -430,6 +433,8 @@ def get_sample_user():
     return user
     
 def get_positions(symbols, quotes, transactions):
+  transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
+  transactions = sorted(transactions, key = (lambda transaction: transaction.as_of_date))
   lots = get_lots(symbols, transactions)
   
   total_market_value = 0
@@ -463,10 +468,11 @@ def get_positions(symbols, quotes, transactions):
   return positions
 
 def get_lots(symbols, transactions):
+  print transactions
   cash = 0.0
   first_cash_date = None
   lots = dict([(symbol, []) for symbol in symbols])
-  for transaction in reversed(sorted(transactions, key = (lambda transaction: transaction.as_of_date))):
+  for transaction in transactions:
     cur_lots = lots.get(transaction.symbol)
     
     if transaction.type == 'DEPOSIT' or transaction.type == 'ADJUST' or transaction.type == 'SELL':
@@ -484,6 +490,7 @@ def get_lots(symbols, transactions):
       q = float(transaction.quantity)
       while q > 0 and len(cur_lots) > 0:
         first_lot = cur_lots[0]
+        print first_lot
         if(q < first_lot.quantity):
           first_lot.quantity -= q
           q = 0
@@ -563,7 +570,8 @@ class TaxLot:
     self.price = price
     
   def __repr__(self):
-    return "%.4f@.4f on %s" % (self.quantity, self.price, self.as_of_date)
+    #return "%.4f@.4f on %s" % (self.quantity, self.price, self.as_of_date.strftime('%m/%d/%Y'))
+    return "%.4f at %.4f on %s" % (self.quantity, self.price, self.as_of_date.strftime('%m/%d/%Y'))
     
 class Position:
   def __init__(self, as_of_date, symbol, name, quantity, price, cost_price, opening_price, allocation, lots):

@@ -5,8 +5,16 @@ from decimal import Decimal
 
 from models import Quote, Transaction
 
+#------------\
+#  CONSTANTS |
+#------------/
+
 FRANO_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TYPE', 'SYMBOL', 'QUANTITY', 'PRICE', 'TOTAL' ]
 GOOGLE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Name', 'Type', 'Date', 'Shares', 'Price', 'Cash value', 'Commission', 'Notes' ]
+AMERITRADE_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TRANSACTION ID', 'DESCRIPTION', 'QUANTITY', 'SYMBOL', 'PRICE', 'COMMISSION', 'AMOUNT', 'NET CASH BALANCE', 'SALES FEE', 'SHORT-TERM RDM FEE', 'FUND REDEMPTION FEE', ' DEFERRED SALES CHARGE' ]
+ZECCO_TRANSACTION_EXPORT_HEADER = [ 'TradeDate', 'AccountTypeDescription', 'TransactionType', 'Symbol', 'Cusip', 'ActivityDescription', 'SecuritySubDescription', 'Quantity', 'Price', 'Currency', 'PrincipalAmount', 'NetAmount', 'TradeNumber' ]
+SCOTTRADE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Quantity', 'Price', 'ActionNameUS', 'TradeDate', 'SettledDate', 'Interest', 'Amount', 'Commission', 'Fees', 'CUSIP', 'Description', 'ActionId', 'TradeNumber', 'RecordType' ]
+CHARLES_TRANSACTION_EXPORT_HEADER = [ 'Date', 'Action', 'Quantity', 'Symbol', 'Description', 'Price', 'Amount', 'Fees & Comm' ]
 
 GOOGLE_TRANSACTION_TYPE_MAP = {
     'Buy' : 'BUY',
@@ -15,7 +23,9 @@ GOOGLE_TRANSACTION_TYPE_MAP = {
     'Withdraw Cash' : 'WITHDRAW',
   }
 
-AMERITRADE_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TRANSACTION ID', 'DESCRIPTION', 'QUANTITY', 'SYMBOL', 'PRICE', 'COMMISSION', 'AMOUNT', 'NET CASH BALANCE', 'SALES FEE', 'SHORT-TERM RDM FEE', 'FUND REDEMPTION FEE', ' DEFERRED SALES CHARGE' ]
+#------------------\
+#  MAIN FUNCTIONS  |
+#------------------/
 
 def transactions_as_csv(target, portfolio):
   writer = csv.writer(target)
@@ -41,6 +51,22 @@ def parse_transactions(type, file):
     reader = csv.reader(file)
     verify_transaction_file_header(reader, AMERITRADE_TRANSACTION_EXPORT_HEADER)
     parsed = parse_ameritrade_transactions(reader)
+    
+  elif type == 'ZECCO':
+    reader = csv.reader(file)
+    verify_transaction_file_header(reader, ZECCO_TRANSACTION_EXPORT_HEADER)
+    parsed = parse_zecco_transactions(reader)
+
+  elif type == 'SCOTTRADE':
+    reader = csv.reader(null_byte_line_filter(file))
+    verify_transaction_file_header(reader, SCOTTRADE_TRANSACTION_EXPORT_HEADER)
+    parsed = parse_scottrade_transactions(reader)
+    
+  elif type == 'CHARLES':
+    reader = csv.reader(null_byte_line_filter(file))
+    reader.next() # skip header line
+    verify_transaction_file_header(reader, CHARLES_TRANSACTION_EXPORT_HEADER)
+    parsed = parse_charles_transactions(reader)
 
   transactions = []
   for row in parsed:
@@ -64,6 +90,10 @@ def verify_transaction_file_header(reader, required_header):
   for i in range(len(required_header)):
     if header[i] != required_header[i]:
       raise Exception("Header mismatch at %d: %s <> %s" % (i, header[i], required_header[i]))
+
+#----------------------\
+#  PER SOURCE PARSERS  |
+#----------------------/
     
 def parse_frano_transactions(reader):
   parsed = []
@@ -160,7 +190,7 @@ def parse_ameritrade_transactions(reader):
       commission_multiplier = Decimal('-1.0')
     
     parsed.append({
-        'date' : datetime.strptime(row[0], '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -169,3 +199,206 @@ def parse_ameritrade_transactions(reader):
       });
       
   return parsed
+
+def parse_zecco_transactions(reader):
+  parsed = []
+  for row in reader:
+    account_type = row[1]
+    transaction_type = row[2]
+    description_field = row[5]
+    date_field = row[0]
+    symbol_field = row[3]
+    quantity_field = row[7]
+    price_field = row[8]
+    net_amount_field = row[11]
+    
+    # skip credit sweeps
+    if description_field.find('Credit Sweep') >= 0:
+      continue
+    
+    # deposits/withdrawals happen on the cash journal
+    elif account_type == 'General Margin' and transaction_type == 'Cash Journal':
+      symbol = Quote.CASH_SYMBOL
+      type = ('DEPOSIT' if float(net_amount_field) >= 0 else 'WITHDRAW')
+      quantity = (abs(Decimal(net_amount_field)))
+      price = Decimal('1.0')
+      commission = Decimal('0')
+    
+    # buys/sells are marked by their transaction types
+    elif transaction_type == 'B' or transaction_type == 'S':
+      symbol = symbol_field
+      type = ('SELL' if transaction_type == 'S' else 'BUY')
+      quantity = Decimal(quantity_field)
+      price = Decimal(price_field)
+      commission = abs(Decimal(net_amount_field)) - (quantity * price)
+      
+    # everything else on the margin account or cash is an adjustment
+    elif account_type == 'General Margin' or account_type == 'Cash':
+      symbol = Quote.CASH_SYMBOL
+      type = 'ADJUST'
+      quantity = Decimal(net_amount_field)
+      price = Decimal('1.0')
+      commission = Decimal('0')
+      
+    # otherwise just skip it for now
+    else:
+      continue
+      
+    commission_multiplier = Decimal('1.0')
+    if type == 'SELL':
+      commission_multiplier = Decimal('-1.0')
+    
+    parsed.append({
+        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'type' : type,
+        'symbol' : symbol,
+        'quantity' : quantity,
+        'price' : price,
+        'total' : ((quantity * price) + (commission_multiplier * commission)),
+      });
+      
+  return parsed
+
+def parse_scottrade_transactions(reader):
+  parsed = []
+  for row in reader:
+    action_field = row[3]
+    symbol_field = row[0]
+    quantity_field = row[1]
+    price_field = row[2]
+    date_field = row[4]
+    amount_field = row[7]
+    commission_field = row[8]
+    
+    # deposits and withdrawals
+    if action_field == 'IRA Receipt' or action_field == 'Journal':
+      symbol = Quote.CASH_SYMBOL
+      type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
+      quantity = abs(Decimal(amount_field))
+      price = Decimal('1.0')
+      commission = Decimal('0')
+    
+    # buys and sells
+    elif action_field == 'Buy' or action_field == 'Sell':
+      symbol = symbol_field
+      type = ('SELL' if action_field == 'Sell' else 'BUY')
+      quantity = abs(Decimal(quantity_field))
+      price = Decimal(price_field)
+      commission = abs(Decimal(commission_field))
+      
+    # incoming transfers mimic a deposit and a buy
+    elif action_field == 'Transfer In':
+      quantity = Decimal(quantity_field)
+      price = Decimal(price_field) / quantity
+      parsed.append({
+        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'type' : 'DEPOSIT',
+        'symbol' : Quote.CASH_SYMBOL,
+        'quantity' : (price * quantity),
+        'price' : Decimal('1.0'),
+        'total' : (price * quantity),
+      });
+      
+      symbol = symbol_field
+      type = 'BUY'
+      commission = Decimal('0.0')
+    
+    # everything else is an adjustment
+    else:
+      symbol = Quote.CASH_SYMBOL
+      type = 'ADJUST'
+      quantity = Decimal(amount_field)
+      price = Decimal('1.0')
+      commission = Decimal('0')
+      
+    commission_multiplier = Decimal('1.0')
+    if type == 'SELL':
+      commission_multiplier = Decimal('-1.0')
+      
+    parsed.append({
+        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'type' : type,
+        'symbol' : symbol,
+        'quantity' : quantity,
+        'price' : price,
+        'total' : ((quantity * price) + (commission_multiplier * commission)),
+      });
+      
+  return parsed
+
+def parse_charles_transactions(reader):
+  parsed = []
+  for row in reader:
+    date_field = row[0][:10]
+    action_field = row[1].strip(' ')
+    quantity_field = row[2].strip(' ')
+    symbol_field = row[3].strip(' ')
+    price_field = row[5].replace('$', '').strip(' ')
+    amount_field = row[6].replace('$', '').strip(' ')
+    commission_field = row[7].replace('$', '').strip(' ')
+    
+    # deposits and withdrawals have no symbols or prices
+    if symbol_field == '' and price_field == '':
+      symbol = Quote.CASH_SYMBOL
+      type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
+      quantity = abs(Decimal(amount_field))
+      price = Decimal('1.0')
+      commission = Decimal('0.0')
+    
+    # buys and sells
+    elif action_field == 'Buy' or action_field == 'Sell':
+      symbol = symbol_field
+      type = ('SELL' if action_field == 'Sell' else 'BUY')
+      quantity = Decimal(quantity_field)
+      price = Decimal(price_field)
+      commission = (Decimal(commission_field) if commission_field != '' else Decimal('0.0'))
+      
+    # transfers have a symbol and quantity, and little else
+    elif symbol_field != '' and quantity_field != '' and amount_field == '':
+      as_of_date = datetime.strptime(date_field, '%m/%d/%Y')
+      symbol = symbol_field
+      quantity = Decimal(quantity_field)
+      price = Decimal(str(Quote.historical_price_by_symbol(symbol, as_of_date)))
+                          
+      parsed.append({
+        'date' : as_of_date,
+        'type' : 'DEPOSIT',
+        'symbol' : Quote.CASH_SYMBOL,
+        'quantity' : (price * quantity),
+        'price' : Decimal('1.0'),
+        'total' : (price * quantity),
+      });
+      
+      type = 'BUY'
+      commission = Decimal('0.0')
+      
+    # everything else is an adjustment
+    else:
+      symbol = Quote.CASH_SYMBOL
+      type = 'ADJUST'
+      quantity = Decimal(amount_field)
+      price = Decimal('1.0')
+      commission = Decimal('0')
+      
+    commission_multiplier = Decimal('1.0')
+    if type == 'SELL':
+      commission_multiplier = Decimal('-1.0')
+      
+    parsed.append({
+        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'type' : type,
+        'symbol' : symbol,
+        'quantity' : quantity,
+        'price' : price,
+        'total' : ((quantity * price) + (commission_multiplier * commission)),
+      });
+      
+  return parsed
+
+#-------------\
+#  UTILITIES  |
+#-------------/
+
+def null_byte_line_filter(stream):
+  for line in stream:
+    yield line.replace('\x00', '')
