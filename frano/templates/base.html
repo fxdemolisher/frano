@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="/css/validationEngine.jquery.1.7.css" type="text/css"/>
 
     <script language="javascript" type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
-    <script language="javascript" type="text/javascript" src="/js/jquery.infieldlabel.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine-en.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine.1.7.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery.jeditable.mini-1.7.1.js"></script>
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
     
     <script type="text/javascript">
@@ -37,39 +37,41 @@
             <h1>Frano</h1>
           </div>
         </a>
-        <div class="five columns">
+        
+        <div class="seven columns">
           <div class="userLinks">
             <ul class="horizontallist">
-              {% if user %}
-                <li>Portfolio:</li>
-                <li>
-                  <select id="portfolio" style="width: 222px;">
-                    <option value=""></option>
-                    {% for a_portfolio in portfolios %}
-                      <option value="{{ a_portfolio.id }}" {% ifequal a_portfolio.id portfolio.id %}selected="selected"{% endifequal %}>{{ a_portfolio.name }}</option>
-                    {% endfor %}
-                  </select>
-                </li>
+        
+              {% if not supress_navigation %}
+                {% if user %}
+                  <li>Portfolio:</li>
+                  <li>
+                    <select id="portfolio" style="width: 180px;">
+                      <option value=""></option>
+                      {% for a_portfolio in portfolios %}
+                        <option value="{{ a_portfolio.id }}" {% ifequal a_portfolio.id portfolio.id %}selected="selected"{% endifequal %}>{{ a_portfolio.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </li>
+                  <li style="width: 145px;">
+                    {% ifnotequal portfolios.count 1 %}
+                      <a href="/{{ portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
+                    {% else %}
+                      &nbsp;
+                    {% endifnotequal %}
+                  </li>
+                    
+                  {% ifequal portfolio.user.id user.id %}
+                    <li><a href="/{{ portfolio.id}}/positions.html" class="buttonLink navLink">Positions</a></li>
+                    <li><a href="/{{ portfolio.id}}/transactions.html" class="buttonLink navLink">Transactions</a></li>
+                  {% endifequal %}
                   
-                {% ifequal portfolio.user.id user.id %}
-                  <li>&nbsp;</li>
-                  <li><form action="/{{ portfolio.id}}/positions.html"><button class="navButton">Positions</button></form></li>
-                  <li><form action="/{{ portfolio.id}}/transactions.html"><button class="navButton">Transactions</button></form></li>
-                  <li><form action="/{{ portfolio.id}}/settings.html" method="post"><button class="navButton">Settings</button></form></li>
-                {% endifequal %}
-              {% endif %}
-            </ul>
-          </div>
-          
-        </div>
-        <div class="two columns">
-          <div class="userLinks">
-            <ul class="horizontallist">
-              {% if not user %}
-                <li><a class="rpxnow" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html"><button class="navButton">Sign In</button></a></li>
-              {% else %}
-                <li><form action="/createPortfolio.html"><button class="navButton">Create a Portfolio</button></form></li>
-                <li><form action="/logout.html"><button class="navButton">Sign Out</button></form></li>
+                  <li><a href="/createPortfolio.html" class="buttonLink navLink">Create a Portfolio</a></li>
+                  <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
+                {% else %}
+                  <li><a class="rpxnow buttonLink navLink" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html">Sign In</a></li>
+                {% endif %}
+                
               {% endif %} 
             </ul>
           </div>
@@ -78,7 +80,7 @@
 
 <!-- header row -->    
       <div id="header" class="column-row">
-        <div class="six columns">
+        <div class="eight columns">
           <div class="pageHeading">{% block pageHeading %}{% endblock %}</div>
         </div>
       </div>
@@ -110,9 +112,23 @@
 <!-- END: footer -->
                  
     </div>
+    <br style="clear:both;"/>
 <!-- END: main container -->    
 
-    <br style="clear:both;"/>
+<!-- START: Google Analytics -->
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-19185013-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+<!-- END: Google Analytics -->
+    
   </body>
 </html>
 

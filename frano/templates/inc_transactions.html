@@ -1,59 +1,8 @@
 {% load frano_filters %}
 
-<div class="column-row">
-  <div class="eight columns">
-    
-    <form action="/{{portfolio.id}}/addTransaction.html" method="post" id="addTransactionForm">
-      <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
-        <tbody>
-          <tr class="addNewRow">
-            <td>
-              <select name="type" id="type" class="validate[required]">
-                <option>---Type---</option>
-                <option value="BUY">Buy</option>
-                <option value="SELL">Sell</option>
-                <option value="DEPOSIT">Deposit Cash</option>
-                <option value="WITHDRAW">Withdraw Cash</option>
-                <option value="ADJUST">Adjust Cash</option>
-              </select>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield" for="as_of_date">Date</label>
-                <input type="text" name="as_of_date" id="as_of_date" size="8" class="validate[required]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield" for="symbol">Symbol</label>
-                <input type="text" name="symbol" id="symbol" size="5" class="validate[required,length[1,5],noSpecialCharacters]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield" for="quantity">Qty</label>
-                <input type="text" name="quantity" id="quantity" size="5" class="validate[required,length[1,9],onlyNumber]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield dollarLabel" for="price">Price</label>
-                $<input type="text" name="price" id="price" size="5" class="validate[required,length[1,9],onlyNumber]"/>
-              </div>
-            </td>
-            <td>
-              <div class="transactionField">
-                <label class="infield dollarLabel" for="comission">Comission</label>
-                $<input type="text" name="comission" id="comission" size="8" class="validate[length[0,9],onlyNumber]"/>
-              </div>    
-            </td>
-            <td><div class="icon add" id="addTransaction"></div></td>
-          </tr>
-        </tbody>
-      </table>
-    </form>
-    
-    {% if transactions %}
+<div id="content" >
+  <div class="column-row">
+    <div class="eight columns">
       <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
         <thead>
           <tr>
@@ -63,27 +12,62 @@
             <td>Qty</td>
             <td>Price</td>
             <td>Total</td>
-            <td>&nbsp;</td>
+            <td class="exportTransactions"><a href="/{{portfolio.id}}/exportTransactions.csv"><img src="/img/csv-export.gif">Export as CSV</a></td>
             <td>&nbsp;</td>
           </tr>
         </thead>
         <tbody id="holdingsTableTbody">
-        
-          {% for transaction in transactions %}
+          
+          {% for transaction in transactions.object_list %}
             <tr>
               <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type }}</div></td>
-              <td>{{ transaction.as_of_date|date:'m/d/Y' }}</td>
-              <td><div class="tickerSymbol">{{ transaction.symbol }}</div></td>
-              <td>{{ transaction.quantity|num_format }}</td>
-              <td>${{ transaction.price|num_format }}</td>
-              <td>${{ transaction.total|num_format }}</td>
+              <td>
+                <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_date_83">{{ transaction.as_of_date|date:'m/d/Y' }}</div>
+                <div class="inline-editable-prompt">click to edit</div>
+              </td>
+              <td>
+                <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_symbol_59 tickerSymbol">{{ transaction.symbol }}</div>
+                <div class="inline-editable-prompt">click to edit</div>
+              </td>
+              <td>
+                {% ifnotequal transaction.symbol "*CASH" %}
+                  <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_quantity_83">{{ transaction.quantity|num_format }}</div>
+                  <div class="inline-editable-prompt">click to edit</div>
+                {% else %}
+                  {{ transaction.quantity|num_format }}
+                {% endifnotequal %}
+              </td>
+              <td>
+                {% ifnotequal transaction.symbol "*CASH" %}
+                  <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_price_83">${{ transaction.price|num_format }}</div>
+                  <div class="inline-editable-prompt">click to edit</div>
+                {% else %}
+                  ${{ transaction.price|num_format }}
+                {% endifnotequal %}
+              </td>
+              <td>
+                <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format }}</div>
+                <div class="inline-editable-prompt">click to edit</div>
+              </td>
               <td><a href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div id="deleteTransaction" class="icon delete"></div></a></td>
+              <td>&nbsp;</td>
             </tr>
           {% endfor %}
-
+  
+          <tr class="pagingRow">
+            <td colspan="8">
+              <ul class="paging horizontallist">
+                <li><a href="?page=1"><div class="pagingButton">&lt;&lt;</div></a></li>
+                <li><a href="?page={{ transactions.previous_page_number }}"><div class="pagingButton">&lt;</div></a></li>
+                <li class="pagingSummary">{{ transactions.start_index }} - {{ transactions.end_index }} out of {{ transactions.paginator.count }} Transactions</li>
+                <li><a href="?page={{ transactions.next_page_number }}"><div class="pagingButton">&gt;</div></a></li>
+                <li><a href="?page={{ transactions.paginator.num_pages }}"><div class="pagingButton">&gt;&gt;</div></a></li>
+              </ul>
+            </td>
+          </tr>
+  
         </tbody>
       </table>
-    {% endif %}
-    
+    </div>
   </div>
 </div>

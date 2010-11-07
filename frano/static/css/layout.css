@@ -22,12 +22,11 @@ see LICENSE file for copying permission.
     #recoverForm { position: relative; }
     #recoverForm LABEL { top: 2px; left: 5px; }
     
-    .transactionField { position: relative; }
-    .transactionField LABEL { top: 3px; left: 5px; }
-    .transactionField LABEL.dollarLabel { left: 11px; }
+    .edit-portfolio { display: inline; }
+    .edit-portfolio-prompt { font-weight: normal; font-style: italic; font-size: 14px; visibility: hidden; display: inline; color: #FFFFFF; vertical-align: middle; }
+    .edit-portfolio-form { display: inline; }
+    .edit-portfolio-form INPUT { font-size: 28px; }
     
-    LABEL.infield { position: absolute; color: #333; font-size: 16px; cursor: text; opacity: .6; }
-
 /*  --------------------------------------------------
   =Portfolio
   -------------------------------------------------- */
@@ -46,7 +45,7 @@ see LICENSE file for copying permission.
     .importantData .related {color:#666;}
     .importantData .related STRONG {font-weight:bold;}
     
-    .paging {width:250px;margin: 0 auto;font-size:15px;white-space:nowrap;}
+    .paging {padding-left: 305px; margin: 0 auto;font-size:15px;white-space:nowrap;}
     .pagingButton {background: url(/img/gradients.png) 0 -43px repeat-x;padding:5px;cursor:pointer;color:#FFF;cursor:pointer;-moz-border-radius: 3px;-webkit-border-radius: 3px;}
     .pagingSummary {padding-top:5px;}
     
@@ -54,7 +53,6 @@ see LICENSE file for copying permission.
     .holdingsTable {font-size:16px;margin-top:10px;}
     .holdingsTable TD {border-bottom: solid 1px #CCC;padding:5px 2px;font-weight:bold;vertical-align:top;}
     .holdingsTable thead TD {font-size:12px;font-weight:normal !important;}
-    .pagingRow TD {background-color:#E3E3E3;}
     .addNewRow TD {background: url(/img/gradients.png) 0 0 repeat-x;padding-top:9px;}
     .lastRow TD { border-bottom: none; }
     
@@ -78,6 +76,10 @@ see LICENSE file for copying permission.
     .delete {background-position:0 0;cursor:pointer;}
     .calendar {background-position:-22px 0;cursor:pointer;margin-left:3px;}
     .add {background-position:0 -22px;cursor:pointer;}
+    
+    .readOnlyCopy {line-height:24px;font-size:17px; margin: 0; }
+    .readOnlyCopy .highlight {color:#F90;font-weight:bold;}
+    .readOnlyCopy STRONG { font-weight: bolder; }
     
 /*  --------------------------------------------------
   =Homepage
@@ -109,3 +111,21 @@ see LICENSE file for copying permission.
     .legalCopy A {color:#3399cc;}
     .legalCopy LI {line-height:24px;font-size:14px;}
     .legalCopy STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
+    
+/*  --------------------------------------------------
+  =Transactions
+  -------------------------------------------------- */
+    
+    .transactionsCopy {line-height:24px;font-size:17px;}
+    .transactionsCopy .highlight {color:#F90;font-weight:bold;}
+    .transactionsCopy STRONG { font-weight: bolder; }
+    
+    .typeButton {background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF;font-size:14px; width: 80px; }
+    .typeButtonOn {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;}
+    
+    .exportTransactions { width: 100px; }
+    .exportTransactions A { font-size: 12px; text-decoration: none; color: #3333CC; }
+    .exportTransactions A IMG { vertical-align: text-top; }
+    
+    .importButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: text-top; }
+    

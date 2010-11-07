@@ -9,7 +9,7 @@
     </ul>
   </div>
   
-  <div class="three columns offset-by-one">
+  <div class="two columns offset-by-one">
     <ul class="importantData">
       <li class="name">Profit Loss</li>
       <li class="value {{ summary.pl|sign_choice:'pos,neg,' }}">${{ summary.pl|num_format }}</li>
@@ -21,7 +21,7 @@
     </ul>
   </div>
 
-  <div class="two columns">
+  <div class="two columns offset-by-one">
     <ul class="importantData">
       <li class="name">As Of</li>
       <li class="value">{{ summary.as_of_date|date:'m/d/Y' }}</li>
