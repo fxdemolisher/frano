@@ -5,7 +5,6 @@
 import json, math, random
 
 from datetime import date, datetime, timedelta
-from decimal import Decimal
 from urllib import urlopen
 
 from django import forms
@@ -165,7 +164,7 @@ def add_transaction(request, portfolio, is_sample):
   if form.is_valid():
     commission = form.cleaned_data.get('commission')
     if commission == None:
-      commission = Decimal('0')
+      commission = 0.0
     
     type = form.cleaned_data.get('type').encode('UTF-8')
     
@@ -335,16 +334,16 @@ class TransactionForm(forms.Form):
   type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
   as_of_date = forms.DateField()
   symbol = forms.CharField(min_length = 1, max_length = 5)
-  quantity = forms.DecimalField(min_value = 0.01)
-  price = forms.DecimalField(min_value = 0.01)
-  commission = forms.DecimalField(min_value = 0.01, required = False)
+  quantity = forms.FloatField(min_value = 0.01)
+  price = forms.FloatField(min_value = 0.01)
+  commission = forms.FloatField(min_value = 0.01, required = False)
 
 class UpdateTransactionForm(forms.Form):
   date = forms.DateField(required = False)
   symbol = forms.CharField(required = False, min_length = 1, max_length = 5)
-  quantity = forms.DecimalField(required = False, min_value = 0.01)
-  price = forms.DecimalField(required = False, min_value = 0.01)
-  total = forms.DecimalField(required = False, min_value = 0.01)
+  quantity = forms.FloatField(required = False, min_value = 0.01)
+  price = forms.FloatField(required = False, min_value = 0.01)
+  total = forms.FloatField(required = False, min_value = 0.01)
 
 class PortfolioForm(forms.Form):
   name = forms.CharField(min_length = 3, max_length = 50)
@@ -366,9 +365,9 @@ class ImportTransactionForm(forms.Form):
   type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
   as_of_date = forms.DateField()
   symbol = forms.CharField(min_length = 1, max_length = 5)
-  quantity = forms.DecimalField(min_value = 0.01)
-  price = forms.DecimalField(min_value = 0.01)
-  total = forms.DecimalField(min_value = 0.01)
+  quantity = forms.FloatField(min_value = 0.01)
+  price = forms.FloatField(min_value = 0.01)
+  total = forms.FloatField(min_value = 0.01)
   exclude = forms.BooleanField(required = False)
 
 ImportTransactionFormSet = formset_factory(ImportTransactionForm)
@@ -378,12 +377,12 @@ ImportTransactionFormSet = formset_factory(ImportTransactionForm)
 #-------------/
 
 DEFAULT_SAMPLE_TRANSACTIONS = [
-    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 5, 1),   'type' : 'DEPOSIT',  'quantity' : '100000', 'price' : '1.0' },
-    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 5, 3),   'type' : 'BUY',      'quantity' : '125',    'price' : '119.14' },
-    { 'symbol' : 'EFA',             'as_of_date' : date(2010, 6, 29),  'type' : 'BUY',      'quantity' : '427',    'price' : '46.83' },
-    { 'symbol' : 'AGG',             'as_of_date' : date(2010, 8, 5),   'type' : 'BUY',      'quantity' : '368',    'price' : '106.86' },
-    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 8, 17),  'type' : 'BUY',      'quantity' : '137',    'price' : '109.01' },
-    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 10, 1),  'type' : 'WITHDRAW', 'quantity' : '10000',  'price' : '1.0' },
+    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 5, 1),   'type' : 'DEPOSIT',  'quantity' : 100000, 'price' : 1.0 },
+    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 5, 3),   'type' : 'BUY',      'quantity' : 125,    'price' : 119.14 },
+    { 'symbol' : 'EFA',             'as_of_date' : date(2010, 6, 29),  'type' : 'BUY',      'quantity' : 427,    'price' : 46.83 },
+    { 'symbol' : 'AGG',             'as_of_date' : date(2010, 8, 5),   'type' : 'BUY',      'quantity' : 368,    'price' : 106.86 },
+    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 8, 17),  'type' : 'BUY',      'quantity' : 137,    'price' : 109.01 },
+    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 10, 1),  'type' : 'WITHDRAW', 'quantity' : 10000,  'price' : 1.0 },
   ]
 
 def get_sample_portfolio(request):
@@ -411,8 +410,8 @@ def get_sample_portfolio(request):
     transaction.type = sample_transaction['type']
     transaction.as_of_date = sample_transaction['as_of_date']
     transaction.symbol = sample_transaction['symbol']
-    transaction.quantity = Decimal(sample_transaction['quantity'])
-    transaction.price = Decimal(sample_transaction['price'])
+    transaction.quantity = sample_transaction['quantity']
+    transaction.price = sample_transaction['price']
     transaction.total = transaction.quantity * transaction.price
     transaction.save()
   

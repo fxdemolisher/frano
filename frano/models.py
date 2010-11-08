@@ -7,7 +7,6 @@ import string
 import random
 
 from datetime import datetime, timedelta
-from decimal import Decimal
 from django.db import models
 from exceptions import StopIteration
 from urllib import urlopen
@@ -75,9 +74,9 @@ class Transaction(models.Model):
   type = models.CharField(max_length = 10, choices = TRANSACTION_TYPES)
   as_of_date = models.DateField()
   symbol = models.CharField(max_length = 5)
-  quantity = models.DecimalField(max_digits = 20, decimal_places = 10)
-  price = models.DecimalField(max_digits = 20, decimal_places = 10)
-  total = models.DecimalField(max_digits = 20, decimal_places = 10)
+  quantity = models.FloatField()
+  price = models.FloatField()
+  total = models.FloatField()
   
   class Meta:
     db_table = 'transaction'
@@ -92,8 +91,8 @@ class Quote(models.Model):
   
   symbol = models.CharField(max_length = 5, unique = True)
   name = models.CharField(max_length = 255)
-  price = models.DecimalField(max_digits = 20, decimal_places = 10)
-  previous_close_price = models.DecimalField(max_digits = 20, decimal_places = 10)
+  price = models.FloatField()
+  previous_close_price = models.FloatField()
   last_trade = models.DateTimeField()
   quote_date = models.DateTimeField()
   
@@ -109,8 +108,8 @@ class Quote(models.Model):
       
     if self.symbol == Quote.CASH_SYMBOL:
       self.name = 'US Dollars'
-      self.price = Decimal('1.0')
-      self.previous_close_price = Decimal('1.0')
+      self.price = 1.0
+      self.previous_close_price = 1.0
             
     else:
       u = None
@@ -121,8 +120,8 @@ class Quote(models.Model):
           return
         
         self.name = row[5]
-        self.price = Decimal(str(row[1]))
-        self.previous_close_price = Decimal(str(0.0))
+        self.price = float(row[1])
+        self.previous_close_price = 0.0
         
         if row[2] != 'N/A': 
           self.previous_close_price = row[2]
@@ -141,13 +140,13 @@ class Quote(models.Model):
     return self
   
   @classmethod
-  def by_symbol(cls, symbolToFind):
-    candidate = Quote.objects.filter(symbol = symbolToFind)
+  def by_symbol(cls, symbol_to_find):
+    candidate = Quote.objects.filter(symbol = symbol_to_find)
     quote = None
     if candidate.count() > 0:
       quote = candidate[0]
     else:
-      quote = Quote(symbol = symbolToFind)
+      quote = Quote(symbol = symbol_to_find)
     
     if quote.quote_date == None or (datetime.now() - quote.quote_date) > Quote.TIMEOUT_DELTA:
       quote.refresh()
