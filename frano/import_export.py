@@ -357,7 +357,7 @@ def parse_charles_transactions(reader):
       as_of_date = datetime.strptime(date_field, '%m/%d/%Y')
       symbol = symbol_field
       quantity = float(quantity_field)
-      price = Quote.historical_price_by_symbol(symbol, as_of_date)
+      price = Quote.by_symbol(symbol).price_as_of(as_of_date)
                           
       parsed.append({
         'date' : as_of_date,

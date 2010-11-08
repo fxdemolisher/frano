@@ -6,7 +6,7 @@ import csv
 import string
 import random
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from django.db import models
 from exceptions import StopIteration
 from urllib import urlopen
@@ -86,15 +86,17 @@ class Transaction(models.Model):
     return "%.2f-%s @ %.2f on %s" % (self.quantity, self.symbol, self.price, self.as_of_date.strftime('%m/%d/%Y'))
   
 class Quote(models.Model):
-  TIMEOUT_DELTA = timedelta(0, 0, 0, 0, 15)
+  TIMEOUT_DELTA = timedelta(minutes = 15)
+  HISTORY_TIMEOUT_DELTA = timedelta(days = 1)
+  HISTORY_START_DATE = date(1900, 1, 1)
   CASH_SYMBOL = '*CASH'
   
   symbol = models.CharField(max_length = 5, unique = True)
   name = models.CharField(max_length = 255)
   price = models.FloatField()
-  previous_close_price = models.FloatField()
   last_trade = models.DateTimeField()
   quote_date = models.DateTimeField()
+  history_date = models.DateTimeField()
   
   class Meta:
     db_table = 'quote'
@@ -103,34 +105,27 @@ class Quote(models.Model):
     return "%s - %s" % (self.symbol, self.name)
   
   def refresh(self):
-    self.last_trade = datetime.now()
-    self.quote_date = datetime.now()
+    self.last_trade = self.history_date = self.quote_date = datetime.now()
       
     if self.symbol == Quote.CASH_SYMBOL:
       self.name = 'US Dollars'
       self.price = 1.0
-      self.previous_close_price = 1.0
             
     else:
       u = None
       try:
-        u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=sl1pd1t1n&e=.csv' % self.symbol)
+        u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=sl1d1t1n&e=.csv' % self.symbol)
         row = csv.reader(u).next()
-        if len(row) < 6:
+        if len(row) < 5:
           return
         
-        self.name = row[5]
+        self.name = row[4]
         self.price = float(row[1])
-        self.previous_close_price = 0.0
         
-        if row[2] != 'N/A': 
-          self.previous_close_price = row[2]
-          
-        if row[3] != 'N/A' and row[4] != 'N/A':
-          month, day, year = [int(f) for f in row[3].split('/')]
-          time = datetime.strptime(row[4], '%I:%M%p')
-          last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
-          self.last_trade = last_trade
+        if row[2] != 'N/A' and row[3] != 'N/A':
+          month, day, year = [int(f) for f in row[2].split('/')]
+          time = datetime.strptime(row[3], '%I:%M%p')
+          self.last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
           
       finally:
         if u != None:
@@ -138,6 +133,50 @@ class Quote(models.Model):
         
     self.save()
     return self
+  
+  def refresh_history(self):
+    history = []
+    u = None
+    try:
+      u = urlopen('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (
+          self.symbol, 
+          (Quote.HISTORY_START_DATE.month - 1), 
+          Quote.HISTORY_START_DATE.day, 
+          Quote.HISTORY_START_DATE.year, 
+          (self.quote_date.month - 1), 
+          self.quote_date.day, 
+          self.quote_date.year)
+        )
+      
+      reader = csv.reader(u)
+      reader.next() # skip header
+      
+      for row in reader:
+        current = PriceHistory()
+        current.quote = self
+        current.as_of_date = datetime.strptime(row[0], '%Y-%m-%d')
+        current.price = float(row[6])
+        
+        history.append(current)
+      
+    finally:
+      if u != None:
+        u.close()
+
+    if len(history) > 0:
+      PriceHistory.objects.filter(quote__id__exact = self.id).delete()
+      for current in history:
+        current.save()
+
+    self.history_date = datetime.now()
+    self.save()
+    return self
+  
+  def price_as_of(self, as_of):
+    return self.pricehistory_set.filter(as_of_date__lte = as_of.strftime('%Y-%m-%d')).order_by('-as_of_date')[0].price
+  
+  def previous_close_price(self):
+    return self.price_as_of(self.last_trade - timedelta(days = 1))
   
   @classmethod
   def by_symbol(cls, symbol_to_find):
@@ -148,29 +187,26 @@ class Quote(models.Model):
     else:
       quote = Quote(symbol = symbol_to_find)
     
-    if quote.quote_date == None or (datetime.now() - quote.quote_date) > Quote.TIMEOUT_DELTA:
+    needs_refresh = (quote.quote_date == None or (datetime.now() - quote.quote_date) > Quote.TIMEOUT_DELTA) 
+    needs_history_refresh = (quote.symbol != Quote.CASH_SYMBOL and (quote.history_date == None or (datetime.now() - quote.history_date) > Quote.HISTORY_TIMEOUT_DELTA))
+    
+    if needs_refresh:
       quote.refresh()
+    
+    if needs_history_refresh:
+      quote.refresh_history()
           
     return quote
   
-  @classmethod
-  def historical_price_by_symbol(cls, symbol, asOfDate):
-    u = None
-    price = 0.0
-    try:
-      u = urlopen('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (symbol, (asOfDate.month - 1), asOfDate.day, asOfDate.year, (asOfDate.month - 1), asOfDate.day, asOfDate.year))
-      reader = csv.reader(u)
-      reader.next() # skip header
-      try:
-        row = reader.next()
-        if row != None:
-          price = float(row[6])
-          
-      except StopIteration:
-        pass 
-      
-    finally:
-      if u != None:
-        u.close()
-        
-    return price
+class PriceHistory(models.Model):
+  quote = models.ForeignKey('Quote')
+  as_of_date = models.DateTimeField()
+  price = models.FloatField()
+  
+  class Meta:
+    db_table = 'price_history'
+    unique_together = ( 'quote', 'as_of_date' )
+    
+  def __unicode__(self):
+    return "%s @ %.2f on %s" % (self.quote.symbol, self.price, self.as_of_date.strftime('%Y-%m-%d'))
+  

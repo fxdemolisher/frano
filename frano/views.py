@@ -281,8 +281,9 @@ def portfolio_read_only(request, read_only_token):
   return render_to_response('read_only.html', { 'supress_navigation' : True, 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
 
 def price_quote(request):
-  asOf = date(int(request.GET.get('year')), int(request.GET.get('month')), int(request.GET.get('day')))
-  return HttpResponse("{ \"price\": %f }" % (Quote.historical_price_by_symbol(request.GET.get('symbol'), asOf)), mimetype="application/json")
+  as_of_date = date(int(request.GET.get('year')), int(request.GET.get('month')), int(request.GET.get('day')))
+  quote = Quote.by_symbol(request.GET.get('symbol'))
+  return HttpResponse("{ \"price\": %f }" % quote.price_as_of(as_of_date), mimetype="application/json")
 
 @login_required_decorator
 @portfolio_manipilation_decorator
@@ -334,16 +335,16 @@ class TransactionForm(forms.Form):
   type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
   as_of_date = forms.DateField()
   symbol = forms.CharField(min_length = 1, max_length = 5)
-  quantity = forms.FloatField(min_value = 0.01)
+  quantity = forms.FloatField()
   price = forms.FloatField(min_value = 0.01)
   commission = forms.FloatField(min_value = 0.01, required = False)
 
 class UpdateTransactionForm(forms.Form):
   date = forms.DateField(required = False)
   symbol = forms.CharField(required = False, min_length = 1, max_length = 5)
-  quantity = forms.FloatField(required = False, min_value = 0.01)
+  quantity = forms.FloatField(required = False)
   price = forms.FloatField(required = False, min_value = 0.01)
-  total = forms.FloatField(required = False, min_value = 0.01)
+  total = forms.FloatField(required = False)
 
 class PortfolioForm(forms.Form):
   name = forms.CharField(min_length = 3, max_length = 50)
@@ -365,9 +366,9 @@ class ImportTransactionForm(forms.Form):
   type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
   as_of_date = forms.DateField()
   symbol = forms.CharField(min_length = 1, max_length = 5)
-  quantity = forms.FloatField(min_value = 0.01)
+  quantity = forms.FloatField()
   price = forms.FloatField(min_value = 0.01)
-  total = forms.FloatField(min_value = 0.01)
+  total = forms.FloatField()
   exclude = forms.BooleanField(required = False)
 
 ImportTransactionFormSet = formset_factory(ImportTransactionForm)
@@ -446,6 +447,8 @@ def get_positions(symbols, quotes, transactions):
       quantity += lot.quantity
      
     cost_price = (cost / quantity) if quantity > 0 else 0
+    previous_price = (1.0 if symbol == Quote.CASH_SYMBOL else quotes[symbol].previous_close_price())
+    
     position = Position(
         quotes[symbol].last_trade, 
         symbol, 
@@ -453,7 +456,7 @@ def get_positions(symbols, quotes, transactions):
         quantity, 
         float(quotes[symbol].price), 
         cost_price, 
-        float(quotes[symbol].previous_close_price), 
+        float(previous_price), 
         0, 
         lots[symbol]
       )
