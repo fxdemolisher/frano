@@ -12,14 +12,21 @@ $(function() {
     });
   })
   
+  var lastTransactionType = 'BUY';
   $(".newTransactionType").change(function() {
     var val = $(this).val();
-    if(val == 'DEPOSIT' || val == 'WITHDRAW' || val == 'ADJUST') {
-      $(".securitiesField").attr("disabled", "disabled").val("");
-      $(".cashField").attr("disabled", "").filter('[type=text]').val("");
-    } else {
-      $(".securitiesField").attr("disabled", "").val("");
-      $(".cashField").attr("disabled", "disabled").filter('[type=text]').val("");
+    var isCash = (val == 'DEPOSIT' || val == 'WITHDRAW' || val == 'ADJUST');
+    var wasCash = (lastTransactionType == 'DEPOSIT' || lastTransactionType == 'WITHDRAW' || lastTransactionType == 'ADJUST');
+    lastTransactionType = val;
+    
+    if(isCash != wasCash) {
+      if(isCash) {
+        $(".securitiesField").attr("disabled", "disabled").val("");
+        $(".cashField").attr("disabled", "").filter('[type=text]').val("");
+      } else {
+        $(".securitiesField").attr("disabled", "").val("");
+        $(".cashField").attr("disabled", "disabled").filter('[type=text]').val("");
+      }
     }
     
     $(".securitiesField").each(function (idx, obj) { $.validationEngine.closePrompt(obj) });
