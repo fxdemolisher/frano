@@ -24,6 +24,7 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 #-------------/
 
 SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
+TRANSACTIONS_BEFORE_SEE_ALL = 20
 
 #--------------\
 #  DECORATORS  |
@@ -97,19 +98,11 @@ def demo(request):
   positions = get_positions(symbols, quotes, transactions)
   summary = get_summary(positions, transactions)
   
-  paginator = Paginator(transactions, 10)
-  try:
-    page = int(request.GET.get('page', '1'))
-  except ValueError:
-    page = 1
-  
-  transactions = paginator.page(max(1, min(page, paginator.num_pages)))
-  
   context = {
       'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
       'portfolio' : portfolio, 
       'positions': positions, 
-      'transactions' : transactions, 
+      'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ], 
       'summary' : summary
     }
   
@@ -279,18 +272,11 @@ def portfolio_remove(request, user, portfolio, is_sample):
 def portfolio_transactions(request, user, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions])
-  paginator = Paginator(transactions, 10)
-  try:
-    page = int(request.GET.get('page', '1'))
-  except ValueError:
-    page = 1
-  
-  transactions = paginator.page(max(1, min(page, paginator.num_pages)))
   
   context = {
       'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
       'portfolio' : portfolio, 
-      'transactions' : transactions, 
+      'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ], 
     }
   
   return render_to_response('transactions.html', context, context_instance = RequestContext(request))

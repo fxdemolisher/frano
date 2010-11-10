@@ -130,3 +130,6 @@ see LICENSE file for copying permission.
     .importButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: text-top; }
     
     .ui-menu-item { font-size: 13px; }
+    
+    #seeAllTransactions TD { text-align: center }
+    #seeAllTransactions A { font-size: 14px; color: #3333CC; }

@@ -13,11 +13,7 @@
 
 {% block mainContent %}
   {% include "inc_transactionForm.html" %}
-
-  {% if transactions.object_list %}
-    {% include "inc_transactions.html" %}
-  {% endif %}
-
+  {% include "inc_transactions.html" %}
 {% endblock %}
 
 {% comment %}

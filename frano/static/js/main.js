@@ -171,6 +171,12 @@ $(function() {
   $(".edit-portfolio").mouseleave(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
   $(".edit-portfolio").click(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
   
+  $("#seeAllTransactions A").click(function(e) {
+    e.preventDefault();
+    $(".transactionRow").show();
+    $("#seeAllTransactions").hide();
+  });
+  
   var previousSelectedPortfolio;
   $("#portfolio").focus(function() {
     previousSelectedPortfolio = $(this).val();
