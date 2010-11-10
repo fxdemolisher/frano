@@ -471,7 +471,9 @@ def get_positions(symbols, quotes, transactions):
       )
     
     total_market_value += position.market_value
-    positions.append(position)
+    
+    if position.market_value <> 0.0:
+      positions.append(position)
 
   for position in positions:
     position.allocation = ((position.market_value / total_market_value * 100) if total_market_value != 0 else 0)

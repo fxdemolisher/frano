@@ -41,8 +41,7 @@ $(function() {
   });
   
   $("#quantity, #price, #comission").change(function() {
-    var total = (valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0);
-    $('#total').val(total);
+    $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0));
   });
   
   $("#addTransaction").click(function () {
@@ -88,6 +87,7 @@ $(function() {
     $.getJSON('/priceQuote.json', { day: asOf.getDate(), month: asOf.getMonth() + 1, year: asOf.getFullYear(), symbol: symbol }, function(data, textStatus) {
       if(textStatus == 'success' && data.price > 0) {
         $('#price').val(data.price);
+        $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0));
       }
     });
     
