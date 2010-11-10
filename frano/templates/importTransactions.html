@@ -91,18 +91,21 @@
                   <input type="hidden" name="form-{{ forloop.counter0 }}-price" value="{{ transaction.price }}" />
                   <input type="hidden" name="form-{{ forloop.counter0 }}-total" value="{{ transaction.total }}" />
                   
-                  <tr>
+                  <tr {% if transaction.is_duplicate %}class="transactionDuplicate"{% endif %}>
                     <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type }}</div></td>
                     <td>{{ transaction.as_of_date|date:'m/d/Y' }}</td>
                     <td>{{ transaction.symbol }}</td>
                     <td>{{ transaction.quantity|num_format }}</td>
                     <td>${{ transaction.price|num_format }}</td>
                     <td>${{ transaction.total|num_format }}</td>
-                    <td><input type="checkbox" name="form-{{ forloop.counter0 }}-exclude" value="true" /></td>
+                    <td>
+                      <input type="checkbox" name="form-{{ forloop.counter0 }}-exclude" value="true" {% if transaction.is_duplicate %}checked="checked"{% endif %}/>
+                      {% if transaction.is_duplicate %}<span class="duplicateText">Possible Duplicate</span>{% endif %}
+                    </td>
                   </tr>
                 {% endfor %}
   
-                <tr><td colspan="7"><button class="importButton">Import Transactions</button></td></tr>
+                <tr><td colspan="7" id="importTransactionButtonRow"><button class="importButton">Import Transactions</button></td></tr>
                   
               </tbody>
             </table>

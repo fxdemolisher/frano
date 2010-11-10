@@ -98,7 +98,7 @@ def parse_frano_transactions(reader):
   parsed = []
   for row in reader:
     parsed.append({
-        'date' : datetime.strptime(row[0], '%m/%d/%Y'),
+        'date' : datetime.strptime(row[0], '%m/%d/%Y').date(),
         'type' : row[1],
         'symbol' : row[2],
         'quantity' : float(row[3]),
@@ -132,7 +132,7 @@ def parse_google_transactions(reader):
       commission_multiplier = -1.0
         
     parsed.append({
-        'date' : datetime.strptime(row[3], '%b %d, %Y'),
+        'date' : datetime.strptime(row[3], '%b %d, %Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -189,7 +189,7 @@ def parse_ameritrade_transactions(reader):
       commission_multiplier = -1.0
     
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -248,7 +248,7 @@ def parse_zecco_transactions(reader):
       commission_multiplier = -1.0
     
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -290,7 +290,7 @@ def parse_scottrade_transactions(reader):
       quantity = float(quantity_field)
       price = float(price_field) / quantity
       parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : 'DEPOSIT',
         'symbol' : Quote.CASH_SYMBOL,
         'quantity' : (price * quantity),
@@ -315,7 +315,7 @@ def parse_scottrade_transactions(reader):
       commission_multiplier = -1.0
       
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -360,7 +360,7 @@ def parse_charles_transactions(reader):
       price = Quote.by_symbol(symbol).price_as_of(as_of_date)
                           
       parsed.append({
-        'date' : as_of_date,
+        'date' : as_of_date.date(),
         'type' : 'DEPOSIT',
         'symbol' : Quote.CASH_SYMBOL,
         'quantity' : (price * quantity),
@@ -384,7 +384,7 @@ def parse_charles_transactions(reader):
       commission_multiplier = -1.0
       
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,

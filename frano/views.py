@@ -314,6 +314,21 @@ def import_transactions(request, portfolio, is_sample):
     if form.is_valid():
       type = request.POST.get('type')
       transactions = parse_transactions(type, request.FILES['file'])
+      
+      existing_transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
+      by_date_map = dict([ (as_of_date, []) for as_of_date in set([ transaction.as_of_date for transaction in existing_transactions]) ])
+      for transaction in existing_transactions:
+        by_date_map.get(transaction.as_of_date).append(transaction)
+      
+      for transaction in transactions:
+        is_duplicate = False
+        possibles = by_date_map.get(transaction.as_of_date)
+        if possibles != None:
+          for possible in possibles:
+            if possible.type == transaction.type and possible.symbol == transaction.symbol and possible.quantity == transaction.quantity and possible.price == transaction.price:
+              is_duplicate = True
+              
+        transaction.is_duplicate = is_duplicate
     
   return render_to_response('importTransactions.html', { 'portfolio' : portfolio, 'transactions' : transactions, 'current_tab' : 'import'}, context_instance = RequestContext(request))  
 

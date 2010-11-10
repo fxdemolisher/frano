@@ -159,3 +159,9 @@ see LICENSE file for copying permission.
     
     #seeAllTransactions TD { text-align: center }
     #seeAllTransactions A { font-size: 14px; color: #3333CC; }
+    
+    .transactionDuplicate { background-color: rgba(255, 0, 0, 0.1); }
+    .transactionDuplicate .duplicateText { font-size: 12px; font-weight: normal; color: #FF3333; }
+    
+    #importTransactionButtonRow { text-align: center; }
+    
