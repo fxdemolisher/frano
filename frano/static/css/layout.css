@@ -25,7 +25,33 @@ see LICENSE file for copying permission.
     .edit-portfolio { display: inline; }
     .edit-portfolio-prompt { font-weight: normal; font-style: italic; font-size: 14px; visibility: hidden; display: inline; color: #FFFFFF; vertical-align: middle; }
     .edit-portfolio-form { display: inline; }
-    .edit-portfolio-form INPUT { font-size: 28px; }
+    .edit-portfolio-form INPUT { font-size: 28px; width: 220px; }
+    
+    #header { margin-bottom: 0px; }
+    
+    .subNav { }
+    
+    .subNav LI { 
+      padding: 3px 10px 2px 10px; 
+      margin-right: 5px; 
+      background-color: #FFFFFF; 
+      -moz-border-radius-topleft: 5px; 
+      -moz-border-radius-topright: 5px; 
+      border-top-left-radius: 5px; 
+      border-top-right-radius: 5px;
+      border-bottom: 1px solid #333333;
+    }
+    
+    .subNav LI.current { border-bottom: 0px; border-bottom: 1px solid #FFFFFF;}
+    .subNav LI.current A { font-weight: bold; } 
+    
+    .subNav LI A { font-size: 14px; color: #3333CC; text-decoration: none; }
+    
+    .subNav .createPortfolio { color: #00CC00; font-weight: bold; font-size: 15px; }
+    .subNav .deletePortfolio { color: #FF0000; font-weight: bold; font-size: 15px; }
+    
+    .selectPortfolio { font-size: 22px; vertical-align: middle; width: 260px; }
+      
     
 /*  --------------------------------------------------
   =Portfolio

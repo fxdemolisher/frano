@@ -103,6 +103,12 @@ $(function() {
     }
   });
   
+  $("#seeAllTransactions A").click(function(e) {
+    e.preventDefault();
+    $(".transactionRow").show();
+    $("#seeAllTransactions").hide();
+  });
+  
   $(".inline-editable").each(function() {
     var holder = $(this)
     var components = holder.attr("id").substring('edit_'.length).split('_');
@@ -139,46 +145,39 @@ $(function() {
   $(".inline-editable").mouseleave(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
   $(".inline-editable").click(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
   
-  $(".edit-portfolio").each(function() {
-    var holder = $(this)
-    var id = holder.attr("id").substring('edit_'.length);
-    var oldValue = holder.html();
-    holder.editable(function(value, settings) {
-      $.post('/' + id + '/setName.json', { name : value }, function(data, textStatus) {
-        if(data.success == 'True') {
-          var dropdown = $("#portfolio").get(0);
-          $(dropdown.options[dropdown.selectedIndex]).html(value);
-          val = value;
-        } else {
-          alert("Something went wrong...sorry");
-          val = oldValue;
-        }
-        
-        holder.html(val);
-      }, 'json');
-      
-      return "Saving..."
-    }, {
-      tooltip   : 'Click to edit...',
-      onblur    : 'submit',
-      cssclass  : 'edit-portfolio-form',
-      width     : '160',
-      height    : '28'
-    });
+  $("#editPortfolioName").click(function(e) {
+    e.preventDefault();
+    $("SELECT.selectPortfolio,#editPortfolioName").hide();
+    $("#portfolioNameForm").css("display", 'inline');
+    $("INPUT.selectPortfolio").focus();
   });
   
-  $(".edit-portfolio").mouseenter(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", true); });
-  $(".edit-portfolio").mouseleave(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
-  $(".edit-portfolio").click(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
-  
-  $("#seeAllTransactions A").click(function(e) {
+  $("#cancelPortfolioName").click(function (e) {
     e.preventDefault();
-    $(".transactionRow").show();
-    $("#seeAllTransactions").hide();
+    $("#portfolioNameForm").hide();
+    $("SELECT.selectPortfolio,#editPortfolioName").show();
+  });
+  
+  $("#setPortfolioName").click(function (e) {
+    e.preventDefault();
+    var id = $(this).val();
+    var value = $("INPUT.selectPortfolio").val();
+    $.post('/' + id + '/setName.json', { name : value }, function(data, textStatus) {
+      if(data.success != 'True') {
+        alert("Something went wrong...sorry");
+        return;
+      }
+      
+      var dropdown = $(".selectPortfolio").get(0);
+      $(dropdown.options[dropdown.selectedIndex]).html(value);
+      
+      $("#portfolioNameForm").hide();
+      $("SELECT.selectPortfolio,#editPortfolioName").show();
+    }, 'json');
   });
   
   var previousSelectedPortfolio;
-  $("#portfolio").focus(function() {
+  $("SELECT.selectPortfolio").focus(function() {
     previousSelectedPortfolio = $(this).val();
   }).change(function () {
     if ($(this).val() == '') {

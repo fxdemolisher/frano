@@ -245,7 +245,7 @@ def portfolio_positions(request, user, portfolio, is_sample):
   positions = get_positions(symbols, quotes, transactions)
   summary = get_summary(positions, transactions)
   
-  return render_to_response('positions.html', { 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
+  return render_to_response('positions.html', { 'portfolio' : portfolio, 'positions': positions, 'summary' : summary, 'current_tab' : 'positions' }, context_instance = RequestContext(request))
 
 @login_required_decorator
 @portfolio_manipilation_decorator
@@ -276,7 +276,8 @@ def portfolio_transactions(request, user, portfolio, is_sample):
   context = {
       'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
       'portfolio' : portfolio, 
-      'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ], 
+      'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ],
+      'current_tab' : 'transactions', 
     }
   
   return render_to_response('transactions.html', context, context_instance = RequestContext(request))
@@ -314,7 +315,7 @@ def import_transactions(request, portfolio, is_sample):
       type = request.POST.get('type')
       transactions = parse_transactions(type, request.FILES['file'])
     
-  return render_to_response('importTransactions.html', { 'portfolio' : portfolio, 'transactions' : transactions}, context_instance = RequestContext(request))  
+  return render_to_response('importTransactions.html', { 'portfolio' : portfolio, 'transactions' : transactions, 'current_tab' : 'import'}, context_instance = RequestContext(request))  
 
 @portfolio_manipilation_decorator
 def process_import_transactions(request, portfolio, is_sample):
@@ -474,7 +475,7 @@ def get_positions(symbols, quotes, transactions):
     
     total_market_value += position.market_value
     
-    if position.market_value <> 0.0:
+    if position.symbol == Quote.CASH_SYMBOL or position.market_value <> 0.0:
       positions.append(position)
 
   for position in positions:
