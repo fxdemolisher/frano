@@ -11,6 +11,7 @@ import os
 urlpatterns = patterns('frano.views',
   (r'^$', 'index'),
   (r'^index.html', 'index'),
+  (r'^demo.html', 'demo'),
   (r'^legal.html', 'legal'),
   (r'^feedback.html', 'feedback'),
   (r'^login.html', 'login'),

@@ -172,7 +172,7 @@ $(function() {
     previousSelectedPortfolio = $(this).val();
   }).change(function () {
     if ($(this).val() == '') {
-      location.href = "/index.html"
+      location.href = "/demo.html"
     } else {
       var tester = new RegExp("^(.*/)" + previousSelectedPortfolio + "(/\\w+\\.html)$", "gi");
       if(tester.exec(location.href) != null) {

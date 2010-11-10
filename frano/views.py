@@ -81,6 +81,15 @@ def login_required_decorator(view_function):
 #---------/
 
 def index(request):
+  user_id = request.session.get('user_id')
+  if user_id != None:
+    portfolio = Portfolio.objects.filter(user__id__exact = user_id)[0]
+    return redirect("/%s/positions.html" % portfolio.id)
+  
+  else:
+    return redirect("/demo.html")
+
+def demo(request):
   portfolio = get_sample_portfolio(request)
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
@@ -96,7 +105,7 @@ def index(request):
   
   transactions = paginator.page(max(1, min(page, paginator.num_pages)))
   
-  return render_to_response('index.html', { 'portfolio' : portfolio, 'positions': positions, 'transactions' : transactions, 'summary' : summary }, context_instance = RequestContext(request))
+  return render_to_response('demo.html', { 'portfolio' : portfolio, 'positions': positions, 'transactions' : transactions, 'summary' : summary }, context_instance = RequestContext(request))
 
 def legal(request):
   return render_to_response('legal.html', { }, context_instance = RequestContext(request))
@@ -113,7 +122,7 @@ def login(request):
     token = request.GET.get('token')
     
   if token == None:
-    return redirect("/index.html?loginFailed=true")
+    return redirect("/demo.html?loginFailed=true")
   
   u = None
   try:
@@ -121,7 +130,7 @@ def login(request):
     auth_info = json.loads(u.read())
     status = auth_info['stat']
     if status != 'ok':
-      return redirect("/index.html?loginFailed=true")
+      return redirect("/demo.html?loginFailed=true")
     
     profile = auth_info['profile']
     identifier = profile['identifier']
@@ -554,7 +563,7 @@ def xirr(dates, payments):
 
 def redirect_to_portfolio(action, portfolio, is_sample):
   if is_sample:
-    return redirect("/index.html")
+    return redirect("/demo.html")
   
   else:
     return redirect("/%d/%s.html" % (portfolio.id, action))
