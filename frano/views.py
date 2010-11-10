@@ -105,7 +105,15 @@ def demo(request):
   
   transactions = paginator.page(max(1, min(page, paginator.num_pages)))
   
-  return render_to_response('demo.html', { 'portfolio' : portfolio, 'positions': positions, 'transactions' : transactions, 'summary' : summary }, context_instance = RequestContext(request))
+  context = {
+      'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
+      'portfolio' : portfolio, 
+      'positions': positions, 
+      'transactions' : transactions, 
+      'summary' : summary
+    }
+  
+  return render_to_response('demo.html', context, context_instance = RequestContext(request))
 
 def legal(request):
   return render_to_response('legal.html', { }, context_instance = RequestContext(request))
@@ -270,6 +278,7 @@ def portfolio_remove(request, user, portfolio, is_sample):
 @portfolio_manipilation_decorator
 def portfolio_transactions(request, user, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
+  symbols = set([t.symbol for t in transactions])
   paginator = Paginator(transactions, 10)
   try:
     page = int(request.GET.get('page', '1'))
@@ -277,7 +286,14 @@ def portfolio_transactions(request, user, portfolio, is_sample):
     page = 1
   
   transactions = paginator.page(max(1, min(page, paginator.num_pages)))
-  return render_to_response('transactions.html', { 'portfolio' : portfolio, 'transactions': transactions }, context_instance = RequestContext(request))
+  
+  context = {
+      'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
+      'portfolio' : portfolio, 
+      'transactions' : transactions, 
+    }
+  
+  return render_to_response('transactions.html', context, context_instance = RequestContext(request))
 
 def portfolio_read_only(request, read_only_token):
   portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]

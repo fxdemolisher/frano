@@ -2,6 +2,8 @@
 // Licensed under the MIT license
 // see LICENSE file for copying permission.
 
+var symbols = [];
+
 $(function() {
   $("input").attr("autocomplete","off"); 
   
@@ -12,6 +14,8 @@ $(function() {
     });
   })
   
+  $('#symbol').autocomplete({ source: symbols });
+    
   var lastTransactionType = 'BUY';
   $(".newTransactionType").change(function() {
     var val = $(this).val();
