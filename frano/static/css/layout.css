@@ -82,6 +82,7 @@ see LICENSE file for copying permission.
     .holdingsTable thead TD {font-size:12px;font-weight:normal !important;}
     .addNewRow TD {background: url(/img/gradients.png) 0 0 repeat-x;padding-top:9px;}
     .lastRow TD { border-bottom: none; }
+    .positionRow TD { padding-top: 8px; padding-bottom: 8px; }
     
     /*buttons*/
      .addNewPortfolio {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;float:right;margin-top:42px;}
