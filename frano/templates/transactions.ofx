@@ -1,0 +1,131 @@
+OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+  <SIGNONMSGSRSV1>
+    <SONRS>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+      </STATUS>
+      <DTSERVER>{% now "YmdHis" %}.000</DTSERVER>
+      <LANGUAGE>ENG</LANGUAGE>
+    </SONRS>
+  </SIGNONMSGSRSV1>
+  <INVSTMTMSGSRSV1>
+    <INVSTMTTRNRS>
+      <TRNUID>1001</TRNUID>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+      </STATUS>
+      <INVSTMTRS>
+        <DTASOF>{% now "YmdHis" %}.000</DTASOF>
+        <CURDEF>USD</CURDEF>
+        <INVACCTFROM>
+          <BROKERID>frano.carelessmusings.com</BROKERID>
+          <ACCTID>{{ portfolio.name }}</ACCTID>
+        </INVACCTFROM>
+        <INVTRANLIST>
+          <DTSTART>{{ start_date|date:"Ymd" }}000000.000</DTSTART>
+          <DTEND>{{ end_date|date:"Ymd" }}000000.000</DTEND>
+      
+{% for transaction in transactions %}
+    {% ifequal transaction.type "BUY" %}
+
+          <BUYSTOCK>
+            <INVBUY>
+              <INVTRAN>
+                <FITID>{{ transaction.id }}</FITID>
+                <DTTRADE>{{ transaction.as_of_date|date:"Ymd" }}000000.000</DTTRADE>
+              </INVTRAN>
+              <SECID>
+                <UNIQUEID>NYSE:{{ transaction.symbol }}</UNIQUEID>
+                <UNIQUEIDTYPE>TICKER</UNIQUEIDTYPE>
+              </SECID>
+              <UNITS>{{ transaction.quantity }}</UNITS>
+              <UNITPRICE>{{ transaction.price }}</UNITPRICE>
+              <COMMISSION>{{ transaction.commission }}</COMMISSION>
+              <TOTAL>{{ transaction.total }}</TOTAL>
+              <SUBACCTSEC>CASH</SUBACCTSEC>
+              <SUBACCTFUND>CASH</SUBACCTFUND>
+            </INVBUY>
+            <BUYTYPE>BUY</BUYTYPE>
+          </BUYSTOCK>
+          
+  {% endifequal %}
+{% endfor %}
+
+{% for transaction in transactions %}
+    {% ifequal transaction.type "SELL" %}
+
+          <SELLSTOCK>
+            <INVSELL>
+              <INVTRAN>
+                <FITID>{{ transaction.id }}</FITID>
+                <DTTRADE>{{ transaction.as_of_date|date:"Ymd" }}000000.000</DTTRADE>
+              </INVTRAN>
+              <SECID>
+                <UNIQUEID>NYSE:{{ transaction.symbol }}</UNIQUEID>
+                <UNIQUEIDTYPE>TICKER</UNIQUEIDTYPE>
+              </SECID>
+              <UNITS>{{ transaction.quantity }}</UNITS>
+              <UNITPRICE>{{ transaction.price }}</UNITPRICE>
+              <COMMISSION>{{ transaction.commission }}</COMMISSION>
+              <TOTAL>{{ transaction.total }}</TOTAL>
+              <SUBACCTSEC>CASH</SUBACCTSEC>
+              <SUBACCTFUND>CASH</SUBACCTFUND>
+            </INVSELL>
+            <SELLTYPE>SELL</SELLTYPE>
+          </SELLSTOCK>
+
+  {% endifequal %}
+{% endfor %}
+
+{% for transaction in transactions %}
+  {% ifequal transaction.symbol '*CASH' %}
+          <INVBANKTRAN>
+            <STMTTRN>
+              <TRNTYPE>OTHER</TRNTYPE>
+              <DTPOSTED>{{ transaction.as_of_date|date:"Ymd" }}000000.000</DTPOSTED>
+              <TRNAMT>{{ transaction.total }}</TRNAMT>
+              <FITID>{{ transaction.id }}</FITID>
+            </STMTTRN>
+            <SUBACCTFUND>CASH</SUBACCTFUND>
+          </INVBANKTRAN>
+        
+  {% endifequal %}
+{% endfor %}
+
+        </INVTRANLIST>
+      </INVSTMTRS>
+    </INVSTMTTRNRS>
+  </INVSTMTMSGSRSV1>
+  <SECLISTMSGSRSV1>
+    <SECLIST>
+    
+{% for quote in quotes %}
+
+      <STOCKINFO>
+        <SECINFO>
+          <SECID>
+            <UNIQUEID>NYSE:{{ quote.symbol }}</UNIQUEID>
+            <UNIQUEIDTYPE>TICKER</UNIQUEIDTYPE>
+          </SECID>
+          <SECNAME>{{ quote.name }}</SECNAME>
+          <TICKER>{{ quote.symbol }}</TICKER>
+        </SECINFO>
+      </STOCKINFO>
+      
+{% endfor %}
+
+    </SECLIST>
+  </SECLISTMSGSRSV1>
+</OFX>

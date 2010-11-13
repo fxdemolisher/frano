@@ -2,6 +2,17 @@
 
 {% if transaction_sets.0 %}
   <div id="content" >
+    <div class="column-row export-transactions-form">
+      <div class="eight columns">
+       <div class="transactionsCopy">
+         Export all your transactions as: 
+         <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
+         <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
+       </div>
+     </div>
+   </div>
+  </div>
+  <div id="content" >
     <div class="column-row">
       <div class="eight columns">
         <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
@@ -13,7 +24,6 @@
               <td>Qty</td>
               <td>Price</td>
               <td>Total</td>
-              <td class="exportTransactions"><a href="/{{portfolio.id}}/exportTransactions.csv"><img src="/img/csv-export.gif">Export as CSV</a></td>
               <td>&nbsp;</td>
             </tr>
           </thead>
@@ -52,7 +62,6 @@
                     <div class="inline-editable-prompt">click to edit</div>
                   </td>
                   <td><a href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div id="deleteTransaction" class="icon delete"></div></a></td>
-                  <td>&nbsp;</td>
                 </tr>
               {% endfor %}
             {% endfor %}

@@ -29,20 +29,21 @@ see LICENSE file for copying permission.
     
     #header { margin-bottom: 0px; }
     
-    .subNav { }
+    .subNav { height: 21px; }
     
     .subNav LI { 
-      padding: 3px 10px 2px 10px; 
-      margin-right: 5px; 
-      background-color: #FFFFFF; 
+      padding: 3px 10px 2px 10px;
+      margin-right: 0px;
+      margin-left: 2px;  
+      background-color: #CCCCCC; 
       -moz-border-radius-topleft: 5px; 
-      -moz-border-radius-topright: 5px; 
+      -moz-border-radius-topright: 5px;
       border-top-left-radius: 5px; 
       border-top-right-radius: 5px;
       border-bottom: 1px solid #333333;
     }
     
-    .subNav LI.current { border-bottom: 0px; border-bottom: 1px solid #FFFFFF;}
+    .subNav LI.current { border-bottom: 0px; border-bottom: 1px solid #FFFFFF; background-color: #FFFFFF; }
     .subNav LI.current A { font-weight: bold; } 
     
     .subNav LI A { font-size: 14px; color: #3333CC; text-decoration: none; }
@@ -164,4 +165,6 @@ see LICENSE file for copying permission.
     .transactionDuplicate .duplicateText { font-size: 12px; font-weight: normal; color: #FF3333; }
     
     #importTransactionButtonRow { text-align: center; }
+    
+    .export-transactions-form { margin-bottom: 0px; }
     

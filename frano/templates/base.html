@@ -54,12 +54,15 @@
               
               {% ifequal portfolio.user.id user.id %}
                 <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit Name</a>
-              
+                
                 <form id="portfolioNameForm" class="hidden">
                   <input type="text" id="portfolioName" class="selectPortfolio" value="{{ portfolio.name }}" />
                   <button class="navButton" id="setPortfolioName" value="{{portfolio.id}}">Set</button>
                   <button class="navButton" id="cancelPortfolioName">Cancel</button>
                 </form>
+                
+                <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
+                <a href="/createPortfolio.html" class="buttonLink navLink">Create New</a>
               {% endifequal %}
 
             {% else %}
@@ -91,12 +94,6 @@
               <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
               <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
               <li {% ifequal current_tab 'import' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/importTransactions.html">Import</a></li>
-              
-              {% ifnotequal portfolios.count 1 %}
-                <li style="float: right;"><a href="/{{portfolio.id}}/remove.html" id="deletePortfolio"><span class="deletePortfolio">X</span> Delete Portfolio</a></li>
-              {% endifnotequal %}
-              
-              <li style="float: right;"><a href="/createPortfolio.html"><span class="createPortfolio">+</span> Create a Portfolio</a></li>
             </ul>
           </div>      
         {% endifequal %}

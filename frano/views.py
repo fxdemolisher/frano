@@ -13,6 +13,7 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
+from django.template.loader import render_to_string
 from django.contrib.sessions.models import Session
 
 from import_export import transactions_as_csv, parse_transactions
@@ -297,13 +298,33 @@ def price_quote(request):
   quote = Quote.by_symbol(request.GET.get('symbol'))
   return HttpResponse("{ \"price\": %f }" % quote.price_as_of(as_of_date), mimetype="application/json")
 
-@login_required_decorator
 @portfolio_manipilation_decorator
-def export_transactions(request, user, portfolio, is_sample):
-  response = HttpResponse(mimetype = 'text/csv')
-  response['Content-Disposition'] = 'attachment; filename=transactions-%s-%s.csv' % (portfolio.name, datetime.now().strftime('%Y%m%d'))
-
-  transactions_as_csv(response, portfolio)
+def export_transactions(request, portfolio, is_sample, format):
+  format = format.lower()
+  name = ('DEMO' if is_sample else portfolio.name)
+  
+  response = HttpResponse(mimetype = ('text/%s' % format))
+  response['Content-Disposition'] = 'attachment; filename=transactions-%s-%s.%s' % (name, datetime.now().strftime('%Y%m%d'), format)
+  
+  if format == 'csv':
+    transactions_as_csv(response, portfolio)
+  elif format == 'ofx':
+    transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
+    for transaction in transactions:
+      transaction.commission = abs(transaction.total - (transaction.price * transaction.quantity))
+      transaction.quantity = ((-transaction.quantity) if transaction.type == 'SELL' else transaction.quantity)
+      transaction.total = ((-transaction.total) if transaction.type == 'BUY' or transaction.type == 'WITHDRAW' else transaction.total)
+      
+    quotes = [ Quote.by_symbol(symbol) for symbol in set([t.symbol for t in transactions]).difference([Quote.CASH_SYMBOL]) ]
+    
+    response.write(render_to_string('transactions.ofx', {
+        'portfolio' : portfolio,
+        'transactions': transactions,
+        'start_date' : min([t.as_of_date for t in transactions]),
+        'end_date' : max([t.as_of_date for t in transactions]),
+        'quotes' : quotes, 
+      }))
+    
   return response
 
 @portfolio_manipilation_decorator
