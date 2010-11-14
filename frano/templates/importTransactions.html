@@ -19,7 +19,36 @@
         <div class="transactionsCopy">
           <strong class="highlight">Use this form to import transactions into your portfolio:</strong>
           <br class="clear" />
+          
+          {% ifequal request.GET.requestSent "true" %}
+            Thank you for helping us impove the import process, we will let you know as soon as we are done adding your
+            file type to the import types. For now, feel free to play around with the sytem.
+          {% else %}
+            If you do not see a compatible format in the dropdown below, <a href="#" id="showImportRequestForm">switch to a form</a> use can use 
+            to let us know what kind of find you are trying to import. We will implement this type of import as soon as possible and let you know.
+          {% endifequal %}
+          <br class="clear" />
         </div>
+        
+        <form action="/{{portfolio.id}}/requestImportType.html" method="post" enctype="multipart/form-data" class="hidden" id="requestTransactionsForm">
+          <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <td>Where is the file from?:</td>
+                <td>Let us know what it looks like:</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" name="type" /></td>
+                <td><input type="file" name="file" /></td>
+                <td><button class="importButton">Send Request</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
         
         <form action="/{{portfolio.id}}/importTransactions.html" method="post" id="importTransactionsForm" enctype="multipart/form-data">
           <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">

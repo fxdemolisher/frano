@@ -198,6 +198,12 @@ $(function() {
     }
   });
   
+  $("#showImportRequestForm").click(function(e) {
+    e.preventDefault();
+    $("#importTransactionsForm").hide();
+    $("#requestTransactionsForm").show();
+  });
+  
 });
 
 function scanForBannerMessages() {

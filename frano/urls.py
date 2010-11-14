@@ -27,6 +27,7 @@ urlpatterns = patterns('frano.views',
   (r'^(?P<portfolio_id>\d+)/exportTransactions.(?P<format>\w{3})', 'export_transactions'),
   (r'^(?P<portfolio_id>\d+)/importTransactions.html', 'import_transactions'),
   (r'^(?P<portfolio_id>\d+)/processImportTransactions.html', 'process_import_transactions'),
+  (r'^(?P<portfolio_id>\d+)/requestImportType.html', 'request_import_type'),
   (r'^(?P<read_only_token>\w{20})/', 'portfolio_read_only'),
   (r'^priceQuote.json', 'price_quote'),
 )

@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta
 from urllib import urlopen
 
 from django import forms
+from django.core.mail import EmailMessage
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.forms.formsets import formset_factory
 from django.http import HttpResponse
@@ -375,6 +376,32 @@ def process_import_transactions(request, portfolio, is_sample):
     
   return redirect_to_portfolio('transactions', portfolio, is_sample)
 
+@portfolio_manipilation_decorator
+def request_import_type(request, portfolio, is_sample):
+  form = RequestImportForm(request.POST, request.FILES)
+  if not form.is_valid():
+    raise Exception('Bad file for request');
+    
+  type = request.POST.get('type')
+  uploaded_file = request.FILES['file']
+  body = "Request for import for type: %s\nRequest for portfolio: %s (%d)\nRequest made from:%s" % (
+      type, 
+      ('Demo' if is_sample else portfolio.name), 
+      portfolio.id, 
+      ('Demo user' if is_sample else portfolio.user.email)
+    )
+      
+  email = EmailMessage("Import type requested",
+      body,
+      "no-reply@frano.carelessmusings.com",
+      [ "gennadiy@apps.carelessmusings.com" ],
+      [ ])
+  
+  email.attach(uploaded_file.name, uploaded_file.read(), uploaded_file.content_type)
+  email.send(fail_silently = False)
+  
+  return redirect("/%d/importTransactions.html?requestSent=true" % portfolio.id)
+
 #--------\
 #  FORMS |
 #--------/
@@ -408,6 +435,10 @@ class ImportForm(forms.Form):
     ]
   
   type = forms.ChoiceField(choices = TYPE_CHOICES)
+  file = forms.FileField()
+  
+class RequestImportForm(forms.Form):
+  type = forms.CharField(max_length = 255)
   file = forms.FileField()
   
 class ImportTransactionForm(forms.Form):
@@ -602,12 +633,12 @@ def xirr(dates, payments):
   
   return (guess if limit > 0 else None)
 
-def redirect_to_portfolio(action, portfolio, is_sample):
+def redirect_to_portfolio(action, portfolio, is_sample, query_string = None):
   if is_sample:
-    return redirect("/demo.html")
+    return redirect("/demo.html%s" % ('' if query_string == None else "?%s" % query_string))
   
   else:
-    return redirect("/%d/%s.html" % (portfolio.id, action))
+    return redirect("/%d/%s.html%s" % (portfolio.id, action, ('' if query_string == None else "?%s" % query_string)))
   
 #-----------------\
 #  VALUE OBJECTS  |
