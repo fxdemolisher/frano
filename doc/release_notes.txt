@@ -1,0 +1,52 @@
+/================\
+| Release 0.4    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+#42 - Improvements of transaction form
+      https://github.com/fxdemolisher/frano/issues#issue/42
+      
+#46 - Changes to transaction list, removing pagination 
+      https://github.com/fxdemolisher/frano/issues#issue/46
+      
+#36 - Improvements in navigation (in place name edit above, tabs)
+      https://github.com/fxdemolisher/frano/issues#issue/36
+
+#33 - Import process will now detect duplicate transactions
+      https://github.com/fxdemolisher/frano/issues#issue/33
+      
+#43 - Adding OFX transaction export
+      https://github.com/fxdemolisher/frano/issues#issue/43
+
+#47 - Release notes
+      https://github.com/fxdemolisher/frano/issues#issue/47
+      
+#35 - Ability to request an import type
+      https://github.com/fxdemolisher/frano/issues#issue/35
+
+Fixes
+-------------------------------------------------------------------------------
+#31 - User should stay on the same segment when using switching dropdown
+      https://github.com/fxdemolisher/frano/issues#issue/31
+      
+#34 - Large summary values causing wrapping
+      https://github.com/fxdemolisher/frano/issues#issue/34
+
+#40 - Transaction fields clearing when switching types
+      https://github.com/fxdemolisher/frano/issues#issue/40
+      
+#39 - Index page should redirect to either a portfolio or the demo
+      https://github.com/fxdemolisher/frano/issues#issue/39
+
+#45 - Sold positions are being shown
+      https://github.com/fxdemolisher/frano/issues#issue/45
+      
+Infrastructure
+-------------------------------------------------------------------------------
+#37 - Switch to using floats instead of Decimal
+      https://github.com/fxdemolisher/frano/issues#issue/37
+      
+#29 - Added price history to quote storage
+      https://github.com/fxdemolisher/frano/issues#issue/29
+      

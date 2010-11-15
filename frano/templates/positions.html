@@ -3,14 +3,6 @@
 
 {% block title %}Frano: Positions - {{ portfolio.name }}{% endblock %}
 
-{% block pageHeading %}
-  <div>
-    Positions - 
-    <div class="edit-portfolio" id="edit_{{ portfolio.id }}">{{ portfolio.name }}</div>
-    <div class="edit-portfolio-prompt">click to edit</div>
-  </div>
-{% endblock %}
-
 {% block mainContent %}
   <div id="mainContent" >
     {% include "inc_summary.html" %}

@@ -19,7 +19,36 @@
         <div class="transactionsCopy">
           <strong class="highlight">Use this form to import transactions into your portfolio:</strong>
           <br class="clear" />
+          
+          {% ifequal request.GET.requestSent "true" %}
+            Thank you for helping us impove the import process, we will let you know as soon as we are done adding your
+            file type to the import types. For now, feel free to play around with the sytem.
+          {% else %}
+            If you do not see a compatible format in the dropdown below, <a href="#" id="showImportRequestForm">switch to a form</a> use can use 
+            to let us know what kind of find you are trying to import. We will implement this type of import as soon as possible and let you know.
+          {% endifequal %}
+          <br class="clear" />
         </div>
+        
+        <form action="/{{portfolio.id}}/requestImportType.html" method="post" enctype="multipart/form-data" class="hidden" id="requestTransactionsForm">
+          <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <td>Where is the file from?:</td>
+                <td>Let us know what it looks like:</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" name="type" /></td>
+                <td><input type="file" name="file" /></td>
+                <td><button class="importButton">Send Request</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
         
         <form action="/{{portfolio.id}}/importTransactions.html" method="post" id="importTransactionsForm" enctype="multipart/form-data">
           <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
@@ -91,18 +120,21 @@
                   <input type="hidden" name="form-{{ forloop.counter0 }}-price" value="{{ transaction.price }}" />
                   <input type="hidden" name="form-{{ forloop.counter0 }}-total" value="{{ transaction.total }}" />
                   
-                  <tr>
+                  <tr {% if transaction.is_duplicate %}class="transactionDuplicate"{% endif %}>
                     <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type }}</div></td>
                     <td>{{ transaction.as_of_date|date:'m/d/Y' }}</td>
                     <td>{{ transaction.symbol }}</td>
                     <td>{{ transaction.quantity|num_format }}</td>
                     <td>${{ transaction.price|num_format }}</td>
                     <td>${{ transaction.total|num_format }}</td>
-                    <td><input type="checkbox" name="form-{{ forloop.counter0 }}-exclude" value="true" /></td>
+                    <td>
+                      <input type="checkbox" name="form-{{ forloop.counter0 }}-exclude" value="true" {% if transaction.is_duplicate %}checked="checked"{% endif %}/>
+                      {% if transaction.is_duplicate %}<span class="duplicateText">Possible Duplicate</span>{% endif %}
+                    </td>
                   </tr>
                 {% endfor %}
   
-                <tr><td colspan="7"><button class="importButton">Import Transactions</button></td></tr>
+                <tr><td colspan="7" id="importTransactionButtonRow"><button class="importButton">Import Transactions</button></td></tr>
                   
               </tbody>
             </table>

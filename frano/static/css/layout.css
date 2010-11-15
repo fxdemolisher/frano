@@ -25,7 +25,34 @@ see LICENSE file for copying permission.
     .edit-portfolio { display: inline; }
     .edit-portfolio-prompt { font-weight: normal; font-style: italic; font-size: 14px; visibility: hidden; display: inline; color: #FFFFFF; vertical-align: middle; }
     .edit-portfolio-form { display: inline; }
-    .edit-portfolio-form INPUT { font-size: 28px; }
+    .edit-portfolio-form INPUT { font-size: 28px; width: 220px; }
+    
+    #header { margin-bottom: 0px; }
+    
+    .subNav { height: 21px; }
+    
+    .subNav LI { 
+      padding: 3px 10px 2px 10px;
+      margin-right: 0px;
+      margin-left: 2px;  
+      background-color: #CCCCCC; 
+      -moz-border-radius-topleft: 5px; 
+      -moz-border-radius-topright: 5px;
+      border-top-left-radius: 5px; 
+      border-top-right-radius: 5px;
+      border-bottom: 1px solid #333333;
+    }
+    
+    .subNav LI.current { border-bottom: 0px; border-bottom: 1px solid #FFFFFF; background-color: #FFFFFF; }
+    .subNav LI.current A { font-weight: bold; } 
+    
+    .subNav LI A { font-size: 14px; color: #3333CC; text-decoration: none; }
+    
+    .subNav .createPortfolio { color: #00CC00; font-weight: bold; font-size: 15px; }
+    .subNav .deletePortfolio { color: #FF0000; font-weight: bold; font-size: 15px; }
+    
+    .selectPortfolio { font-size: 22px; vertical-align: middle; width: 260px; }
+      
     
 /*  --------------------------------------------------
   =Portfolio
@@ -39,11 +66,11 @@ see LICENSE file for copying permission.
     /*forms*/
     #myPortfolios {position:absolute;top:52px;font-size:50px;display:none;}
     /*lists*/
-    .importantData {color:#000;}
-    .importantData .name {font-size:13px;font-weight:bold;}
-    .importantData .value {font-size:45px;margin-bottom:7px;}
-    .importantData .related {color:#666;}
-    .importantData .related STRONG {font-weight:bold;}
+    .importantData {color:#000; white-space:nowrap;}
+    .importantData .name {font-size:14px;font-weight:bold; white-space:nowrap;}
+    .importantData .value {font-size:40px;margin-bottom:7px; white-space:nowrap;}
+    .importantData .related {color:#666; white-space:nowrap;}
+    .importantData .related STRONG {font-weight:bold; white-space:nowrap;}
     
     .paging {padding-left: 305px; margin: 0 auto;font-size:15px;white-space:nowrap;}
     .pagingButton {background: url(/img/gradients.png) 0 -43px repeat-x;padding:5px;cursor:pointer;color:#FFF;cursor:pointer;-moz-border-radius: 3px;-webkit-border-radius: 3px;}
@@ -55,6 +82,7 @@ see LICENSE file for copying permission.
     .holdingsTable thead TD {font-size:12px;font-weight:normal !important;}
     .addNewRow TD {background: url(/img/gradients.png) 0 0 repeat-x;padding-top:9px;}
     .lastRow TD { border-bottom: none; }
+    .positionRow TD { padding-top: 8px; padding-bottom: 8px; }
     
     /*buttons*/
      .addNewPortfolio {background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px;float:right;margin-top:42px;}
@@ -128,4 +156,18 @@ see LICENSE file for copying permission.
     .exportTransactions A IMG { vertical-align: text-top; }
     
     .importButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: text-top; }
+    
+    .ui-menu-item { font-size: 13px; }
+    
+    #seeAllTransactions TD { text-align: center }
+    #seeAllTransactions A { font-size: 14px; color: #3333CC; }
+    
+    .transactionDuplicate { background-color: rgba(255, 0, 0, 0.1); }
+    .transactionDuplicate .duplicateText { font-size: 12px; font-weight: normal; color: #FF3333; }
+    
+    #importTransactionButtonRow { text-align: center; }
+    
+    .export-transactions-form { margin-bottom: 0px; }
+    
+    #showImportRequestForm { color: #3333CC; }
     

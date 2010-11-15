@@ -1,7 +1,6 @@
 import codecs, csv
 
 from datetime import datetime
-from decimal import Decimal
 
 from models import Quote, Transaction
 
@@ -99,12 +98,12 @@ def parse_frano_transactions(reader):
   parsed = []
   for row in reader:
     parsed.append({
-        'date' : datetime.strptime(row[0], '%m/%d/%Y'),
+        'date' : datetime.strptime(row[0], '%m/%d/%Y').date(),
         'type' : row[1],
         'symbol' : row[2],
-        'quantity' : Decimal(row[3]),
-        'price' : Decimal(row[4]),
-        'total' : Decimal(row[5]),
+        'quantity' : float(row[3]),
+        'price' : float(row[4]),
+        'total' : float(row[5]),
       });
       
   return parsed
@@ -118,22 +117,22 @@ def parse_google_transactions(reader):
     
     if type == 'DEPOSIT' or type == 'WITHDRAW':
       symbol = Quote.CASH_SYMBOL
-      quantity = abs(Decimal(row[6]))
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = abs(float(row[6]))
+      price = 1.0
+      commission = 0.0
       
     else:
       symbol = row[0]
-      quantity = Decimal(row[4])
-      price = Decimal(row[5])
-      commission = Decimal(row[7])
+      quantity = float(row[4])
+      price = float(row[5])
+      commission = float(row[7])
     
-    commission_multiplier = Decimal('1.0')
+    commission_multiplier = 1.0
     if type == 'SELL':
-      commission_multiplier = Decimal('-1.0')
+      commission_multiplier = -1.0
         
     parsed.append({
-        'date' : datetime.strptime(row[3], '%b %d, %Y'),
+        'date' : datetime.strptime(row[3], '%b %d, %Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -165,32 +164,32 @@ def parse_ameritrade_transactions(reader):
     if symbol_field != '' and price_field != '':
       symbol = symbol_field
       type = ('SELL' if float(amount_field) >= 0 else 'BUY')
-      quantity = Decimal(quantity_field)
-      price = Decimal(price_field)
-      commission = Decimal(commission_field)
+      quantity = float(quantity_field)
+      price = float(price_field)
+      commission = float(commission_field)
       
     # symbol is there, but price is not, dividend
     elif symbol_field != '':
       symbol = symbol_field
       type = 'ADJUST'
-      quantity = Decimal(amount_field)
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = float(amount_field)
+      price = 1.0
+      commission = 0.0
     
     # otherwise its a cash movement
     else:
       symbol = Quote.CASH_SYMBOL
       type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
-      quantity = (abs(Decimal(amount_field)))
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = (abs(float(amount_field)))
+      price = 1.0
+      commission = 0.0
     
-    commission_multiplier = Decimal('1.0')
+    commission_multiplier = 1.0
     if type == 'SELL':
-      commission_multiplier = Decimal('-1.0')
+      commission_multiplier = -1.0
     
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -220,36 +219,36 @@ def parse_zecco_transactions(reader):
     elif account_type == 'General Margin' and transaction_type == 'Cash Journal':
       symbol = Quote.CASH_SYMBOL
       type = ('DEPOSIT' if float(net_amount_field) >= 0 else 'WITHDRAW')
-      quantity = (abs(Decimal(net_amount_field)))
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = (abs(float(net_amount_field)))
+      price = 1.0
+      commission = 0.0
     
     # buys/sells are marked by their transaction types
     elif transaction_type == 'B' or transaction_type == 'S':
       symbol = symbol_field
       type = ('SELL' if transaction_type == 'S' else 'BUY')
-      quantity = Decimal(quantity_field)
-      price = Decimal(price_field)
-      commission = abs(Decimal(net_amount_field)) - (quantity * price)
+      quantity = float(quantity_field)
+      price = float(price_field)
+      commission = abs(float(net_amount_field)) - (quantity * price)
       
     # everything else on the margin account or cash is an adjustment
     elif account_type == 'General Margin' or account_type == 'Cash':
       symbol = Quote.CASH_SYMBOL
       type = 'ADJUST'
-      quantity = Decimal(net_amount_field)
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = float(net_amount_field)
+      price = 1.0
+      commission = 0.0
       
     # otherwise just skip it for now
     else:
       continue
       
-    commission_multiplier = Decimal('1.0')
+    commission_multiplier = 1.0
     if type == 'SELL':
-      commission_multiplier = Decimal('-1.0')
+      commission_multiplier = -1.0
     
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -274,49 +273,49 @@ def parse_scottrade_transactions(reader):
     if action_field == 'IRA Receipt' or action_field == 'Journal':
       symbol = Quote.CASH_SYMBOL
       type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
-      quantity = abs(Decimal(amount_field))
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = abs(float(amount_field))
+      price = 1.0
+      commission = 0.0
     
     # buys and sells
     elif action_field == 'Buy' or action_field == 'Sell':
       symbol = symbol_field
       type = ('SELL' if action_field == 'Sell' else 'BUY')
-      quantity = abs(Decimal(quantity_field))
-      price = Decimal(price_field)
-      commission = abs(Decimal(commission_field))
+      quantity = abs(float(quantity_field))
+      price = float(price_field)
+      commission = abs(float(commission_field))
       
     # incoming transfers mimic a deposit and a buy
     elif action_field == 'Transfer In':
-      quantity = Decimal(quantity_field)
-      price = Decimal(price_field) / quantity
+      quantity = float(quantity_field)
+      price = float(price_field) / quantity
       parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : 'DEPOSIT',
         'symbol' : Quote.CASH_SYMBOL,
         'quantity' : (price * quantity),
-        'price' : Decimal('1.0'),
+        'price' : 1.0,
         'total' : (price * quantity),
       });
       
       symbol = symbol_field
       type = 'BUY'
-      commission = Decimal('0.0')
+      commission = 0.0
     
     # everything else is an adjustment
     else:
       symbol = Quote.CASH_SYMBOL
       type = 'ADJUST'
-      quantity = Decimal(amount_field)
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = float(amount_field)
+      price = 1.0
+      commission = 0.0
       
-    commission_multiplier = Decimal('1.0')
+    commission_multiplier = 1.0
     if type == 'SELL':
-      commission_multiplier = Decimal('-1.0')
+      commission_multiplier = -1.0
       
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
@@ -341,51 +340,51 @@ def parse_charles_transactions(reader):
     if symbol_field == '' and price_field == '':
       symbol = Quote.CASH_SYMBOL
       type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
-      quantity = abs(Decimal(amount_field))
-      price = Decimal('1.0')
-      commission = Decimal('0.0')
+      quantity = abs(float(amount_field))
+      price = 1.0
+      commission = 0.0
     
     # buys and sells
     elif action_field == 'Buy' or action_field == 'Sell':
       symbol = symbol_field
       type = ('SELL' if action_field == 'Sell' else 'BUY')
-      quantity = Decimal(quantity_field)
-      price = Decimal(price_field)
-      commission = (Decimal(commission_field) if commission_field != '' else Decimal('0.0'))
+      quantity = float(quantity_field)
+      price = float(price_field)
+      commission = (float(commission_field) if commission_field != '' else 0.0)
       
     # transfers have a symbol and quantity, and little else
     elif symbol_field != '' and quantity_field != '' and amount_field == '':
       as_of_date = datetime.strptime(date_field, '%m/%d/%Y')
       symbol = symbol_field
-      quantity = Decimal(quantity_field)
-      price = Decimal(str(Quote.historical_price_by_symbol(symbol, as_of_date)))
+      quantity = float(quantity_field)
+      price = Quote.by_symbol(symbol).price_as_of(as_of_date)
                           
       parsed.append({
-        'date' : as_of_date,
+        'date' : as_of_date.date(),
         'type' : 'DEPOSIT',
         'symbol' : Quote.CASH_SYMBOL,
         'quantity' : (price * quantity),
-        'price' : Decimal('1.0'),
+        'price' : 1.0,
         'total' : (price * quantity),
       });
       
       type = 'BUY'
-      commission = Decimal('0.0')
+      commission = 0.0
       
     # everything else is an adjustment
     else:
       symbol = Quote.CASH_SYMBOL
       type = 'ADJUST'
-      quantity = Decimal(amount_field)
-      price = Decimal('1.0')
-      commission = Decimal('0')
+      quantity = float(amount_field)
+      price = 1.0
+      commission = 0.0
       
-    commission_multiplier = Decimal('1.0')
+    commission_multiplier = 1.0
     if type == 'SELL':
-      commission_multiplier = Decimal('-1.0')
+      commission_multiplier = -1.0
       
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y'),
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,

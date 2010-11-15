@@ -1,5 +1,9 @@
 {% load frano_filters %}
 
+<script type="text/javascript">
+  symbols = [ {% for symbol in symbols %} '{{ symbol }}', {% endfor %} ];
+</script>
+
 <div id="content" >
   <div class="column-row">
     <div class="eight columns">
@@ -15,17 +19,11 @@
       
       <form action="/{{portfolio.id}}/addTransaction.html" method="post" id="addTransactionForm">
         <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
-          <thead>
-            <tr>
-              <td>Date:</td>
-              <td colspan="5">Transaction Type:</td>
-            </tr>
-          </thead>
           <tbody>
             <tr>
-              <td><input type="text" name="as_of_date" id="as_of_date" size="8" value="{{ today|date:'m/d/Y' }}" class="validate[required]"/></td>
-              <td><input type="radio" name="type" id="typeBuy" value="BUY" checked="checked" class="newTransactionType validate[required]" /> Buy</td>
-              <td><input type="radio" name="type" id="typeSell" value="SELL" class="newTransactionType validate[required]" /> Sell</td>
+              <td>Transaction Type:</td>
+              <td><input type="radio" name="type" id="typeBuy" value="BUY" checked="checked" class="newTransactionType validate[required]" /> Buy Securities</td>
+              <td><input type="radio" name="type" id="typeSell" value="SELL" class="newTransactionType validate[required]" /> Sell Securities</td>
               <td><input type="radio" name="type" id="typeDeposit" value="DEPOSIT" class="newTransactionType validate[required]" /> Deposit Cash</td>
               <td><input type="radio" name="type" id="typeWithdraw" value="WITHDRAW" class="newTransactionType validate[required]" /> Withdraw Cash</td>
               <td><input type="radio" name="type" id="typeAdjust" value="ADJUST" class="newTransactionType validate[required]" /> Adjust Cash</td>
@@ -35,6 +33,7 @@
         <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
           <thead>
             <tr>
+              <td>Date:</td>
               <td>Symbol:</td>
               <td>Quantity:</td>
               <td>Price:</td>
@@ -45,6 +44,8 @@
           </thead>
           <tbody>
             <tr>
+              <td><input type="text" name="as_of_date" id="as_of_date" size="10" value="{{ today|date:'m/d/Y' }}" class="validate[required]"/></td>
+              
               <td><input type="text" name="symbol" id="symbol" size="5" class="securitiesField validate[required,length[1,5],noSpecialCharacters]"/></td>
               <td><input type="text" name="quantity" id="quantity" size="8" class="securitiesField validate[required,length[1,9],onlyNumber]"/></td>
               <td>

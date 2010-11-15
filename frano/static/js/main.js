@@ -2,6 +2,8 @@
 // Licensed under the MIT license
 // see LICENSE file for copying permission.
 
+var symbols = [];
+
 $(function() {
   $("input").attr("autocomplete","off"); 
   
@@ -12,14 +14,23 @@ $(function() {
     });
   })
   
+  $('#symbol').autocomplete({ source: symbols });
+    
+  var lastTransactionType = 'BUY';
   $(".newTransactionType").change(function() {
     var val = $(this).val();
-    if(val == 'DEPOSIT' || val == 'WITHDRAW' || val == 'ADJUST') {
-      $(".securitiesField").attr("disabled", "disabled").val("");
-      $(".cashField").attr("disabled", "").filter('[type=text]').val("");
-    } else {
-      $(".securitiesField").attr("disabled", "").val("");
-      $(".cashField").attr("disabled", "disabled").filter('[type=text]').val("");
+    var isCash = (val == 'DEPOSIT' || val == 'WITHDRAW' || val == 'ADJUST');
+    var wasCash = (lastTransactionType == 'DEPOSIT' || lastTransactionType == 'WITHDRAW' || lastTransactionType == 'ADJUST');
+    lastTransactionType = val;
+    
+    if(isCash != wasCash) {
+      if(isCash) {
+        $(".securitiesField").attr("disabled", "disabled").val("");
+        $(".cashField").attr("disabled", "").filter('[type=text]').val("");
+      } else {
+        $(".securitiesField").attr("disabled", "").val("");
+        $(".cashField").attr("disabled", "disabled").filter('[type=text]').val("");
+      }
     }
     
     $(".securitiesField").each(function (idx, obj) { $.validationEngine.closePrompt(obj) });
@@ -34,8 +45,7 @@ $(function() {
   });
   
   $("#quantity, #price, #comission").change(function() {
-    var total = (valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0);
-    $('#total').val(total);
+    $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0));
   });
   
   $("#addTransaction").click(function () {
@@ -81,6 +91,7 @@ $(function() {
     $.getJSON('/priceQuote.json', { day: asOf.getDate(), month: asOf.getMonth() + 1, year: asOf.getFullYear(), symbol: symbol }, function(data, textStatus) {
       if(textStatus == 'success' && data.price > 0) {
         $('#price').val(data.price);
+        $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0));
       }
     });
     
@@ -90,6 +101,12 @@ $(function() {
     if(!confirm('Are you sure you wish to remove this transaction?')) {
       e.preventDefault();
     }
+  });
+  
+  $("#seeAllTransactions A").click(function(e) {
+    e.preventDefault();
+    $(".transactionRow").show();
+    $("#seeAllTransactions").hide();
   });
   
   $(".inline-editable").each(function() {
@@ -128,43 +145,50 @@ $(function() {
   $(".inline-editable").mouseleave(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
   $(".inline-editable").click(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
   
-  $(".edit-portfolio").each(function() {
-    var holder = $(this)
-    var id = holder.attr("id").substring('edit_'.length);
-    var oldValue = holder.html();
-    holder.editable(function(value, settings) {
-      $.post('/' + id + '/setName.json', { name : value }, function(data, textStatus) {
-        if(data.success == 'True') {
-          var dropdown = $("#portfolio").get(0);
-          $(dropdown.options[dropdown.selectedIndex]).html(value);
-          val = value;
-        } else {
-          alert("Something went wrong...sorry");
-          val = oldValue;
-        }
-        
-        holder.html(val);
-      }, 'json');
-      
-      return "Saving..."
-    }, {
-      tooltip   : 'Click to edit...',
-      onblur    : 'submit',
-      cssclass  : 'edit-portfolio-form',
-      width     : '160',
-      height    : '28'
-    });
+  $("#editPortfolioName").click(function(e) {
+    e.preventDefault();
+    $("SELECT.selectPortfolio,#editPortfolioName").hide();
+    $("#portfolioNameForm").css("display", 'inline');
+    $("INPUT.selectPortfolio").focus();
   });
   
-  $(".edit-portfolio").mouseenter(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", true); });
-  $(".edit-portfolio").mouseleave(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
-  $(".edit-portfolio").click(function() { toggleEditPrompt($(this), ".edit-portfolio-prompt", false); });
+  $("#cancelPortfolioName").click(function (e) {
+    e.preventDefault();
+    $("#portfolioNameForm").hide();
+    $("SELECT.selectPortfolio,#editPortfolioName").show();
+  });
   
-  $("#portfolio").change(function () {
+  $("#setPortfolioName").click(function (e) {
+    e.preventDefault();
+    var id = $(this).val();
+    var value = $("INPUT.selectPortfolio").val();
+    $.post('/' + id + '/setName.json', { name : value }, function(data, textStatus) {
+      if(data.success != 'True') {
+        alert("Something went wrong...sorry");
+        return;
+      }
+      
+      var dropdown = $(".selectPortfolio").get(0);
+      $(dropdown.options[dropdown.selectedIndex]).html(value);
+      
+      $("#portfolioNameForm").hide();
+      $("SELECT.selectPortfolio,#editPortfolioName").show();
+    }, 'json');
+  });
+  
+  var previousSelectedPortfolio;
+  $("SELECT.selectPortfolio").focus(function() {
+    previousSelectedPortfolio = $(this).val();
+  }).change(function () {
     if ($(this).val() == '') {
-      location.href = "/index.html"
+      location.href = "/demo.html"
     } else {
-      location.href = "/" + $(this).val() + "/positions.html"
+      var tester = new RegExp("^(.*/)" + previousSelectedPortfolio + "(/\\w+\\.html)$", "gi");
+      if(tester.exec(location.href) != null) {
+        location.href = location.href.replace(tester, "$1" + $(this).val() + "$2")
+      } else {
+        location.href = "/" + $(this).val() + "/positions.html"
+      }
     }
   });
   
@@ -172,6 +196,12 @@ $(function() {
     if(!confirm('Are you sure you wish to remove this portfolio?')) {
       e.preventDefault();
     }
+  });
+  
+  $("#showImportRequestForm").click(function(e) {
+    e.preventDefault();
+    $("#importTransactionsForm").hide();
+    $("#requestTransactionsForm").show();
   });
   
 });

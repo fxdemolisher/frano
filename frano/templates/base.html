@@ -6,11 +6,13 @@
     <link rel="stylesheet" href="/css/global.css" type="text/css"/>
     <link rel="stylesheet" href="/css/layout.css" type="text/css"/>
     <link rel="stylesheet" href="/css/validationEngine.jquery.1.7.css" type="text/css"/>
+    <link rel="stylesheet" href="/css/jquery-ui-1.8.6.custom.css" type="text/css"/>
 
     <script language="javascript" type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine-en.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.jeditable.mini-1.7.1.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery-ui-1.8.6.custom.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
     
     <script type="text/javascript">
@@ -38,40 +40,46 @@
           </div>
         </a>
         
-        <div class="seven columns">
+        <div class="six columns">
+          <div class="pageHeading">
+            {% if not supress_navigation and user and portfolio %}
+              Portfolio: 
+              
+              <select class="selectPortfolio">
+                <option value="">Demo</option>
+                {% for a_portfolio in portfolios %}
+                  <option value="{{ a_portfolio.id }}" {% ifequal a_portfolio.id portfolio.id %}selected="selected"{% endifequal %}>{{ a_portfolio.name }}</option>
+                {% endfor %}
+              </select>
+              
+              {% ifequal portfolio.user.id user.id %}
+                <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit Name</a>
+                
+                <form id="portfolioNameForm" class="hidden">
+                  <input type="text" id="portfolioName" class="selectPortfolio" value="{{ portfolio.name }}" />
+                  <button class="navButton" id="setPortfolioName" value="{{portfolio.id}}">Set</button>
+                  <button class="navButton" id="cancelPortfolioName">Cancel</button>
+                </form>
+                
+                <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
+                <a href="/createPortfolio.html" class="buttonLink navLink">Create New</a>
+              {% endifequal %}
+
+            {% else %}
+              &nbsp;
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="one columns">
           <div class="userLinks">
             <ul class="horizontallist">
-        
               {% if not supress_navigation %}
                 {% if user %}
-                  <li>Portfolio:</li>
-                  <li>
-                    <select id="portfolio" style="width: 180px;">
-                      <option value=""></option>
-                      {% for a_portfolio in portfolios %}
-                        <option value="{{ a_portfolio.id }}" {% ifequal a_portfolio.id portfolio.id %}selected="selected"{% endifequal %}>{{ a_portfolio.name }}</option>
-                      {% endfor %}
-                    </select>
-                  </li>
-                  <li style="width: 145px;">
-                    {% ifnotequal portfolios.count 1 %}
-                      <a href="/{{ portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
-                    {% else %}
-                      &nbsp;
-                    {% endifnotequal %}
-                  </li>
-                    
-                  {% ifequal portfolio.user.id user.id %}
-                    <li><a href="/{{ portfolio.id}}/positions.html" class="buttonLink navLink">Positions</a></li>
-                    <li><a href="/{{ portfolio.id}}/transactions.html" class="buttonLink navLink">Transactions</a></li>
-                  {% endifequal %}
-                  
-                  <li><a href="/createPortfolio.html" class="buttonLink navLink">Create a Portfolio</a></li>
                   <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
                 {% else %}
                   <li><a class="rpxnow buttonLink navLink" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html">Sign In</a></li>
                 {% endif %}
-                
               {% endif %} 
             </ul>
           </div>
@@ -79,11 +87,17 @@
       </div>    
 
 <!-- header row -->    
-      <div id="header" class="column-row">
-        <div class="eight columns">
-          <div class="pageHeading">{% block pageHeading %}{% endblock %}</div>
-        </div>
-      </div>
+      {% if not supress_navigation and user %}
+        {% ifequal portfolio.user.id user.id %}
+          <div class="subNav">
+            <ul class="horizontallist">
+              <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
+              <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
+              <li {% ifequal current_tab 'import' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/importTransactions.html">Import</a></li>
+            </ul>
+          </div>      
+        {% endifequal %}
+      {% endif %}
 <!-- END: header row -->
 
 <!-- main content -->        
@@ -95,14 +109,15 @@
         <div class="eight columns legal">
           <a href="/feedback.html">Feedback</a> &nbsp;|&nbsp; 
           <a href="/legal.html">Legal</a> &nbsp;|&nbsp;
-         <a href="http://github.com/fxdemolisher/frano" target="_blank">Source Code @ GitHub</a>
+          <a href="http://github.com/fxdemolisher/frano/blob/master/doc/release_notes.txt" target="_blank">Release Notes</a> &nbsp;|&nbsp;
+          <a href="http://github.com/fxdemolisher/frano" target="_blank">Source Code @ GitHub</a>
           <br/><br/>
           
           Designed by <a href="#" target="_blank">Todd Faulls</a>.
           <br/>
           
           &copy; 2010 <a href="http://www.carelessmusings.com" target="_blank">Gennadiy Shafranovich</a>,
-          Licensed under the <a href="http://github.com/fxdemolisher/frano/blob/develop/LICENSE" target="_blank">MIT Software License</a>.
+          Licensed under the <a href="http://github.com/fxdemolisher/frano/blob/master/LICENSE" target="_blank">MIT Software License</a>.
           <br/>
 
           Version: {{ BUILD_VERSION }}, Built On: {{ BUILD_DATETIME|date:'Y-m-d' }} {{ BUILD_DATETIME|time:'H:i' }}

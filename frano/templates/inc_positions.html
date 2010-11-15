@@ -6,7 +6,7 @@
       <thead>
         <tr>
           <td>% of Allocation</td>
-          <td>Symbol/Name</td>
+          <td>Symbol</td>
           <td>Qty</td>
           <td>Price/Cost</td>
           <td>Mkt Value</td>                                
@@ -23,7 +23,7 @@
               {% ifequal position.symbol '*CASH' %}
                 <div class="tickerSymbol">{{ position.symbol }}</div>
               {% else %}
-                <a href="http://finance.yahoo.com/q?s={{ position.symbol|lower }}" class="tickerSymbol" target="_blank">{{ position.symbol }}</a>
+                <a href="http://finance.yahoo.com/q?s={{ position.symbol|lower }}" class="tickerSymbol" target="_blank" title="{{ position.name }}">{{ position.symbol }}</a>
               {% endifequal %}
             </td>
             <td>{{ position.quantity|num_format }}</td>
@@ -41,7 +41,6 @@
               <div class="holdingsMeta">{{ position.pl_percent|floatformat:2 }}%</div>
             </td>
           </tr>
-
         {% endfor %}
         
         <tr class="lastRow">
