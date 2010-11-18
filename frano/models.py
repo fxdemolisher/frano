@@ -49,7 +49,7 @@ class Portfolio(models.Model):
   @classmethod
   def create(cls, user, name):
     read_only_token = ''
-    for i in range(20):
+    for i in range(10):
       read_only_token += random.choice(Portfolio.TOKEN_LETTERS)
       
     portfolio = Portfolio()

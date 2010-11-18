@@ -61,7 +61,10 @@
                   <button class="navButton" id="cancelPortfolioName">Cancel</button>
                 </form>
                 
-                <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
+                {% ifnotequal portfolios.count 1 %}
+                  <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
+                {% endifnotequal %}
+                
                 <a href="/createPortfolio.html" class="buttonLink navLink">Create New</a>
               {% endifequal %}
 
