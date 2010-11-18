@@ -600,15 +600,19 @@ def get_summary(positions, transactions):
   return Summary(as_of_date, start_date, market_value, cost_basis, opening_market_value, xirr_percent)
   
 def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
+  transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
+  transactions = sorted(transactions, key = (lambda transaction: transaction.as_of_date))
+
   dates = []
   payments = []
-  for transaction in reversed(transactions):
+  for transaction in transactions:
     if transaction.type == 'DEPOSIT' or transaction.type == 'WITHDRAW':
       dates.append(transaction.as_of_date)
-      payments.append((-1 if transaction.type == 'DEPOSIT' else 1) * float(transaction.total))
+      payments.append((-1 if transaction.type == 'DEPOSIT' else 1) * transaction.total)
       
   dates.append(as_of_date.date())
   payments.append(market_value)
+  
   xirr_candidate = xirr(dates, payments)
   return (xirr_candidate * 100) if xirr_candidate != None else 0 
 
