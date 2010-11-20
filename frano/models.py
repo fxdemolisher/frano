@@ -97,6 +97,7 @@ class Quote(models.Model):
   last_trade = models.DateTimeField()
   quote_date = models.DateTimeField()
   history_date = models.DateTimeField()
+  cash_equivalent = models.BooleanField()
   
   class Meta:
     db_table = 'quote'
@@ -120,7 +121,8 @@ class Quote(models.Model):
           return
         
         self.name = row[4]
-        self.price = float(row[1])
+        self.cash_equivalent = row[1].endswith('%')
+        self.price = (1.0 if self.cash_equivalent else float(row[1]))
         
         if row[2] != 'N/A' and row[3] != 'N/A':
           month, day, year = [int(f) for f in row[2].split('/')]
@@ -149,7 +151,9 @@ class Quote(models.Model):
         )
       
       reader = csv.reader(u)
-      reader.next() # skip header
+      header_row = reader.next()
+      if len(header_row) < 7:
+        return
       
       for row in reader:
         current = PriceHistory()
@@ -173,7 +177,11 @@ class Quote(models.Model):
     return self
   
   def price_as_of(self, as_of):
-    return self.pricehistory_set.filter(as_of_date__lte = as_of.strftime('%Y-%m-%d')).order_by('-as_of_date')[0].price
+    if self.cash_equivalent:
+      return self.price
+    else:
+      candidates = self.pricehistory_set.filter(as_of_date__lte = as_of.strftime('%Y-%m-%d')).order_by('-as_of_date')
+      return (candidates[0].price if candidates.count() > 0 else 0)
   
   def previous_close_price(self):
     return self.price_as_of(self.last_trade - timedelta(days = 1))
@@ -193,7 +201,7 @@ class Quote(models.Model):
     if needs_refresh:
       quote.refresh()
     
-    if needs_history_refresh:
+    if needs_history_refresh and not quote.cash_equivalent:
       quote.refresh_history()
           
     return quote

@@ -542,7 +542,7 @@ def get_positions(symbols, quotes, transactions):
     
     total_market_value += position.market_value
     
-    if position.symbol == Quote.CASH_SYMBOL or position.market_value <> 0.0:
+    if position.symbol == Quote.CASH_SYMBOL or position.quantity <> 0.0:
       positions.append(position)
 
   for position in positions:

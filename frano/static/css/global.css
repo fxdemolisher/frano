@@ -136,6 +136,7 @@ see LICENSE file for copying permission.
     #banner A {color:blue;}
     .message { display: none; }
     .hidden { display: none; }
+    .error { color: #CC0000; }
     
  /* --------------------------------------------------
   =Icons

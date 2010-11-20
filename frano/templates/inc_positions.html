@@ -25,6 +25,10 @@
               {% else %}
                 <a href="http://finance.yahoo.com/q?s={{ position.symbol|lower }}" class="tickerSymbol" target="_blank" title="{{ position.name }}">{{ position.symbol }}</a>
               {% endifequal %}
+              
+              {% ifequal position.price 0 %}
+                <div class="holdingsMeta error">Unknown symbol</div>
+              {% endifequal %}
             </td>
             <td>{{ position.quantity|num_format }}</td>
             <td>

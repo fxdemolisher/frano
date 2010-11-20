@@ -6,3 +6,17 @@ UPDATE portfolio
 ;
 
 -- END SEGMENT
+
+-- Issue 55 - Handling of cash equivalents
+
+ALTER TABLE quote
+ADD COLUMN cash_equivalent bool NOT NULL
+;
+
+-- END SEGMENT
+
+-- price history was created with the wrong engine
+
+ALTER TABLE price_history ENGINE=InnoDb;
+
+-- END SEGMENT
