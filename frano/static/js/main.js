@@ -198,7 +198,7 @@ $(function() {
     }
   });
   
-  $("#showImportRequestForm").click(function(e) {
+  $(".showImportRequestForm").click(function(e) {
     e.preventDefault();
     $("#importTransactionsForm").hide();
     $("#requestTransactionsForm").show();

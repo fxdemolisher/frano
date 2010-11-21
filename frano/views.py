@@ -17,7 +17,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.contrib.sessions.models import Session
 
-from import_export import transactions_as_csv, parse_transactions
+from import_export import transactions_as_csv, parse_transactions, detect_transaction_file_type
 from models import User, Portfolio, Transaction, Quote
 from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 
@@ -331,28 +331,37 @@ def export_transactions(request, portfolio, is_sample, format):
 @portfolio_manipilation_decorator
 def import_transactions(request, portfolio, is_sample):
   transactions = None
+  auto_detect_error = False
   if request.method == 'POST':
     form = ImportForm(request.POST, request.FILES)
     if form.is_valid():
       type = request.POST.get('type')
-      transactions = parse_transactions(type, request.FILES['file'])
+      if type == 'AUTO':
+        type = detect_transaction_file_type(request.FILES['file'])
       
-      existing_transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
-      by_date_map = dict([ (as_of_date, []) for as_of_date in set([ transaction.as_of_date for transaction in existing_transactions]) ])
-      for transaction in existing_transactions:
-        by_date_map.get(transaction.as_of_date).append(transaction)
-      
-      for transaction in transactions:
-        is_duplicate = False
-        possibles = by_date_map.get(transaction.as_of_date)
-        if possibles != None:
-          for possible in possibles:
-            if possible.type == transaction.type and possible.symbol == transaction.symbol and possible.quantity == transaction.quantity and possible.price == transaction.price:
-              is_duplicate = True
-              
-        transaction.is_duplicate = is_duplicate
+      auto_detect_error = (True if type == None else False);
+      if not auto_detect_error:
+        transactions = parse_transactions(type, request.FILES['file'])
+        
+        existing_transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
+        by_date_map = dict([ (as_of_date, []) for as_of_date in set([ transaction.as_of_date for transaction in existing_transactions]) ])
+        for transaction in existing_transactions:
+          by_date_map.get(transaction.as_of_date).append(transaction)
+        
+        for transaction in transactions:
+          is_duplicate = False
+          possibles = by_date_map.get(transaction.as_of_date)
+          if possibles != None:
+            for possible in possibles:
+              if possible.type == transaction.type and possible.symbol == transaction.symbol and possible.quantity == transaction.quantity and possible.price == transaction.price:
+                is_duplicate = True
+                
+          transaction.is_duplicate = is_duplicate
     
-  return render_to_response('importTransactions.html', { 'portfolio' : portfolio, 'transactions' : transactions, 'current_tab' : 'import'}, context_instance = RequestContext(request))  
+  return render_to_response('importTransactions.html', 
+      { 'portfolio' : portfolio, 'transactions' : transactions, 'current_tab' : 'import', 'auto_detect_error' : auto_detect_error }, 
+      context_instance = RequestContext(request)
+    )  
 
 @portfolio_manipilation_decorator
 def process_import_transactions(request, portfolio, is_sample):
@@ -426,6 +435,7 @@ class PortfolioForm(forms.Form):
   
 class ImportForm(forms.Form):
   TYPE_CHOICES = [
+      ('AUTO', u'AUTO'),
       ('FRANO', u'FRANO'), 
       ('CHARLES', u'CHARLES'),
       ('GOOGLE', u'GOOGLE'),
