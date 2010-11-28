@@ -3,14 +3,6 @@
 
 {% block title %}Frano: Transactions - Import - {{ portfolio.name }}{% endblock %}
 
-{% block pageHeading %}
-  <div>
-    Transactions - Import - 
-    <div class="edit-portfolio" id="edit_{{ portfolio.id }}">{{ portfolio.name }}</div>
-    <div class="edit-portfolio-prompt">click to edit</div>
-  </div>
-{% endblock %}
-
 {% block mainContent %}
   
   <div id="content" >
@@ -24,14 +16,14 @@
             Thank you for helping us impove the import process, we will let you know as soon as we are done adding your
             file type to the import types. For now, feel free to play around with the sytem.
           {% else %}
-            If you do not see a compatible format in the dropdown below, <a href="#" id="showImportRequestForm">switch to a form</a> use can use 
+            If you do not see a compatible format in the dropdown below, <a href="#" class="showImportRequestForm">switch to a form</a> use can use 
             to let us know what kind of find you are trying to import. We will implement this type of import as soon as possible and let you know.
           {% endifequal %}
           <br class="clear" />
         </div>
         
         <form action="/{{portfolio.id}}/requestImportType.html" method="post" enctype="multipart/form-data" class="hidden" id="requestTransactionsForm">
-          <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+          <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
             <thead>
               <tr>
                 <td>Where is the file from?:</td>
@@ -51,7 +43,7 @@
         </form>
         
         <form action="/{{portfolio.id}}/importTransactions.html" method="post" id="importTransactionsForm" enctype="multipart/form-data">
-          <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+          <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
             <thead>
               <tr>
                 <td>Type:</td>
@@ -63,6 +55,7 @@
               <tr>
                 <td>
                   <select name="type">
+                    <option value="AUTO">Auto Detect</option>
                     <option value="FRANO">Native Format (Frano)</option>
                     <option value="CHARLES">Charles Schwab</option>
                     <option value="GOOGLE">Google Finance</option>
@@ -81,6 +74,19 @@
     </div>
   </div>
   
+  {% if auto_detect_error %}
+    <div id="content" >
+      <div class="column-row">
+        <div class="eight columns error">
+          Sorry, could not detect import file type.
+          <br/><br/>
+          
+          Try a different file or <a href="#" class="showImportRequestForm">use the suggest an import form</a> above.
+        </div>
+      </div>
+    </div>
+  {% endif %}
+  
   {% if transactions %}
     <div id="content" >
       <div class="column-row">
@@ -98,7 +104,7 @@
             <input type="hidden" name="form-INITIAL_FORMS" value="{{ transactions|length }}" />
             <input type="hidden" name="form-MAX_NUM_FORMS" value="{{ transactions|length }}" />
           
-            <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+            <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
               <thead>
                 <tr>
                   <td>Type</td>
@@ -110,7 +116,7 @@
                   <td>Exclude</td>
                 </tr>
               </thead>
-              <tbody id="holdingsTableTbody">
+              <tbody>
                 
                 {% for transaction in transactions %}
                   <input type="hidden" name="form-{{ forloop.counter0 }}-type" value="{{ transaction.type }}" />

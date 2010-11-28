@@ -1,0 +1,295 @@
+/*
+Copyright (c) 2010 Gennadiy Shafranovich
+Licensed under the MIT license
+see LICENSE file for copying permission.
+*/
+
+/*******\
+= RESET =
+\*******/
+
+html, body { 
+  margin: 0; 
+  padding: 0; 
+  background-color: #333333;  
+  height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, cite, code, del, dfn, img, q, s, samp, small, strike, strong, em, sub, sup, tt, var, dd, dl, dt, li, ol, ul, fieldset, form, label, legend, button, table, caption, tbody, tfoot, thead, tr, th, td { 
+  margin: 0; 
+  padding: 0; 
+  border-width: 0; 
+  font-weight: normal; 
+  font-style: normal; 
+  font-size: 100%;  
+  font-family: inherit; 
+  text-align: left; 
+  line-height: 1; 
+}
+
+table { border-collapse: collapse; border-spacing: 0; }
+ol, ul, li { list-style: none; }
+q:before, q:after, blockquote:before, blockquote:after { content: ""; }
+A {color:#999;}
+
+/***********\
+= STRUCTURE =
+\***********/
+
+body { 
+  background-color: #333333; 
+  font-family: Arial, sans, sans-serif; 
+  color: #666; 
+  padding: 0 10px;
+}
+
+div#container, div.wrapper {
+  position: relative; 
+  width: 964px; 
+  margin: 0 auto; 
+  clear: both; 
+  z-index: 10; 
+}
+
+div#container, div.container { 
+  position: relative; 
+  width: 934px; 
+  margin: 0 auto; 
+  padding: 0; 
+}
+
+div#content, #mainContent { 
+  overflow: hidden; 
+  clear: both; 
+  background: #e2e3e4 url(/img/gradients.png) 0 -112px repeat-x; 
+  padding: 10px 5px; 
+  -webkit-box-shadow: 2px 3px 3px #000; 
+  -moz-box-shadow: 2px 3px 3px #000; 
+  font-size: 15px; 
+  line-height: 1.2em;
+  z-index: 1;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px; 
+  margin-left:-20px;
+  padding-left:20px;
+  margin-bottom:20px;
+}
+
+.clear {clear:both;}
+.message { display: none; }
+.hidden { display: none; }
+
+.column-row, .row { margin: 0 0 18px -20px; }
+.column, .columns { float: left; display: inline; margin: 0 0 0 20px; }
+ 
+.one { width: 98px; }
+.two { width: 216px; }
+.three { width: 334px; }
+.four { width: 452px; }
+.five { width: 570px; }
+.six { width: 688px; }
+.seven { width: 806px; }
+.eight { width: 924px; }
+ 
+.offset-by-one-half { margin-left: 59px; }
+.offset-by-one { margin-left: 118px; }
+.offset-by-two { margin-left: 236px; }
+.offset-by-three { margin-left: 354px; }
+.offset-by-four { margin-left: 472px; }
+.offset-by-five { margin-left: 590px; }
+.offset-by-six { margin-left: 708px; }
+ 
+/* Clear the columns automagically, thanks @kneath */
+.column-row:after, .row:after, .clearfix:after { content: "."; display: block; height: 0; clear: both; visibility: hidden; }
+* html .column-row, * html .row, * html .clearfix { height: 1%; }
+.column-row, .row, .clearfix { display: inline-block; }
+.column-row, .row, .clearfix { display: block; }
+ 
+/*  IE6 Problems ---------- */
+body.ie .column-row { width: 944px; }
+body.ie .two-thirds .column-row { width: 964px; }
+
+/**************\
+= HIGHLIGHTING =
+\**************/
+
+.pos {color:#3C3;}
+.neg {color:#C33;}
+.error { color: #CC0000; }
+
+/********\
+= COMMON =
+\********/
+
+H2 {font-size:24px;}
+
+BUTTON {
+  text-align:center;
+  padding:4px 6px 7px 6px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);
+  -webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);
+  text-shadow:1px 1px .5px rgba(0,0,0,.5);
+  cursor:pointer;
+}
+
+.buttonLink {
+  text-align:center;
+  padding: 4px 6px 7px 6px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);
+  -webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);
+  text-shadow: 1px 1px .5px rgba(0,0,0,.5);
+  cursor:pointer;
+  text-decoration: none;
+}
+
+.inline-editable { display: inline; }
+.inline-editable-prompt { font-weight: normal; font-style: italic; font-size: 12px; margin-top: 4px; visibility: hidden;}
+    
+#banner {text-align:center;padding:8px;z-index:99;background-color:#ffff99;-moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);height:20px;position:fixed;left:0;top:0;width:100%;color:#666633;display:none;}
+#banner A {color:blue;}
+
+.icon {width:20px;height:20px;float:left;background: url(/img/icons.png) top left no-repeat;}
+
+.legal {font-size:11px;text-align:center;}
+
+.normal-weight { font-weight: normal !important; }
+
+/*********\
+= TOP NAV =
+\*********/
+
+.pageHeading {font-size:34px;color:#FFF;float:left; margin-top: 3px; margin-left: -25px; }
+.horizontallist LI {float:left;margin-left:10px;}
+.horizontallist LI:first-child {margin-left:0;}
+
+.navButton {background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px; vertical-align: middle;}
+.navLink {background: url(/img/gradients.png) 0 -43px repeat-x;color:#FFF; font-size: 14px; vertical-align: middle;}
+
+#nav {height:50px;background-color:#222;margin-bottom:15px;}
+#nav H1 {width:67px;height:33px;text-indent:-10000px;overflow:hidden;background: url(/img/logo.gif) left top no-repeat;  -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);-webkit-box-shadow: 3px 3px 3px rgba(0,0,0,.5);}
+
+.userLinks {float:right;font-size:17px;color:#FFF;padding-top:15px;white-space:nowrap;right:0;}
+
+.selectPortfolio { font-size: 22px; vertical-align: middle; width: 260px; }
+
+/*********\
+= SUB NAV =
+\*********/
+
+.subNav { height: 21px; }
+
+.subNav LI { 
+  padding: 3px 10px 2px 10px;
+  margin-right: 0px;
+  margin-left: 2px;  
+  background-color: #CCCCCC; 
+  -moz-border-radius-topleft: 5px; 
+  -moz-border-radius-topright: 5px;
+  border-top-left-radius: 5px; 
+  border-top-right-radius: 5px;
+  border-bottom: 1px solid #333333;
+}
+
+.subNav LI.current { border-bottom: 0px; border-bottom: 1px solid #FFFFFF; background-color: #FFFFFF; }
+.subNav LI.current A { font-weight: bold; } 
+
+.subNav LI A { font-size: 14px; color: #3333CC; text-decoration: none; }
+
+/*************\
+= DATA TABLES =
+\*************/
+
+.dataTable {font-size:16px;margin-top:10px;}
+.dataTable TD {border-bottom: solid 1px #CCC;padding:5px 2px;font-weight:bold;vertical-align:top;}
+.dataTable thead TD {font-size:12px;font-weight:normal !important;}
+
+.dataMeta {font-size:13px;font-weight:normal;margin-top:2px;}
+TD.right { text-align: right !important; }
+TD.left { text-align: left !important; }
+
+.lastRow TD { border-bottom: none; }
+
+.positionTable THEAD TD { text-align: center; }
+.positionTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
+.tickerSymbol {font-size:18px;font-weight:bold;color:#333;}
+
+.transactionType {
+  width:80px;
+  float:left;
+  padding:10px 3px;
+  color:#FFF;
+  background-color:#CCC;
+  border: solid 1px #999;
+  font-size:10px;
+  font-weight:normal;
+  text-align:center;
+  text-transform: uppercase;
+  margin-right:5px;
+}
+
+.deposit {background-color:#B391B3;}
+.sell {background-color:#A85252;}
+.buy {background-color:#6CB56C;}
+.withdraw {background-color:#BABA5D;}
+.adjust {background-color:#D89041;}
+
+.add {background-position:0 -22px;cursor:pointer;}
+
+/******************\
+= POSITION SUMMARY =
+\******************/
+
+.importantData {color:#000; white-space:nowrap;}
+.importantData .name {font-size:14px;font-weight:bold; white-space:nowrap;}
+.importantData .value {font-size:40px;margin-bottom:7px; white-space:nowrap;}
+.importantData .related {color:#666; white-space:nowrap;}
+.importantData .related STRONG {font-weight:bold; white-space:nowrap;}
+
+/**************\
+= TRANSACTIONS =
+\**************/
+
+.importButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: text-top; }
+#importTransactionButtonRow { text-align: center; }
+.export-transactions-form { margin-bottom: 0px; }
+#showImportRequestForm { color: #3333CC; }
+
+.transactionDuplicate { background-color: rgba(255, 0, 0, 0.1); }
+.transactionDuplicate .duplicateText { font-size: 12px; font-weight: normal; color: #FF3333; }
+
+.ui-menu-item { font-size: 13px; } /* used for autocomplete */
+
+#seeAllTransactions TD { text-align: center }
+#seeAllTransactions A { font-size: 14px; color: #3333CC; }
+
+/*************\
+= COPY BLOCKS =
+\*************/
+
+.readOnlyCopy {line-height:24px;font-size:17px; margin: 0; }
+.readOnlyCopy .highlight {color:#F90;font-weight:bold;}
+.readOnlyCopy STRONG { font-weight: bolder; }
+
+.homepageCopy {line-height:24px;font-size:17px;}
+.homepageCopy .highlight {color:#F90;font-weight:bold;}
+    
+.legalCopy A {color:#3399cc;}
+.legalCopy LI {line-height:24px;font-size:14px;}
+.legalCopy STRONG {display:block;margin-top:22px;font-size:22px;color:#333;margin-bottom:3px;}
+
+.transactionsCopy {line-height:24px;font-size:17px;}
+.transactionsCopy .highlight {color:#F90;font-weight:bold;}
+.transactionsCopy STRONG { font-weight: bolder; }
+
+/********\
+= CHARTS =
+\********/
+
+#allocationChart { height: 215px; width: 100%; border: 1px solid #999999; }
+
+#plChartContainer { height: 210px; padding: 5px 5px 0px 10px; border: 1px solid #999999; }
+#plChart { height: 210px; }

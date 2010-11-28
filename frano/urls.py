@@ -4,7 +4,7 @@
 
 from django.conf.urls.defaults import *
 from django.views.static import serve
-from settings import DEBUG
+from settings import SERVE_STATICS
 
 import os
 
@@ -28,11 +28,11 @@ urlpatterns = patterns('frano.views',
   (r'^(?P<portfolio_id>\d+)/importTransactions.html', 'import_transactions'),
   (r'^(?P<portfolio_id>\d+)/processImportTransactions.html', 'process_import_transactions'),
   (r'^(?P<portfolio_id>\d+)/requestImportType.html', 'request_import_type'),
-  (r'^(?P<read_only_token>\w{20})/', 'portfolio_read_only'),
+  (r'^(?P<read_only_token>\w{10})/', 'portfolio_read_only'),
   (r'^priceQuote.json', 'price_quote'),
 )
 
-if DEBUG:
+if SERVE_STATICS:
   dir = os.path.realpath(os.path.dirname(__file__)) + "/static/"
   urlpatterns += patterns('django.views.static',
     (r'^css/(?P<path>.*)$', 'serve', { 'document_root' : dir + '/css' }),

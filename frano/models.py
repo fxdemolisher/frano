@@ -49,7 +49,7 @@ class Portfolio(models.Model):
   @classmethod
   def create(cls, user, name):
     read_only_token = ''
-    for i in range(20):
+    for i in range(10):
       read_only_token += random.choice(Portfolio.TOKEN_LETTERS)
       
     portfolio = Portfolio()
@@ -85,6 +85,193 @@ class Transaction(models.Model):
   def __unicode__(self):
     return "%.2f-%s @ %.2f on %s" % (self.quantity, self.symbol, self.price, self.as_of_date.strftime('%m/%d/%Y'))
   
+class Position(models.Model):
+  portfolio = models.ForeignKey(Portfolio)
+  as_of_date = models.DateField()
+  symbol = models.CharField(max_length = 5)
+  quantity = models.FloatField()
+  cost_price = models.FloatField()
+  
+  class Meta:
+    db_table = 'position'
+    
+  def __unicode__(self):
+    return "%.2f of %s on %s @ %.2f" % (self.quantity, self.symbol, self.as_of_date.strftime('%m/%d/%Y'), self.cost_price)
+  
+  def decorate_with_prices(self, price, previous_price):
+    self.price = price
+    self.previous_price = previous_price
+    
+    self.market_value = self.quantity * self.price
+    self.cost_basis = self.quantity * self.cost_price
+    self.previous_market_value = self.quantity * self.previous_price
+    self.day_pl = (self.market_value - self.previous_market_value)
+    self.day_pl_percent = (((self.day_pl / self.previous_market_value) * 100) if self.previous_market_value != 0 else 0)
+    self.pl = (self.market_value - self.cost_basis)
+    self.pl_percent = (((self.pl / self.cost_basis) * 100) if self.cost_basis != 0 else 0)
+  
+  @classmethod
+  def refresh_if_needed(cls, portfolio, transactions = None, force = False):
+    if transactions == None:
+      transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
+    
+    positions = Position.objects.filter(portfolio__id__exact = portfolio.id)
+    if (transactions.count() > 0 and positions.count() == 0) or force:
+      Position.objects.filter(portfolio__id__exact = portfolio.id).delete()
+      Position.refresh_from_transactions(transactions)
+  
+  @classmethod
+  def refresh_from_transactions(cls, transactions):
+    if len(transactions) == 0:
+      return
+    
+    # presort and bucket transactions
+    transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
+    transactions = sorted(transactions, key = (lambda transaction: transaction.as_of_date))
+    dates = sorted(set([ t.as_of_date for t in transactions]))
+    transactions_by_date = dict([(date, []) for date in dates])
+    for transaction in transactions:
+      transactions_by_date.get(transaction.as_of_date).append(transaction)
+    
+    # utility functions
+    def buy_in_lots(lots, date, quantity, price):
+      for lot in lots:
+        if lot.sold_quantity > lot.quantity:
+          bought_in_lot = min(lot.sold_quantity - lot.quantity, quantity)
+          total = (lot.quantity * lot.cost_price) + (bought_in_lot * price)
+          lot.quantity += bought_in_lot
+          lot.cost_price = total / lot.quantity
+          quantity -= bought_in_lot
+      
+      if quantity > 0:
+        lot = TaxLot(as_of_date = date, 
+            quantity = quantity, 
+            cost_price = price, 
+            sold_quantity = 0, 
+            sold_price = 0)
+        
+        lots.append(lot)
+    
+    def sell_in_lots(lots, quantity, price):
+      sold_original_cost = 0
+      for lot in lots:
+        sold_in_lot = min(lot.quantity - lot.sold_quantity, quantity)
+        if sold_in_lot > 0:
+          sold_original_cost += sold_in_lot * lot.cost_price
+          
+          total = (lot.sold_quantity * lot.sold_price) + (sold_in_lot * price)
+          lot.sold_quantity += sold_in_lot
+          lot.sold_price = total / lot.sold_quantity
+          quantity -= sold_in_lot
+          
+        if quantity == 0:
+          break
+    
+      # oversell
+      if quantity > 0:
+        lot = TaxLot(as_of_date = date, 
+          quantity = 0, 
+          cost_price = 0, 
+          sold_quantity = quantity, 
+          sold_price = price)
+      
+        lots.append(lot)
+    
+      return sold_original_cost
+    
+    # get the tax lots
+    lot_sets = {}
+    last_lot_set = None
+    for date in dates:
+      current_transactions = transactions_by_date.get(date)
+      current_lot_set = ( dict([ (symbol, [lot.clone(date) for lot in lots]) for symbol, lots in last_lot_set.items()]) if last_lot_set != None else { } )
+      
+      cash_lots = current_lot_set.get(Quote.CASH_SYMBOL, [])
+      current_lot_set[Quote.CASH_SYMBOL] = cash_lots
+      
+      for transaction in current_transactions:
+        lots = current_lot_set.get(transaction.symbol, [])
+        current_lot_set[transaction.symbol] = lots
+      
+        if transaction.type == 'DEPOSIT':
+          buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, 1.0)
+                  
+        elif transaction.type == 'WITHDRAW':
+          sell_in_lots(cash_lots, transaction.total, 1.0)
+        
+        elif transaction.type == 'ADJUST':
+          if transaction.total > 0:
+            buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, 0.0)
+          else:
+            sell_in_lots(cash_lots, abs(transaction.total), 1.0)
+            
+        elif transaction.type == 'BUY':
+          buy_in_lots(lots, transaction.as_of_date, transaction.quantity, transaction.price)
+          sell_in_lots(cash_lots, transaction.total, 1.0)
+                      
+        elif transaction.type == 'SELL':
+          original_cost = sell_in_lots(lots, transaction.quantity, transaction.price)
+          buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, (original_cost / transaction.total))
+      
+      last_lot_set = lot_sets[date] = current_lot_set
+      
+    # compose positions
+    for date in dates:
+      for symbol, lots in lot_sets.get(date).items():
+        position = Position(as_of_date = date, portfolio = transactions[0].portfolio)
+        position.symbol = symbol
+        
+        quantity = 0
+        cost_price = 0
+        for lot in lots:
+          cur_quantity = (lot.quantity - lot.sold_quantity)
+          if cur_quantity > 0:
+            total = (quantity * cost_price) + (cur_quantity * lot.cost_price)
+            quantity += cur_quantity
+            cost_price = total / quantity
+        
+        position.quantity = quantity
+        position.cost_price = cost_price
+      
+        position.save()
+        for lot in lots:
+          lot.position = position
+          lot.save()
+
+  # done here      
+  
+  @classmethod
+  def get_latest(cls, portfolio):
+    latest_date = Position.objects.filter(portfolio__id__exact = portfolio.id).dates('as_of_date', 'day', order = 'DESC')
+    if latest_date.count() > 0:
+      return Position.objects.filter(portfolio__id__exact = portfolio.id, as_of_date = latest_date[0]).order_by('symbol')
+    else:
+      return []
+  
+class TaxLot(models.Model):
+  position = models.ForeignKey(Position)
+  as_of_date = models.DateField()
+  quantity = models.FloatField()
+  cost_price = models.FloatField()
+  sold_quantity = models.FloatField()
+  sold_price = models.FloatField()
+  
+  class Meta:
+    db_table = 'tax_lot'
+    
+  def __unicode__(self):
+    return "%.2f on %s @ %.2f with %.2f sold at %.2f" % (self.quantity, self.as_of_date.strftime('%m/%d/%Y'), self.cost_price, self.sold_quantity, self.sold_price)
+  
+  def clone(self, as_of_date = None):
+    out = TaxLot()
+    out.as_of_date = (self.as_of_date if as_of_date == None else as_of_date)
+    out.quantity = self.quantity
+    out.cost_price = self.cost_price
+    out.sold_quantity = self.sold_quantity
+    out.sold_price = self.sold_price
+    
+    return out;
+  
 class Quote(models.Model):
   TIMEOUT_DELTA = timedelta(minutes = 15)
   HISTORY_TIMEOUT_DELTA = timedelta(days = 1)
@@ -97,6 +284,7 @@ class Quote(models.Model):
   last_trade = models.DateTimeField()
   quote_date = models.DateTimeField()
   history_date = models.DateTimeField()
+  cash_equivalent = models.BooleanField()
   
   class Meta:
     db_table = 'quote'
@@ -120,7 +308,8 @@ class Quote(models.Model):
           return
         
         self.name = row[4]
-        self.price = float(row[1])
+        self.cash_equivalent = row[1].endswith('%')
+        self.price = (1.0 if self.cash_equivalent else float(row[1]))
         
         if row[2] != 'N/A' and row[3] != 'N/A':
           month, day, year = [int(f) for f in row[2].split('/')]
@@ -149,7 +338,9 @@ class Quote(models.Model):
         )
       
       reader = csv.reader(u)
-      reader.next() # skip header
+      header_row = reader.next()
+      if len(header_row) < 7:
+        return
       
       for row in reader:
         current = PriceHistory()
@@ -173,7 +364,11 @@ class Quote(models.Model):
     return self
   
   def price_as_of(self, as_of):
-    return self.pricehistory_set.filter(as_of_date__lte = as_of.strftime('%Y-%m-%d')).order_by('-as_of_date')[0].price
+    if self.cash_equivalent:
+      return self.price
+    else:
+      candidates = self.pricehistory_set.filter(as_of_date__lte = as_of.strftime('%Y-%m-%d')).order_by('-as_of_date')
+      return (candidates[0].price if candidates.count() > 0 else 0)
   
   def previous_close_price(self):
     return self.price_as_of(self.last_trade - timedelta(days = 1))
@@ -193,7 +388,7 @@ class Quote(models.Model):
     if needs_refresh:
       quote.refresh()
     
-    if needs_history_refresh:
+    if needs_history_refresh and not quote.cash_equivalent:
       quote.refresh_history()
           
     return quote

@@ -18,19 +18,19 @@
       </div>
       
       <form action="/{{portfolio.id}}/addTransaction.html" method="post" id="addTransactionForm">
-        <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+        <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
           <tbody>
             <tr>
               <td>Transaction Type:</td>
-              <td><input type="radio" name="type" id="typeBuy" value="BUY" checked="checked" class="newTransactionType validate[required]" /> Buy Securities</td>
-              <td><input type="radio" name="type" id="typeSell" value="SELL" class="newTransactionType validate[required]" /> Sell Securities</td>
-              <td><input type="radio" name="type" id="typeDeposit" value="DEPOSIT" class="newTransactionType validate[required]" /> Deposit Cash</td>
-              <td><input type="radio" name="type" id="typeWithdraw" value="WITHDRAW" class="newTransactionType validate[required]" /> Withdraw Cash</td>
-              <td><input type="radio" name="type" id="typeAdjust" value="ADJUST" class="newTransactionType validate[required]" /> Adjust Cash</td>
+              <td><input type="radio" name="type" id="typeBuy" value="BUY" checked="checked" class="newTransactionType validate[required]" /><label for="typeBuy">Buy Securities</label></td>
+              <td><input type="radio" name="type" id="typeSell" value="SELL" class="newTransactionType validate[required]" /><label for="typeSell">Sell Securities</label></td>
+              <td><input type="radio" name="type" id="typeDeposit" value="DEPOSIT" class="newTransactionType validate[required]" /><label for="typeDeposit">Deposit Cash</label></td>
+              <td><input type="radio" name="type" id="typeWithdraw" value="WITHDRAW" class="newTransactionType validate[required]" /><label for="typeWithdraw">Withdraw Cash</label></td>
+              <td><input type="radio" name="type" id="typeAdjust" value="ADJUST" class="newTransactionType validate[required]" /><label for="typeAdjust">Adjust Cash</label></td>
             </tr>
           </tbody>
         </table>
-        <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+        <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
           <thead>
             <tr>
               <td>Date:</td>
@@ -68,3 +68,9 @@
     </div>
   </div>
 </div>
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}

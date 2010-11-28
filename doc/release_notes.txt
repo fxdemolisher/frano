@@ -1,4 +1,51 @@
 /================\
+| Release 0.5    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+#56 - Auto-detect file type on import
+      https://github.com/fxdemolisher/frano/issues#issue/56
+
+#27 - P/L and Allocation charts on positions view
+      https://github.com/fxdemolisher/frano/issues#issue/27
+      
+#60 - Cash adjustments contribute to P/L on cash position now
+      https://github.com/fxdemolisher/frano/issues#issue/60
+      
+#63 - Cleanup of positions view (remove stacked text)
+      https://github.com/fxdemolisher/frano/issues#issue/63
+
+Fixes
+-------------------------------------------------------------------------------
+#49 - Moved export section below main transaction list
+      https://github.com/fxdemolisher/frano/issues#issue/49
+
+#50 - Shorten read-only portfolio token to ten chars
+      https://github.com/fxdemolisher/frano/issues#issue/50
+      
+#51 - Delete button showing up when it shouldn't 
+      https://github.com/fxdemolisher/frano/issues#issue/51
+      
+#52 - Transaction type should be clickable in the transaction form
+      https://github.com/fxdemolisher/frano/issues#issue/52
+      
+#53 - XIRR calc broken
+      https://github.com/fxdemolisher/frano/issues#issue/53
+      
+#55 - Changes in how quotes and historical prices are retrieved
+      https://github.com/fxdemolisher/frano/issues#issue/55
+      
+Infrastructure
+-------------------------------------------------------------------------------
+#54 - Error and Not Found page templates added
+      https://github.com/fxdemolisher/frano/issues#issue/54
+
+#57 - Merge and cleanup of CSS file
+      https://github.com/fxdemolisher/frano/issues#issue/57
+     
+
+/================\
 | Release 0.4    |
 \================/
 

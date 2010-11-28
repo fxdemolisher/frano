@@ -3,16 +3,20 @@
 <html>
   <head>
     <title>{% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="/css/global.css" type="text/css"/>
-    <link rel="stylesheet" href="/css/layout.css" type="text/css"/>
     <link rel="stylesheet" href="/css/validationEngine.jquery.1.7.css" type="text/css"/>
     <link rel="stylesheet" href="/css/jquery-ui-1.8.6.custom.css" type="text/css"/>
+    <link rel="stylesheet" href="/css/main.css" type="text/css"/>
 
     <script language="javascript" type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine-en.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.jeditable.mini-1.7.1.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery-ui-1.8.6.custom.min.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jshashtable-2.1.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery.numberformatter-1.2.1.min.js"></script>
+    
+    {% block extraJs %}{% endblock %}
+    
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
     
     <script type="text/javascript">
@@ -61,7 +65,10 @@
                   <button class="navButton" id="cancelPortfolioName">Cancel</button>
                 </form>
                 
-                <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
+                {% ifnotequal portfolios.count 1 %}
+                  <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
+                {% endifnotequal %}
+                
                 <a href="/createPortfolio.html" class="buttonLink navLink">Create New</a>
               {% endifequal %}
 

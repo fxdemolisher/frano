@@ -6,6 +6,9 @@
 DEBUG = True
 TEMPLATE_DEBUG = True
 
+# static url serving
+SERVE_STATICS = True
+
 # database setup, the default engine is MYSQL
 DATABASE_NAME = 'frano'
 DATABASE_USER = ''

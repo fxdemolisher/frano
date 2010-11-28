@@ -22,6 +22,15 @@ GOOGLE_TRANSACTION_TYPE_MAP = {
     'Withdraw Cash' : 'WITHDRAW',
   }
 
+HEADER_TO_IMPORT_TYPE_MAP = {
+    ",".join(FRANO_TRANSACTION_EXPORT_HEADER) : 'FRANO',
+    ("\xef\xbb\xbf" + ",".join(GOOGLE_TRANSACTION_EXPORT_HEADER)) : 'GOOGLE',
+    ",".join(AMERITRADE_TRANSACTION_EXPORT_HEADER) : 'AMERITRADE',
+    ",".join(ZECCO_TRANSACTION_EXPORT_HEADER) : 'ZECCO',
+    ",".join(SCOTTRADE_TRANSACTION_EXPORT_HEADER) : 'SCOTTRADE',
+    ",".join([ ('"%s"' % v) for v in CHARLES_TRANSACTION_EXPORT_HEADER]) : 'CHARLES',
+  }
+
 #------------------\
 #  MAIN FUNCTIONS  |
 #------------------/
@@ -81,15 +90,16 @@ def parse_transactions(type, file):
     
   return transactions
 
-def verify_transaction_file_header(reader, required_header):
-  header = reader.next()
-  if len(header) != len(required_header):
-    raise Exception('Header mismatch for transaction file')
+def detect_transaction_file_type(file):
+  first_line = None
+  for line in file:
+    first_line = line
+    
+    if first_line != None and not first_line.startswith('"Transactions  for account'):
+      break
   
-  for i in range(len(required_header)):
-    if header[i] != required_header[i]:
-      raise Exception("Header mismatch at %d: %s <> %s" % (i, header[i], required_header[i]))
-
+  return HEADER_TO_IMPORT_TYPE_MAP.get(line.strip(), None)
+  
 #----------------------\
 #  PER SOURCE PARSERS  |
 #----------------------/
@@ -401,3 +411,13 @@ def parse_charles_transactions(reader):
 def null_byte_line_filter(stream):
   for line in stream:
     yield line.replace('\x00', '')
+
+def verify_transaction_file_header(reader, required_header):
+  header = reader.next()
+  if len(header) != len(required_header):
+    raise Exception('Header mismatch for transaction file')
+  
+  for i in range(len(required_header)):
+    if header[i] != required_header[i]:
+      raise Exception("Header mismatch at %d: %s <> %s" % (i, header[i], required_header[i]))
+    

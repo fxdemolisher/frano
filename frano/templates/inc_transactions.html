@@ -2,20 +2,9 @@
 
 {% if transaction_sets.0 %}
   <div id="content" >
-    <div class="column-row export-transactions-form">
-      <div class="eight columns">
-       <div class="transactionsCopy">
-         Export all your transactions as: 
-         <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
-         <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
-       </div>
-     </div>
-   </div>
-  </div>
-  <div id="content" >
     <div class="column-row">
       <div class="eight columns">
-        <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+        <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
           <thead>
             <tr>
               <td>Type</td>
@@ -27,7 +16,7 @@
               <td>&nbsp;</td>
             </tr>
           </thead>
-          <tbody id="holdingsTableTbody">
+          <tbody>
           
             {% for transaction_set in transaction_sets %}
               {% for transaction in transaction_set %}
@@ -61,7 +50,7 @@
                     <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format }}</div>
                     <div class="inline-editable-prompt">click to edit</div>
                   </td>
-                  <td><a href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div id="deleteTransaction" class="icon delete"></div></a></td>
+                  <td><a id="deleteTransaction" href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div class="icon delete"></div></a></td>
                 </tr>
               {% endfor %}
             {% endfor %}
@@ -75,4 +64,21 @@
       </div>
     </div>
   </div>
+  <div id="content" >
+    <div class="column-row export-transactions-form">
+      <div class="eight columns">
+       <div class="transactionsCopy">
+         Export all your transactions as: 
+         <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
+         <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
+       </div>
+     </div>
+   </div>
+  </div>
 {% endif %}
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}
