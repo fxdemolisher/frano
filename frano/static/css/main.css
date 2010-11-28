@@ -278,4 +278,11 @@ BUTTON {
 .transactionsCopy .highlight {color:#F90;font-weight:bold;}
 .transactionsCopy STRONG { font-weight: bolder; }
 
-    
+/********\
+= CHARTS =
+\********/
+
+#allocationChart { height: 215px; width: 100%; border: 1px solid #999999; }
+
+#plChartContainer { height: 210px; padding: 5px 5px 0px 10px; border: 1px solid #999999; }
+#plChart { height: 210px; }

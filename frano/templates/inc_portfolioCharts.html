@@ -1,0 +1,27 @@
+{% load frano_filters %}
+
+<script type="text/javascript">
+  var dates = [ {% for history in pl_history %}new Date({{ history.as_of_date.year }}, {{ history.as_of_date.month }}, {{ history.as_of_date.day }}), {% endfor %} ];
+  var profitLossPercent = [ {% for history in pl_history %}{{ history.profit_loss_percent}}, {% endfor %} ];
+  var benchmark  = [ {% for history in pl_history %}{{ history.benchmark_profit_loss_percent}}, {% endfor %} ];
+
+  var allocation = [ {% for position in positions %}[ '{{ position.symbol|escapejs }}', {{ position.allocation }} ], {% endfor %} ]
+  
+  $(function() {
+    initializeProfitLossChart($("#plChart"));
+    initializeAllocationChart($("#allocationChart"));
+  });
+</script>
+
+<div class="column-row">
+  <div class="two columns">
+    
+    <div id="allocationChart">&nbsp;</div>
+  </div>
+  
+  <div class="six columns">
+    <div id="plChartContainer">
+      <div id="plChart">&nbsp;</div>
+    </div>
+  </div>
+</div>

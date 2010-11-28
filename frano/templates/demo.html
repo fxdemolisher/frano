@@ -2,6 +2,11 @@
 {% load frano_filters %}
 
 {% block title %}Frano: Portfolio Management Improved{% endblock %}
+    
+{% block extraJs %}
+  <script language="javascript" type="text/javascript" src="/js/jquery.flot.0.6.min.js"></script>
+  <script language="javascript" type="text/javascript" src="/js/jquery.flot.pie.0.6.js"></script>
+{% endblock %}
 
 {% block mainContent %}
   <div id="mainContent" >
@@ -23,6 +28,7 @@
     
     {% include "inc_summary.html" %}
     {% include "inc_positions.html" %}
+    {% include "inc_portfolioCharts.html" %}
   </div>
   
   {% include "inc_transactionForm.html" %}

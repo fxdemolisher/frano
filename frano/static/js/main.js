@@ -228,3 +228,74 @@ function toggleEditPrompt(holder, promptClass,  state) {
     prompt.css("visibility", "hidden");
   }
 }
+
+function initializeProfitLossChart(container) {
+  var dataPercent = []
+  var benchmarkPercent = []
+  for(var i = 0; i < profitLossPercent.length; i++) {
+    dataPercent[i] = [ i, profitLossPercent[i] ]
+    benchmarkPercent[i] = [ i, benchmark[i] ]
+  }
+  
+  $.plot(container,
+    [ 
+      { data: dataPercent, yaxis: 2, label: "P/L %" },
+      { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (SPY)' },
+    ],
+    {
+      series: {
+          lines: { show: true }
+      },
+      xaxis: {
+        tickFormatter: function (value, axis) {
+          if(value >= 0 && value < dates.length) {
+            return $.datepicker.formatDate('mm/dd', dates[value]);
+          }
+        }
+      },
+      y2axis: {
+        tickFormatter: function (value, axis) {
+          return (value * 100).toFixed(2) + "%";
+        }
+      },
+      grid: {
+        backgroundColor: { colors: ["#ffffff", "#eeeeee"] },
+      },
+      legend: {
+        show: true,
+        position: 'nw',
+        backgroundColor: '#FFFFFF',
+        opacity: 0.8
+      }
+    });
+}
+
+function initializeAllocationChart(container) {
+  data = []
+  for (var i = 0; i < allocation.length; i++) {
+    data[i] = { label: allocation[i][0], data: allocation[i][1] }
+  }
+  
+  $.plot(container, 
+      data, 
+      {
+        series: {
+          pie: { 
+            show: true, 
+            radius: 1,
+            label: {
+                show: true,
+                radius: 3/4,
+                formatter: function(label, series) {
+                    return '<div style="font-size:8pt;text-align:center;padding:2px;color:white;">'+label+'<br/>'+series.percent.toFixed(2)+'%</div>';
+                },
+                background: { opacity: 0.5 }
+            }
+          },
+        },
+        legend: {
+          show: false
+        }
+      }
+    );
+}

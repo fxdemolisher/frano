@@ -50,7 +50,7 @@
                     <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format }}</div>
                     <div class="inline-editable-prompt">click to edit</div>
                   </td>
-                  <td><a href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div id="deleteTransaction" class="icon delete"></div></a></td>
+                  <td><a id="deleteTransaction" href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div class="icon delete"></div></a></td>
                 </tr>
               {% endfor %}
             {% endfor %}

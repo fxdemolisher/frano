@@ -10,6 +10,7 @@ from urllib import urlopen
 from django import forms
 from django.core.mail import EmailMessage
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.db import connection, transaction
 from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
@@ -18,7 +19,7 @@ from django.template.loader import render_to_string
 from django.contrib.sessions.models import Session
 
 from import_export import transactions_as_csv, parse_transactions, detect_transaction_file_type
-from models import User, Portfolio, Transaction, Quote
+from models import User, Portfolio, Transaction, Position, TaxLot, Quote
 from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 
 #-------------\
@@ -27,6 +28,8 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 
 SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
 TRANSACTIONS_BEFORE_SEE_ALL = 20
+DAYS_IN_PL_HISTORY = 90
+PL_BENCHMARK_SYMBOL = 'SPY'
 
 #--------------\
 #  DECORATORS  |
@@ -94,18 +97,23 @@ def index(request):
 
 def demo(request):
   portfolio = get_sample_portfolio(request)
+      
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
+  Position.refresh_if_needed(portfolio, transactions)
+    
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
-  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
-  positions = get_positions(symbols, quotes, transactions)
+  positions = Position.get_latest(portfolio)
+  decorate_positions_for_display(positions, symbols)
   summary = get_summary(positions, transactions)
+  pl_history = get_pl_history(portfolio, DAYS_IN_PL_HISTORY)
   
   context = {
       'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
       'portfolio' : portfolio, 
       'positions': positions, 
       'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ], 
-      'summary' : summary
+      'summary' : summary,
+      'pl_history' : pl_history,
     }
   
   return render_to_response('demo.html', context, context_instance = RequestContext(request))
@@ -189,6 +197,8 @@ def add_transaction(request, portfolio, is_sample):
     transaction.price = form.cleaned_data.get('price')
     transaction.total = (transaction.quantity * transaction.price) + commission
     transaction.save()
+    
+    Position.refresh_if_needed(portfolio, force = True)
   
   return redirect_to_portfolio('transactions', portfolio, is_sample)
 
@@ -197,6 +207,7 @@ def remove_transaction(request, portfolio, is_sample, transaction_id):
   transaction = Transaction.objects.filter(id = transaction_id)[0]
   if transaction.portfolio.id == portfolio.id:
     transaction.delete()
+    Position.refresh_if_needed(portfolio, force = True)
     
   return redirect_to_portfolio('transactions', portfolio, is_sample) 
 
@@ -234,6 +245,7 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
           transaction.quantity = transaction.total
       
       transaction.save()
+      Position.refresh_if_needed(portfolio, force = True)
       success = True
     
   return HttpResponse("{ \"success\": \"%s\" }" % success)
@@ -242,12 +254,21 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
 @portfolio_manipilation_decorator
 def portfolio_positions(request, user, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
-  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
-  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
-  positions = get_positions(symbols, quotes, transactions)
-  summary = get_summary(positions, transactions)
+  Position.refresh_if_needed(portfolio, transactions)
   
-  return render_to_response('positions.html', { 'portfolio' : portfolio, 'positions': positions, 'summary' : summary, 'current_tab' : 'positions' }, context_instance = RequestContext(request))
+  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
+  positions = Position.get_latest(portfolio)
+  decorate_positions_for_display(positions, symbols)
+  summary = get_summary(positions, transactions)
+  pl_history = get_pl_history(portfolio, DAYS_IN_PL_HISTORY)
+  
+  return render_to_response('positions.html', { 
+      'portfolio' : portfolio, 
+      'positions': positions, 
+      'summary' : summary, 
+      'current_tab' : 'positions',
+      'pl_history' : pl_history, 
+    }, context_instance = RequestContext(request))
 
 @login_required_decorator
 @portfolio_manipilation_decorator
@@ -286,13 +307,22 @@ def portfolio_transactions(request, user, portfolio, is_sample):
 
 def portfolio_read_only(request, read_only_token):
   portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id)
-  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
-  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
-  positions = get_positions(symbols, quotes, transactions)
-  summary = get_summary(positions, transactions)
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
+  Position.refresh_if_needed(portfolio, transactions)
   
-  return render_to_response('read_only.html', { 'supress_navigation' : True, 'portfolio' : portfolio, 'positions': positions, 'summary' : summary }, context_instance = RequestContext(request))
+  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
+  positions = Position.get_latest(portfolio)
+  decorate_positions_for_display(positions, symbols)
+  summary = get_summary(positions, transactions)
+  pl_history = get_pl_history(portfolio, DAYS_IN_PL_HISTORY)
+  
+  return render_to_response('read_only.html', { 
+      'supress_navigation' : True, 
+      'portfolio' : portfolio, 
+      'positions': positions, 
+      'summary' : summary,
+      'pl_history' : pl_history, 
+    }, context_instance = RequestContext(request))
 
 def price_quote(request):
   as_of_date = date(int(request.GET.get('year')), int(request.GET.get('month')), int(request.GET.get('day')))
@@ -383,6 +413,7 @@ def process_import_transactions(request, portfolio, is_sample):
       transaction.total = cd.get('total')
       transaction.save()
     
+  Position.refresh_if_needed(portfolio, force = True)
   return redirect_to_portfolio('transactions', portfolio, is_sample)
 
 @portfolio_manipilation_decorator
@@ -472,6 +503,7 @@ DEFAULT_SAMPLE_TRANSACTIONS = [
     { 'symbol' : 'EFA',             'as_of_date' : date(2010, 6, 29),  'type' : 'BUY',      'quantity' : 427,    'price' : 46.83 },
     { 'symbol' : 'AGG',             'as_of_date' : date(2010, 8, 5),   'type' : 'BUY',      'quantity' : 368,    'price' : 106.86 },
     { 'symbol' : 'SPY',             'as_of_date' : date(2010, 8, 17),  'type' : 'BUY',      'quantity' : 137,    'price' : 109.01 },
+    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 9, 20),  'type' : 'SELL',     'quantity' : 130,    'price' : 114.21 },
     { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 10, 1),  'type' : 'WITHDRAW', 'quantity' : 10000,  'price' : 1.0 },
   ]
 
@@ -520,94 +552,36 @@ def get_sample_user():
     user.create_date = datetime.now()
     user.save()
     return user
-    
-def get_positions(symbols, quotes, transactions):
-  transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
-  transactions = sorted(transactions, key = (lambda transaction: transaction.as_of_date))
-  lots = get_lots(symbols, transactions)
+
+def decorate_positions_for_display(positions, symbols):
+  quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   
   total_market_value = 0
-  positions = []
-  for symbol in sorted(lots):
-    cost = 0
-    quantity = 0
-    for lot in lots[symbol]:
-      cost += lot.quantity * lot.price
-      quantity += lot.quantity
-     
-    cost_price = (cost / quantity) if quantity > 0 else 0
-    previous_price = (1.0 if symbol == Quote.CASH_SYMBOL else quotes[symbol].previous_close_price())
+  for position in positions:
+    price = (1.0 if position.symbol == Quote.CASH_SYMBOL else quotes[position.symbol].price)
+    previous_price = (1.0 if position.symbol == Quote.CASH_SYMBOL else quotes[position.symbol].previous_close_price())
     
-    position = Position(
-        quotes[symbol].last_trade, 
-        symbol, 
-        quotes[symbol].name, 
-        quantity, 
-        float(quotes[symbol].price), 
-        cost_price, 
-        float(previous_price), 
-        0, 
-        lots[symbol]
-      )
-    
+    position.decorate_with_prices(price, previous_price)
     total_market_value += position.market_value
     
-    if position.symbol == Quote.CASH_SYMBOL or position.quantity <> 0.0:
-      positions.append(position)
-
   for position in positions:
     position.allocation = ((position.market_value / total_market_value * 100) if total_market_value != 0 else 0)
-    
-  return positions
-
-def get_lots(symbols, transactions):
-  cash = 0.0
-  first_cash_date = None
-  lots = dict([(symbol, []) for symbol in symbols])
-  for transaction in transactions:
-    cur_lots = lots.get(transaction.symbol)
-    
-    if transaction.type == 'DEPOSIT' or transaction.type == 'ADJUST' or transaction.type == 'SELL':
-      cash += float(transaction.total)
-      first_cash_date = (transaction.as_of_date if first_cash_date is None else first_cash_date)
-      
-    elif transaction.type == 'WITHDRAW' or transaction.type == 'BUY':
-      cash -= float(transaction.total)
-      first_cash_date = (transaction.as_of_date if first_cash_date is None else first_cash_date)
-      
-    if transaction.type == 'BUY':
-      cur_lots.append(TaxLot(transaction.as_of_date, float(transaction.quantity), float(transaction.price)))
-
-    elif transaction.type == 'SELL':
-      q = float(transaction.quantity)
-      while q > 0 and len(cur_lots) > 0:
-        first_lot = cur_lots[0]
-        if(q < first_lot.quantity):
-          first_lot.quantity -= q
-          q = 0
-          
-        else:
-          q -= first_lot.quantity
-          del(cur_lots[0])
-
-  lots[Quote.CASH_SYMBOL] = [ TaxLot((first_cash_date if first_cash_date != None else datetime.now()), cash, 1.0) ]
-  return lots
-
+  
 def get_summary(positions, transactions):
   as_of_date = max([position.as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
   start_date = min([transaction.as_of_date for transaction in transactions]) if len(transactions) > 0 else datetime.now().date()
     
   cost_basis = 0
   market_value = 0
-  opening_market_value = 0
+  previous_market_value = 0
   for position in positions:
     cost_basis += position.cost_price * position.quantity
     market_value += position.market_value
-    opening_market_value += position.opening_market_value
+    previous_market_value += position.previous_market_value
     
   xirr_percent = get_xirr_percent_for_transactions(transactions, as_of_date, market_value)
 
-  return Summary(as_of_date, start_date, market_value, cost_basis, opening_market_value, xirr_percent)
+  return Summary(as_of_date, start_date, market_value, cost_basis, previous_market_value, xirr_percent)
   
 def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
   transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
@@ -620,7 +594,7 @@ def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
       dates.append(transaction.as_of_date)
       payments.append((-1 if transaction.type == 'DEPOSIT' else 1) * transaction.total)
       
-  dates.append(as_of_date.date())
+  dates.append(as_of_date)
   payments.append(market_value)
   
   xirr_candidate = xirr(dates, payments)
@@ -653,56 +627,101 @@ def redirect_to_portfolio(action, portfolio, is_sample, query_string = None):
   
   else:
     return redirect("/%d/%s.html%s" % (portfolio.id, action, ('' if query_string == None else "?%s" % query_string)))
+
+def get_pl_history(portfolio, days):
+  query = """
+        SELECT D.portfolio_date,
+             SUM(P.quantity * P.cost_price) as cost_basis,
+             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value
+        FROM position P
+             JOIN
+             (
+                 SELECT D.portfolio_date,
+                        MAX(P.as_of_date) as position_date
+                   FROM (
+                          SELECT DISTINCT 
+                                 DATE(H.as_of_date) as portfolio_date
+                            FROM price_history H
+                                 JOIN quote Q ON (Q.id = H.quote_id)
+                                 JOIN
+                                 (
+                                   SELECT DISTINCT
+                                          P.symbol
+                                     FROM position P
+                                    WHERE P.portfolio_id = %s
+                                      AND P.symbol != '*CASH'
+                                 ) S ON (Q.symbol = S.symbol)
+                                 JOIN
+                                 (
+                                   SELECT MIN(as_of_date) as start_date
+                                     FROM position P
+                                    WHERE P.portfolio_id = %s
+                                 ) D ON (H.as_of_date >= D.start_date)
+                           WHERE DATEDIFF(NOW(), H.as_of_date) < %s
+                        ) D
+                        JOIN 
+                        (
+                          SELECT DISTINCT 
+                                 P.as_of_date
+                            FROM position P
+                           WHERE P.portfolio_id = %s
+                        )  P ON (P.as_of_date <= D.portfolio_date)
+               GROUP BY D.portfolio_date
+             ) D ON (P.as_of_date = D.position_date)
+             LEFT JOIN quote Q ON (Q.symbol = P.symbol)
+             LEFT JOIN price_history H ON (H.quote_id = Q.id AND H.as_of_date = D.portfolio_date)
+       WHERE P.quantity <> 0
+    GROUP BY D.portfolio_date"""
+  
+  cursor = connection.cursor()
+  cursor.execute(query, [portfolio.id, portfolio.id, days, portfolio.id])
+  
+  benchmark_quote = Quote.by_symbol(PL_BENCHMARK_SYMBOL)
+  cutoff_date = datetime.now().date() - timedelta(days = DAYS_IN_PL_HISTORY)
+  benchmark_pl = {}
+  first_price = None
+  for history in benchmark_quote.pricehistory_set.filter(as_of_date__gte = cutoff_date).order_by('as_of_date'):
+    benchmark_pl[history.as_of_date.date()] = (((history.price - first_price) / first_price) if first_price != None else 0.0)
+    if first_price == None: 
+      first_price = history.price
+    
+  offset = None
+  out = []
+  for row in cursor.fetchall():
+    as_of_date = row[0]
+    benchmark = benchmark_pl.get(as_of_date, 0.0)
+    pl = (((row[2] / row[1]) - 1) if row[1] <> 0 else 0.0)
+    
+    if offset == None:
+      offset = pl
+     
+    out.append(ProfitLossHistory(as_of_date, ((pl - offset) if offset != None else 0.0), benchmark))
+    
+  return out
   
 #-----------------\
 #  VALUE OBJECTS  |
 #-----------------/
-  
-class TaxLot:
-  def __init__(self, as_of_date, quantity, price):
-    self.as_of_date = as_of_date
-    self.quantity = quantity
-    self.price = price
-    
-  def __repr__(self):
-    #return "%.4f@.4f on %s" % (self.quantity, self.price, self.as_of_date.strftime('%m/%d/%Y'))
-    return "%.4f at %.4f on %s" % (self.quantity, self.price, self.as_of_date.strftime('%m/%d/%Y'))
-    
-class Position:
-  def __init__(self, as_of_date, symbol, name, quantity, price, cost_price, opening_price, allocation, lots):
-    self.as_of_date = as_of_date
-    self.symbol = symbol
-    self.name = name
-    self.quantity = quantity
-    self.price = price
-    self.cost_price = cost_price
-    self.opening_price = opening_price
-    self.allocation = allocation
-    self.lots = lots
-    
-    self.market_value = quantity * price
-    self.cost_basis = quantity * cost_price
-    self.opening_market_value = quantity * opening_price
-    self.day_pl = (self.market_value - self.opening_market_value)
-    self.day_pl_percent = (((self.day_pl / self.opening_market_value) * 100) if self.opening_market_value != 0 else 0)
-    self.pl = (self.market_value - self.cost_basis)
-    self.pl_percent = (((self.pl / self.cost_basis) * 100) if self.cost_basis != 0 else 0)
-    
-  def __repr__(self):
-    return "%.4f of %s" % (self.quantity, self.symbol)
 
 class Summary:
-  def __init__(self, as_of_date, start_date, market_value, cost_basis, opening_market_value, xirr_percent):
+  def __init__(self, as_of_date, start_date, market_value, cost_basis, previous_market_value, xirr_percent):
     self.as_of_date = as_of_date
     self.start_date = start_date
     self.market_value = market_value
     self.cost_basis = cost_basis
-    self.opening_market_value = opening_market_value
+    self.previous_market_value = previous_market_value
     self.xirr_percent = xirr_percent
     
     self.pl = market_value - cost_basis
     self.pl_percent = ((self.pl / cost_basis) * 100) if cost_basis != 0 else 0
-    self.day_pl = market_value - opening_market_value
-    self.day_pl_percent = ((self.day_pl / opening_market_value) * 100) if opening_market_value != 0 else 0
-    self.days = (as_of_date.date() - start_date).days
+    self.day_pl = market_value - previous_market_value
+    self.day_pl_percent = ((self.day_pl / previous_market_value) * 100) if previous_market_value != 0 else 0
+    self.days = (as_of_date - start_date).days
     self.annualized_pl_percent = (self.pl_percent / (self.days / 365.0)) if self.days != 0 else 0
+
+class ProfitLossHistory:
+  def __init__(self, as_of_date, profit_loss_percent, benchmark_profit_loss_percent):
+    self.as_of_date = as_of_date
+    self.profit_loss_percent = profit_loss_percent
+    self.benchmark_profit_loss_percent = benchmark_profit_loss_percent
+    
