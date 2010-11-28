@@ -156,6 +156,8 @@ BUTTON {
 
 .legal {font-size:11px;text-align:center;}
 
+.normal-weight { font-weight: normal !important; }
+
 /*********\
 = TOP NAV =
 \*********/
@@ -201,14 +203,19 @@ BUTTON {
 = DATA TABLES =
 \*************/
 
-.holdingsTable {font-size:16px;margin-top:10px;}
-.holdingsTable TD {border-bottom: solid 1px #CCC;padding:5px 2px;font-weight:bold;vertical-align:top;}
-.holdingsTable thead TD {font-size:12px;font-weight:normal !important;}
+.dataTable {font-size:16px;margin-top:10px;}
+.dataTable TD {border-bottom: solid 1px #CCC;padding:5px 2px;font-weight:bold;vertical-align:top;}
+.dataTable thead TD {font-size:12px;font-weight:normal !important;}
+
+.dataMeta {font-size:13px;font-weight:normal;margin-top:2px;}
+TD.right { text-align: right !important; }
+TD.left { text-align: left !important; }
 
 .lastRow TD { border-bottom: none; }
 
+.positionTable THEAD TD { text-align: center; }
+.positionTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
 .tickerSymbol {font-size:18px;font-weight:bold;color:#333;}
-.holdingsMeta {font-size:13px;font-weight:normal;margin-top:2px;}
 
 .transactionType {
   width:80px;

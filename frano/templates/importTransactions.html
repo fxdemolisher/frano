@@ -23,7 +23,7 @@
         </div>
         
         <form action="/{{portfolio.id}}/requestImportType.html" method="post" enctype="multipart/form-data" class="hidden" id="requestTransactionsForm">
-          <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+          <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
             <thead>
               <tr>
                 <td>Where is the file from?:</td>
@@ -43,7 +43,7 @@
         </form>
         
         <form action="/{{portfolio.id}}/importTransactions.html" method="post" id="importTransactionsForm" enctype="multipart/form-data">
-          <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+          <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
             <thead>
               <tr>
                 <td>Type:</td>
@@ -104,7 +104,7 @@
             <input type="hidden" name="form-INITIAL_FORMS" value="{{ transactions|length }}" />
             <input type="hidden" name="form-MAX_NUM_FORMS" value="{{ transactions|length }}" />
           
-            <table class="holdingsTable" id="holdingsTable" width="100%" cellpadding="0" cellspacing="0">
+            <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
               <thead>
                 <tr>
                   <td>Type</td>
@@ -116,7 +116,7 @@
                   <td>Exclude</td>
                 </tr>
               </thead>
-              <tbody id="holdingsTableTbody">
+              <tbody>
                 
                 {% for transaction in transactions %}
                   <input type="hidden" name="form-{{ forloop.counter0 }}-type" value="{{ transaction.type }}" />
