@@ -30,6 +30,7 @@
                 <td>Let us know what it looks like:</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
+                <td>&nbsp;</td>
               </tr>
             </thead>
             <tbody>
@@ -37,6 +38,7 @@
                 <td><input type="text" name="type" /></td>
                 <td><input type="file" name="file" /></td>
                 <td><button class="importButton">Send Request</button></td>
+                <td><button class="importButton" id="cancelImportRequest">Cancel</button></td>
               </tr>
             </tbody>
           </table>
@@ -91,19 +93,19 @@
     <div id="content" >
       <div class="column-row">
         <div class="eight columns">
-          <div class="transactionsCopy">
-            Found <strong>{{ transactions|length }}</strong> transactions in your file. 
-            <br class="clear" />
-            
-            Below is a preview, exclude any transactions you do not wish to be imported and submit the rest below.
-            <br class="clear" />
-          </div>
-        
           <form action="/{{portfolio.id}}/processImportTransactions.html" method="post">
             <input type="hidden" name="form-TOTAL_FORMS" value="{{ transactions|length }}" />
             <input type="hidden" name="form-INITIAL_FORMS" value="{{ transactions|length }}" />
             <input type="hidden" name="form-MAX_NUM_FORMS" value="{{ transactions|length }}" />
-          
+        
+            <div class="transactionsCopy">
+              Found <strong>{{ transactions|length }}</strong> transactions in your file. <button class="importButton">Import Them</button>
+              <br class="clear" />
+              
+              Below is a preview, exclude any transactions you do not wish to be imported and submit the rest below.
+              <br class="clear" />
+            </div>
+                  
             <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
               <thead>
                 <tr>
@@ -117,7 +119,7 @@
                 </tr>
               </thead>
               <tbody>
-                
+              
                 {% for transaction in transactions %}
                   <input type="hidden" name="form-{{ forloop.counter0 }}-type" value="{{ transaction.type }}" />
                   <input type="hidden" name="form-{{ forloop.counter0 }}-as_of_date" value="{{ transaction.as_of_date|date:'m/d/Y' }}" />

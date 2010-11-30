@@ -140,7 +140,7 @@ class Position(models.Model):
           bought_in_lot = min(lot.sold_quantity - lot.quantity, quantity)
           total = (lot.quantity * lot.cost_price) + (bought_in_lot * price)
           lot.quantity += bought_in_lot
-          lot.cost_price = total / lot.quantity
+          lot.cost_price = ((total / lot.quantity) if lot.quantity <> 0 else 0)
           quantity -= bought_in_lot
       
       if quantity > 0:
@@ -161,7 +161,7 @@ class Position(models.Model):
           
           total = (lot.sold_quantity * lot.sold_price) + (sold_in_lot * price)
           lot.sold_quantity += sold_in_lot
-          lot.sold_price = total / lot.sold_quantity
+          lot.sold_price = ((total / lot.sold_quantity) if lot.sold_quantity <> 0 else 0)
           quantity -= sold_in_lot
           
         if quantity == 0:
@@ -211,7 +211,7 @@ class Position(models.Model):
                       
         elif transaction.type == 'SELL':
           original_cost = sell_in_lots(lots, transaction.quantity, transaction.price)
-          buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, (original_cost / transaction.total))
+          buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, ((original_cost / transaction.total) if transaction.total <> 0 else 0))
       
       last_lot_set = lot_sets[date] = current_lot_set
       

@@ -379,13 +379,14 @@ def import_transactions(request, portfolio, is_sample):
           by_date_map.get(transaction.as_of_date).append(transaction)
         
         for transaction in transactions:
+                    
           is_duplicate = False
           possibles = by_date_map.get(transaction.as_of_date)
           if possibles != None:
             for possible in possibles:
-              if possible.type == transaction.type and possible.symbol == transaction.symbol and possible.quantity == transaction.quantity and possible.price == transaction.price:
+              if possible.type == transaction.type and possible.symbol == transaction.symbol and abs(possible.quantity - transaction.quantity) < 0.01 and abs(possible.price - transaction.price) < 0.01:
                 is_duplicate = True
-                
+            
           transaction.is_duplicate = is_duplicate
     
   return render_to_response('importTransactions.html', 
@@ -671,10 +672,11 @@ def get_pl_history(portfolio, days):
              LEFT JOIN quote Q ON (Q.symbol = P.symbol)
              LEFT JOIN price_history H ON (H.quote_id = Q.id AND H.as_of_date = D.portfolio_date)
        WHERE P.quantity <> 0
+         AND P.portfolio_id = %s
     GROUP BY D.portfolio_date"""
   
   cursor = connection.cursor()
-  cursor.execute(query, [portfolio.id, portfolio.id, days, portfolio.id])
+  cursor.execute(query, [portfolio.id, portfolio.id, days, portfolio.id, portfolio.id])
   
   benchmark_quote = Quote.by_symbol(PL_BENCHMARK_SYMBOL)
   cutoff_date = datetime.now().date() - timedelta(days = DAYS_IN_PL_HISTORY)

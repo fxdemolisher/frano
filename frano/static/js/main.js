@@ -204,6 +204,13 @@ $(function() {
     $("#requestTransactionsForm").show();
   });
   
+  $("#cancelImportRequest").click(function(e) {
+    e.preventDefault();
+    $("#requestTransactionsForm").hide();
+    $("#importTransactionsForm").show();
+    
+  });
+  
 });
 
 function scanForBannerMessages() {
