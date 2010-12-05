@@ -293,7 +293,9 @@ TD.left { text-align: left !important; }
 = CHARTS =
 \********/
 
-#allocationChart { height: 215px; width: 100%; border: 1px solid #999999; }
+#allocationChartColumn { width: 280px; }
+#allocationChart { height: 280px; width: 100%; border: 1px solid #999999; }
 
-#plChartContainer { height: 210px; padding: 5px 5px 0px 10px; border: 1px solid #999999; }
-#plChart { height: 210px; }
+#plChartColumn { width: 625px; }
+#plChartContainer { height: 275px; padding: 5px 5px 0px 10px; border: 1px solid #999999; }
+#plChart { height: 270px; }

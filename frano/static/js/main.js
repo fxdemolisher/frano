@@ -291,9 +291,11 @@ function initializeProfitLossChart(container) {
     ],
     {
       series: {
-          lines: { show: true }
+        lines: { show: true },
       },
       xaxis: {
+        ticks: dates.length / 7,
+        minTickSize: 1,
         tickFormatter: function (value, axis) {
           if(value >= 0 && value < dates.length) {
             return $.datepicker.formatDate('mm/dd', dates[value]);
@@ -329,14 +331,17 @@ function initializeAllocationChart(container) {
         series: {
           pie: { 
             show: true, 
-            radius: 1,
+            radius: 0.98,
             label: {
                 show: true,
-                radius: 3/4,
+                radius: 0.8,
                 formatter: function(label, series) {
-                    return '<div style="font-size:8pt;text-align:center;padding:2px;color:white;">'+label+'<br/>'+series.percent.toFixed(2)+'%</div>';
+                    return '<div style="font-size:8pt;text-align:center;padding:2px;color:white; border: 1px solid #ccc;">'+label+'<br/>'+series.percent.toFixed(2)+'%</div>';
                 },
-                background: { opacity: 0.5 }
+                background: { opacity: 0.5, color: '#666' }
+            },
+            combine: {
+              threshold: 0.05
             }
           },
         },
