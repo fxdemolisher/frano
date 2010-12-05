@@ -653,12 +653,12 @@ def redirect_to_portfolio(action, portfolio, is_sample, query_string = None):
   else:
     return redirect("/%d/%s.html%s" % (portfolio.id, action, ('' if query_string == None else "?%s" % query_string)))
 
-def get_total_pl_history(portfolio, days):
+def get_pl_history(portfolio, days):
   query = """
         SELECT D.portfolio_date,
              SUM(P.quantity * P.cost_price) as cost_basis,
              SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value,
-             SUM(P.realized_pl) as realized_pl,
+             SUM(P.realized_pl) as realized_pl
         FROM position P
              JOIN
              (
