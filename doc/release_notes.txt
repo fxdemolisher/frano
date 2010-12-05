@@ -1,4 +1,61 @@
 /================\
+| Release 0.6    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+#65 - Added a second import button on top of import preview
+      https://github.com/fxdemolisher/frano/issues#issue/65      
+      
+#70 - Added a way to remove all transactions from a portfolio 
+      https://github.com/fxdemolisher/frano/issues#issue/70
+      
+#64 - Supplimented XIRR with realized and total P/L numbers
+      https://github.com/fxdemolisher/frano/issues#issue/64 
+      
+#58 - Transation type is now editable inline on the transaction screen
+      https://github.com/fxdemolisher/frano/issues#issue/58 
+      
+#17 - Added transaction view filter (single security)
+      https://github.com/fxdemolisher/frano/issues#issue/17
+
+Fixes
+-------------------------------------------------------------------------------
+#66 - Fix to P/L graph bug (all portfolios selected)
+      https://github.com/fxdemolisher/frano/issues#issue/66
+      
+#68 - Added a way to cancel the "request a format" form
+      https://github.com/fxdemolisher/frano/issues#issue/68
+      
+#69 - Fixed diplicate detection (less than cent difference)
+      https://github.com/fxdemolisher/frano/issues#issue/69
+      
+#76 - Fixed as_of_date
+      https://github.com/fxdemolisher/frano/issues#issue/76
+      
+#77 - Right aligned position table headers
+      https://github.com/fxdemolisher/frano/issues#issue/77
+      
+#71 - Fixed delete transaction prompt
+      https://github.com/fxdemolisher/frano/issues#issue/71
+      
+#72 - Various fixes after portfolio was crashed with desyched data
+      https://github.com/fxdemolisher/frano/issues#issue/72
+      
+#75 - Fixes to Zecco import (negative quantities on sell/withdraw)
+      https://github.com/fxdemolisher/frano/issues#issue/75
+   
+#73 - Fixes to allocation chart. No longer showing slices that are too small.
+      Brought back allocation column on position view.
+      https://github.com/fxdemolisher/frano/issues#issue/73
+      
+Infrastructure
+-------------------------------------------------------------------------------
+#78 - Refactored cost basis calculations. Calculating realized P/L instead of
+      lowering cash cost basis. 
+      https://github.com/fxdemolisher/frano/issues#issue/78
+      
+/================\
 | Release 0.5    |
 \================/
 
