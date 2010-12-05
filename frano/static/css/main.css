@@ -218,7 +218,7 @@ TD.left { text-align: left !important; }
 .tickerSymbol {font-size:18px;font-weight:bold;color:#333;}
 
 .transactionType {
-  width:80px;
+  min-width: 80px; 
   float:left;
   padding:10px 3px;
   color:#FFF;
@@ -229,6 +229,10 @@ TD.left { text-align: left !important; }
   text-align:center;
   text-transform: uppercase;
   margin-right:5px;
+}
+
+.transactionType SELECT {
+  text-transform: none;
 }
 
 .deposit {background-color:#B391B3;}

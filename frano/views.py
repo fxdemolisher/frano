@@ -227,6 +227,10 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
     if form.is_valid():
       current_commission = transaction.total - (transaction.price * transaction.quantity)
       
+      type = form.cleaned_data.get('type')
+      if type != None:
+        transaction.type = type
+      
       as_of_date = form.cleaned_data.get('date')
       if as_of_date != None:
         transaction.as_of_date = as_of_date
@@ -463,6 +467,7 @@ class TransactionForm(forms.Form):
   commission = forms.FloatField(min_value = 0.01, required = False)
 
 class UpdateTransactionForm(forms.Form):
+  type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES, required = False)
   date = forms.DateField(required = False)
   symbol = forms.CharField(required = False, min_length = 1, max_length = 5)
   quantity = forms.FloatField(required = False)

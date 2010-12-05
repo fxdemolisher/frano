@@ -115,7 +115,7 @@ $(function() {
     $("#seeAllTransactions").hide();
   });
   
-  $(".inline-editable").each(function() {
+  $(".editable-transaction-field").each(function() {
     var holder = $(this)
     var components = holder.attr("id").substring('edit_'.length).split('_');
     holder.editable(function(value, settings) {
@@ -138,12 +138,46 @@ $(function() {
       
       return "Saving..."
     }, {
-      tooltip   : 'Click to edit...',
       onblur    : 'submit',
       height    : 17,
       width     : parseInt(components[3]),
       style     : 'display: inline;',
       data      : function(value, settings) { return value.replace(/[,\$]/gi, ''); }
+    });
+  });
+  
+  $(".transactionType").each(function() {
+    var holder = $(this)
+    var components = holder.attr("id").substring('edit_'.length).split('_');
+    holder.editable(function(value, settings) {
+      var params = Object();
+      $.post('/' + components[0] + '/' + components[1] + '/' + 'update.json', { type : value }, function(data, textStatus) {
+        if(data.success == 'True') {
+          val = 'Saved';
+        } else {
+          alert("Something went wrong...sorry");
+          val = 'Failed';
+        }
+        
+        holder.editable('disable');
+        holder.unbind('click');
+        holder.html(val);
+        holder.siblings(".inline-editable-prompt").html("refresh to update");
+        
+      }, 'json');
+      
+      return "Saving..."
+    }, {
+      onblur    : 'submit',
+      type      : 'select',
+      style     : 'display: inline;',
+      data      : function (value, settings) {
+        if(value == 'BUY' || value == 'SELL') {
+          return { 'BUY' : 'Buy Securities', 'SELL' : 'Sell Securities', 'selected' : value };
+        } else {
+          return { 'DEPOSIT' : 'Deposit Cash', 'WITHDRAW' : 'Withdraw Cash', 'ADJUST' : 'Adjust Cash', 'selected' : value };
+        }
+      }
     });
   });
   
