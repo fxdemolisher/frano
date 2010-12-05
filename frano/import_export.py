@@ -226,7 +226,7 @@ def parse_zecco_transactions(reader):
       continue
     
     # deposits/withdrawals happen on the cash journal
-    elif account_type == 'General Margin' and transaction_type == 'Cash Journal':
+    elif transaction_type == 'Cash Journal' and (description_field.startswith('ACH DEPOSIT') or description_field.startswith('ACH DISBURSEMENT')):
       symbol = Quote.CASH_SYMBOL
       type = ('DEPOSIT' if float(net_amount_field) >= 0 else 'WITHDRAW')
       quantity = (abs(float(net_amount_field)))
@@ -237,12 +237,12 @@ def parse_zecco_transactions(reader):
     elif transaction_type == 'B' or transaction_type == 'S':
       symbol = symbol_field
       type = ('SELL' if transaction_type == 'S' else 'BUY')
-      quantity = float(quantity_field)
+      quantity = abs(float(quantity_field))
       price = float(price_field)
       commission = abs(float(net_amount_field)) - (quantity * price)
       
     # everything else on the margin account or cash is an adjustment
-    elif account_type == 'General Margin' or account_type == 'Cash':
+    elif transaction_type == 'Interest Paid' or transaction_type == 'Qualified Dividend':
       symbol = Quote.CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(net_amount_field)

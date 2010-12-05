@@ -580,18 +580,20 @@ def decorate_positions_for_display(positions, symbols):
 def get_summary(positions, transactions):
   as_of_date = max([position.effective_as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
   start_date = min([transaction.as_of_date for transaction in transactions]) if len(transactions) > 0 else datetime.now().date()
-    
+  
+  market_value = 0  
   cost_basis = 0
-  market_value = 0
+  realized_pl = 0
   previous_market_value = 0
   for position in positions:
-    cost_basis += position.cost_price * position.quantity
     market_value += position.market_value
+    cost_basis += position.cost_price * position.quantity
+    realized_pl += position.realized_pl
     previous_market_value += position.previous_market_value
     
   xirr_percent = get_xirr_percent_for_transactions(transactions, as_of_date, market_value)
 
-  return Summary(as_of_date, start_date, market_value, cost_basis, previous_market_value, xirr_percent)
+  return Summary(as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent)
   
 def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
   transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
@@ -715,11 +717,12 @@ def get_pl_history(portfolio, days):
 #-----------------/
 
 class Summary:
-  def __init__(self, as_of_date, start_date, market_value, cost_basis, previous_market_value, xirr_percent):
+  def __init__(self, as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent):
     self.as_of_date = as_of_date
     self.start_date = start_date
     self.market_value = market_value
     self.cost_basis = cost_basis
+    self.realized_pl = realized_pl
     self.previous_market_value = previous_market_value
     self.xirr_percent = xirr_percent
     
@@ -729,6 +732,7 @@ class Summary:
     self.day_pl_percent = ((self.day_pl / previous_market_value) * 100) if previous_market_value != 0 else 0
     self.days = (as_of_date - start_date).days
     self.annualized_pl_percent = (self.pl_percent / (self.days / 365.0)) if self.days != 0 else 0
+    self.total_pl = self.pl + self.realized_pl
 
 class ProfitLossHistory:
   def __init__(self, as_of_date, profit_loss_percent, benchmark_profit_loss_percent):
