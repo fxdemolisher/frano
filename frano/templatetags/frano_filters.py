@@ -26,6 +26,10 @@ def sign_choice(value, args = 'positive,negative,zero'):
   else:
     return negative
 
+@register.filter
+def sorted_set(value):
+  return sorted(value)
+
 #-------------\
 #  UTILITIES  |
 #-------------/

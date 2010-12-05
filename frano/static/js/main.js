@@ -251,6 +251,10 @@ $(function() {
     
   });
   
+  $("#transactionSymbolFilter").change(function() {
+    $(this).submit();
+  });
+  
 });
 
 function scanForBannerMessages() {
@@ -287,7 +291,7 @@ function initializeProfitLossChart(container) {
   $.plot(container,
     [ 
       { data: dataPercent, yaxis: 2, label: "P/L %" },
-      { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (SPY)' },
+      { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (' + benchmarkSymbol + ')' },
     ],
     {
       series: {

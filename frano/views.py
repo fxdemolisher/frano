@@ -29,7 +29,7 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
 TRANSACTIONS_BEFORE_SEE_ALL = 20
 DAYS_IN_PL_HISTORY = 90
-PL_BENCHMARK_SYMBOL = 'SPY'
+PL_BENCHMARK_SYMBOL = 'ACWI'
 
 #--------------\
 #  DECORATORS  |
@@ -114,6 +114,7 @@ def demo(request):
       'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ], 
       'summary' : summary,
       'pl_history' : pl_history,
+      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
     }
   
   return render_to_response('demo.html', context, context_instance = RequestContext(request))
@@ -279,6 +280,7 @@ def portfolio_positions(request, user, portfolio, is_sample):
       'summary' : summary, 
       'current_tab' : 'positions',
       'pl_history' : pl_history, 
+      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
     }, context_instance = RequestContext(request))
 
 @login_required_decorator
@@ -307,11 +309,16 @@ def portfolio_transactions(request, user, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions])
   
+  symbol_filter = request.GET.get('filter')
+  if symbol_filter != None and symbol_filter != '':
+    transactions = transactions.filter(symbol = symbol_filter)
+  
   context = {
       'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
       'portfolio' : portfolio, 
       'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ],
-      'current_tab' : 'transactions', 
+      'current_tab' : 'transactions',
+      'symbol_filter' : symbol_filter,  
     }
   
   return render_to_response('transactions.html', context, context_instance = RequestContext(request))
@@ -333,6 +340,7 @@ def portfolio_read_only(request, read_only_token):
       'positions': positions, 
       'summary' : summary,
       'pl_history' : pl_history, 
+      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
     }, context_instance = RequestContext(request))
 
 def price_quote(request):
@@ -645,11 +653,12 @@ def redirect_to_portfolio(action, portfolio, is_sample, query_string = None):
   else:
     return redirect("/%d/%s.html%s" % (portfolio.id, action, ('' if query_string == None else "?%s" % query_string)))
 
-def get_pl_history(portfolio, days):
+def get_total_pl_history(portfolio, days):
   query = """
         SELECT D.portfolio_date,
              SUM(P.quantity * P.cost_price) as cost_basis,
-             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value
+             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value,
+             SUM(P.realized_pl) as realized_pl,
         FROM position P
              JOIN
              (

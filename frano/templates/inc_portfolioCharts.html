@@ -4,6 +4,7 @@
   var dates = [ {% for history in pl_history %}new Date({{ history.as_of_date.year }}, {{ history.as_of_date.month|add:'-1' }}, {{ history.as_of_date.day }}), {% endfor %} ];
   var profitLossPercent = [ {% for history in pl_history %}{{ history.profit_loss_percent}}, {% endfor %} ];
   var benchmark  = [ {% for history in pl_history %}{{ history.benchmark_profit_loss_percent}}, {% endfor %} ];
+  var benchmarkSymbol = '{{ benchmark_symbol|escapejs }}';
 
   var allocation = [ {% for position in positions %}[ '{{ position.symbol|escapejs }}', {{ position.allocation }} ], {% endfor %} ]
   

@@ -270,6 +270,8 @@ TD.left { text-align: left !important; }
 #seeAllTransactions TD { text-align: center }
 #seeAllTransactions A { font-size: 14px; color: #3333CC; }
 
+#transactionSymbolFilter { display: inline; }
+
 /*************\
 = COPY BLOCKS =
 \*************/
