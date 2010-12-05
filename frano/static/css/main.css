@@ -213,12 +213,12 @@ TD.left { text-align: left !important; }
 
 .lastRow TD { border-bottom: none; }
 
-.positionTable THEAD TD { text-align: center; }
+.positionTable THEAD TD { text-align: right; padding-right: 5px;}
 .positionTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
 .tickerSymbol {font-size:18px;font-weight:bold;color:#333;}
 
 .transactionType {
-  width:80px;
+  min-width: 80px; 
   float:left;
   padding:10px 3px;
   color:#FFF;
@@ -229,6 +229,10 @@ TD.left { text-align: left !important; }
   text-align:center;
   text-transform: uppercase;
   margin-right:5px;
+}
+
+.transactionType SELECT {
+  text-transform: none;
 }
 
 .deposit {background-color:#B391B3;}
@@ -266,6 +270,8 @@ TD.left { text-align: left !important; }
 #seeAllTransactions TD { text-align: center }
 #seeAllTransactions A { font-size: 14px; color: #3333CC; }
 
+#transactionSymbolFilter { display: inline; }
+
 /*************\
 = COPY BLOCKS =
 \*************/
@@ -289,7 +295,9 @@ TD.left { text-align: left !important; }
 = CHARTS =
 \********/
 
-#allocationChart { height: 215px; width: 100%; border: 1px solid #999999; }
+#allocationChartColumn { width: 280px; }
+#allocationChart { height: 280px; width: 100%; border: 1px solid #999999; }
 
-#plChartContainer { height: 210px; padding: 5px 5px 0px 10px; border: 1px solid #999999; }
-#plChart { height: 210px; }
+#plChartColumn { width: 625px; }
+#plChartContainer { height: 275px; padding: 5px 5px 0px 10px; border: 1px solid #999999; }
+#plChart { height: 270px; }

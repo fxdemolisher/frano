@@ -29,7 +29,7 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
 TRANSACTIONS_BEFORE_SEE_ALL = 20
 DAYS_IN_PL_HISTORY = 90
-PL_BENCHMARK_SYMBOL = 'SPY'
+PL_BENCHMARK_SYMBOL = 'ACWI'
 
 #--------------\
 #  DECORATORS  |
@@ -114,6 +114,7 @@ def demo(request):
       'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ], 
       'summary' : summary,
       'pl_history' : pl_history,
+      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
     }
   
   return render_to_response('demo.html', context, context_instance = RequestContext(request))
@@ -212,6 +213,13 @@ def remove_transaction(request, portfolio, is_sample, transaction_id):
   return redirect_to_portfolio('transactions', portfolio, is_sample) 
 
 @portfolio_manipilation_decorator
+def remove_all_transactions(request, portfolio, is_sample):
+  Transaction.objects.filter(portfolio__id__exact = portfolio.id).delete()
+  Position.refresh_if_needed(portfolio, force = True)
+    
+  return redirect_to_portfolio('transactions', portfolio, is_sample)
+
+@portfolio_manipilation_decorator
 def update_transaction(request, portfolio, is_sample, transaction_id):
   transaction = Transaction.objects.filter(id = transaction_id)[0]
   success = False
@@ -219,6 +227,10 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
     form = UpdateTransactionForm(request.POST)
     if form.is_valid():
       current_commission = transaction.total - (transaction.price * transaction.quantity)
+      
+      type = form.cleaned_data.get('type')
+      if type != None:
+        transaction.type = type
       
       as_of_date = form.cleaned_data.get('date')
       if as_of_date != None:
@@ -268,6 +280,7 @@ def portfolio_positions(request, user, portfolio, is_sample):
       'summary' : summary, 
       'current_tab' : 'positions',
       'pl_history' : pl_history, 
+      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
     }, context_instance = RequestContext(request))
 
 @login_required_decorator
@@ -296,11 +309,16 @@ def portfolio_transactions(request, user, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions])
   
+  symbol_filter = request.GET.get('filter')
+  if symbol_filter != None and symbol_filter != '':
+    transactions = transactions.filter(symbol = symbol_filter)
+  
   context = {
       'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
       'portfolio' : portfolio, 
       'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ],
-      'current_tab' : 'transactions', 
+      'current_tab' : 'transactions',
+      'symbol_filter' : symbol_filter,  
     }
   
   return render_to_response('transactions.html', context, context_instance = RequestContext(request))
@@ -322,6 +340,7 @@ def portfolio_read_only(request, read_only_token):
       'positions': positions, 
       'summary' : summary,
       'pl_history' : pl_history, 
+      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
     }, context_instance = RequestContext(request))
 
 def price_quote(request):
@@ -379,13 +398,14 @@ def import_transactions(request, portfolio, is_sample):
           by_date_map.get(transaction.as_of_date).append(transaction)
         
         for transaction in transactions:
+                    
           is_duplicate = False
           possibles = by_date_map.get(transaction.as_of_date)
           if possibles != None:
             for possible in possibles:
-              if possible.type == transaction.type and possible.symbol == transaction.symbol and possible.quantity == transaction.quantity and possible.price == transaction.price:
+              if possible.type == transaction.type and possible.symbol == transaction.symbol and abs(possible.quantity - transaction.quantity) < 0.01 and abs(possible.price - transaction.price) < 0.01:
                 is_duplicate = True
-                
+            
           transaction.is_duplicate = is_duplicate
     
   return render_to_response('importTransactions.html', 
@@ -455,6 +475,7 @@ class TransactionForm(forms.Form):
   commission = forms.FloatField(min_value = 0.01, required = False)
 
 class UpdateTransactionForm(forms.Form):
+  type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES, required = False)
   date = forms.DateField(required = False)
   symbol = forms.CharField(required = False, min_length = 1, max_length = 5)
   quantity = forms.FloatField(required = False)
@@ -555,6 +576,7 @@ def get_sample_user():
 
 def decorate_positions_for_display(positions, symbols):
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
+  as_of_date = min([quote.last_trade.date() for symbol, quote in quotes.items()])
   
   total_market_value = 0
   for position in positions:
@@ -566,22 +588,25 @@ def decorate_positions_for_display(positions, symbols):
     
   for position in positions:
     position.allocation = ((position.market_value / total_market_value * 100) if total_market_value != 0 else 0)
+    position.effective_as_of_date = as_of_date
   
 def get_summary(positions, transactions):
-  as_of_date = max([position.as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
+  as_of_date = max([position.effective_as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
   start_date = min([transaction.as_of_date for transaction in transactions]) if len(transactions) > 0 else datetime.now().date()
-    
+  
+  market_value = 0  
   cost_basis = 0
-  market_value = 0
+  realized_pl = 0
   previous_market_value = 0
   for position in positions:
-    cost_basis += position.cost_price * position.quantity
     market_value += position.market_value
+    cost_basis += position.cost_price * position.quantity
+    realized_pl += position.realized_pl
     previous_market_value += position.previous_market_value
     
   xirr_percent = get_xirr_percent_for_transactions(transactions, as_of_date, market_value)
 
-  return Summary(as_of_date, start_date, market_value, cost_basis, previous_market_value, xirr_percent)
+  return Summary(as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent)
   
 def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
   transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
@@ -632,7 +657,8 @@ def get_pl_history(portfolio, days):
   query = """
         SELECT D.portfolio_date,
              SUM(P.quantity * P.cost_price) as cost_basis,
-             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value
+             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value,
+             SUM(P.realized_pl) as realized_pl
         FROM position P
              JOIN
              (
@@ -671,10 +697,11 @@ def get_pl_history(portfolio, days):
              LEFT JOIN quote Q ON (Q.symbol = P.symbol)
              LEFT JOIN price_history H ON (H.quote_id = Q.id AND H.as_of_date = D.portfolio_date)
        WHERE P.quantity <> 0
+         AND P.portfolio_id = %s
     GROUP BY D.portfolio_date"""
   
   cursor = connection.cursor()
-  cursor.execute(query, [portfolio.id, portfolio.id, days, portfolio.id])
+  cursor.execute(query, [portfolio.id, portfolio.id, days, portfolio.id, portfolio.id])
   
   benchmark_quote = Quote.by_symbol(PL_BENCHMARK_SYMBOL)
   cutoff_date = datetime.now().date() - timedelta(days = DAYS_IN_PL_HISTORY)
@@ -704,11 +731,12 @@ def get_pl_history(portfolio, days):
 #-----------------/
 
 class Summary:
-  def __init__(self, as_of_date, start_date, market_value, cost_basis, previous_market_value, xirr_percent):
+  def __init__(self, as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent):
     self.as_of_date = as_of_date
     self.start_date = start_date
     self.market_value = market_value
     self.cost_basis = cost_basis
+    self.realized_pl = realized_pl
     self.previous_market_value = previous_market_value
     self.xirr_percent = xirr_percent
     
@@ -718,6 +746,7 @@ class Summary:
     self.day_pl_percent = ((self.day_pl / previous_market_value) * 100) if previous_market_value != 0 else 0
     self.days = (as_of_date - start_date).days
     self.annualized_pl_percent = (self.pl_percent / (self.days / 365.0)) if self.days != 0 else 0
+    self.total_pl = self.pl + self.realized_pl
 
 class ProfitLossHistory:
   def __init__(self, as_of_date, profit_loss_percent, benchmark_profit_loss_percent):

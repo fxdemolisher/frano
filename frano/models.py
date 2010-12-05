@@ -91,12 +91,24 @@ class Position(models.Model):
   symbol = models.CharField(max_length = 5)
   quantity = models.FloatField()
   cost_price = models.FloatField()
+  realized_pl = models.FloatField()
   
   class Meta:
     db_table = 'position'
     
   def __unicode__(self):
     return "%.2f of %s on %s @ %.2f" % (self.quantity, self.symbol, self.as_of_date.strftime('%m/%d/%Y'), self.cost_price)
+  
+  def clone(self, as_of_date = None):
+    out = Position()
+    out.portfolio = self.portfolio
+    out.as_of_date = (self.as_of_date if as_of_date == None else as_of_date)
+    out.symbol = self.symbol
+    out.quantity = self.quantity
+    out.cost_price = self.cost_price
+    out.realized_pl = self.realized_pl
+    
+    return out;
   
   def decorate_with_prices(self, price, previous_price):
     self.price = price
@@ -140,7 +152,7 @@ class Position(models.Model):
           bought_in_lot = min(lot.sold_quantity - lot.quantity, quantity)
           total = (lot.quantity * lot.cost_price) + (bought_in_lot * price)
           lot.quantity += bought_in_lot
-          lot.cost_price = total / lot.quantity
+          lot.cost_price = ((total / lot.quantity) if lot.quantity <> 0 else 0)
           quantity -= bought_in_lot
       
       if quantity > 0:
@@ -153,15 +165,12 @@ class Position(models.Model):
         lots.append(lot)
     
     def sell_in_lots(lots, quantity, price):
-      sold_original_cost = 0
       for lot in lots:
         sold_in_lot = min(lot.quantity - lot.sold_quantity, quantity)
         if sold_in_lot > 0:
-          sold_original_cost += sold_in_lot * lot.cost_price
-          
           total = (lot.sold_quantity * lot.sold_price) + (sold_in_lot * price)
           lot.sold_quantity += sold_in_lot
-          lot.sold_price = total / lot.sold_quantity
+          lot.sold_price = ((total / lot.sold_quantity) if lot.sold_quantity <> 0 else 0)
           quantity -= sold_in_lot
           
         if quantity == 0:
@@ -177,62 +186,70 @@ class Position(models.Model):
       
         lots.append(lot)
     
-      return sold_original_cost
-    
     # get the tax lots
     lot_sets = {}
-    last_lot_set = None
+    last_lot_set = {}
+    cash = {}
+    last_cash = Position(portfolio = transactions[0].portfolio,
+        as_of_date = datetime.now().date(),
+        symbol = Quote.CASH_SYMBOL,
+        quantity = 0,
+        cost_price = 1.0,
+        realized_pl = 0.0
+      )
+    
     for date in dates:
       current_transactions = transactions_by_date.get(date)
-      current_lot_set = ( dict([ (symbol, [lot.clone(date) for lot in lots]) for symbol, lots in last_lot_set.items()]) if last_lot_set != None else { } )
-      
-      cash_lots = current_lot_set.get(Quote.CASH_SYMBOL, [])
-      current_lot_set[Quote.CASH_SYMBOL] = cash_lots
+      current_lot_set = dict([ (symbol, [lot.clone(date) for lot in lots]) for symbol, lots in last_lot_set.items()])
+      current_cash = last_cash.clone(date)
       
       for transaction in current_transactions:
-        lots = current_lot_set.get(transaction.symbol, [])
-        current_lot_set[transaction.symbol] = lots
-      
-        if transaction.type == 'DEPOSIT':
-          buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, 1.0)
+        if transaction.type == 'DEPOSIT' or transaction.type == 'SELL':
+          current_cash.quantity += transaction.total
                   
-        elif transaction.type == 'WITHDRAW':
-          sell_in_lots(cash_lots, transaction.total, 1.0)
+        elif transaction.type == 'WITHDRAW' or transaction.type == 'BUY':
+          current_cash.quantity -= transaction.total
+          
+        elif  transaction.type == 'ADJUST':
+          current_cash.quantity += transaction.total
+          current_cash.realized_pl += transaction.total
         
-        elif transaction.type == 'ADJUST':
-          if transaction.total > 0:
-            buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, 0.0)
-          else:
-            sell_in_lots(cash_lots, abs(transaction.total), 1.0)
-            
-        elif transaction.type == 'BUY':
-          buy_in_lots(lots, transaction.as_of_date, transaction.quantity, transaction.price)
-          sell_in_lots(cash_lots, transaction.total, 1.0)
-                      
-        elif transaction.type == 'SELL':
-          original_cost = sell_in_lots(lots, transaction.quantity, transaction.price)
-          buy_in_lots(cash_lots, transaction.as_of_date, transaction.total, (original_cost / transaction.total))
+        if transaction.type == 'BUY' or transaction.type == 'SELL':
+          lots = current_lot_set.get(transaction.symbol, [])
+          current_lot_set[transaction.symbol] = lots
+          
+          if transaction.type == 'BUY':
+            buy_in_lots(lots, date, transaction.quantity, transaction.price)
+                        
+          elif transaction.type == 'SELL':
+            sell_in_lots(lots, transaction.quantity, transaction.price)
       
       last_lot_set = lot_sets[date] = current_lot_set
+      last_cash = cash[date] = current_cash
       
     # compose positions
     for date in dates:
+      cash.get(date).save() # save cash position first
+      
       for symbol, lots in lot_sets.get(date).items():
-        position = Position(as_of_date = date, portfolio = transactions[0].portfolio)
-        position.symbol = symbol
+        position = Position(portfolio = transactions[0].portfolio, 
+            as_of_date = date,
+            symbol = symbol, 
+            quantity = 0.0, 
+            cost_price = 0.0, 
+            realized_pl = 0.0
+          )
         
-        quantity = 0
-        cost_price = 0
         for lot in lots:
           cur_quantity = (lot.quantity - lot.sold_quantity)
           if cur_quantity > 0:
-            total = (quantity * cost_price) + (cur_quantity * lot.cost_price)
-            quantity += cur_quantity
-            cost_price = total / quantity
+            total = (position.quantity * position.cost_price) + (cur_quantity * lot.cost_price)
+            position.quantity += cur_quantity
+            position.cost_price = (total / position.quantity if lot.quantity <> 0.0 else 0.0)
         
-        position.quantity = quantity
-        position.cost_price = cost_price
-      
+          if lot.sold_quantity > 0:
+            position.realized_pl += (lot.sold_quantity * (lot.sold_price - lot.cost_price))
+        
         position.save()
         for lot in lots:
           lot.position = position

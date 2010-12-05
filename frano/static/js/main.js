@@ -97,8 +97,14 @@ $(function() {
     
   });
   
-  $("#deleteTransaction").click(function (e) {
+  $(".deleteTransaction").click(function (e) {
     if(!confirm('Are you sure you wish to remove this transaction?')) {
+      e.preventDefault();
+    }
+  });
+  
+  $(".removeAllTransactions").click(function (e) {
+    if(!confirm('Are you sure you wish to remove ALL transactions from this portfolio?\nThis action cannot be undone.')) {
       e.preventDefault();
     }
   });
@@ -109,7 +115,7 @@ $(function() {
     $("#seeAllTransactions").hide();
   });
   
-  $(".inline-editable").each(function() {
+  $(".editable-transaction-field").each(function() {
     var holder = $(this)
     var components = holder.attr("id").substring('edit_'.length).split('_');
     holder.editable(function(value, settings) {
@@ -132,12 +138,46 @@ $(function() {
       
       return "Saving..."
     }, {
-      tooltip   : 'Click to edit...',
       onblur    : 'submit',
       height    : 17,
       width     : parseInt(components[3]),
       style     : 'display: inline;',
       data      : function(value, settings) { return value.replace(/[,\$]/gi, ''); }
+    });
+  });
+  
+  $(".transactionType").each(function() {
+    var holder = $(this)
+    var components = holder.attr("id").substring('edit_'.length).split('_');
+    holder.editable(function(value, settings) {
+      var params = Object();
+      $.post('/' + components[0] + '/' + components[1] + '/' + 'update.json', { type : value }, function(data, textStatus) {
+        if(data.success == 'True') {
+          val = 'Saved';
+        } else {
+          alert("Something went wrong...sorry");
+          val = 'Failed';
+        }
+        
+        holder.editable('disable');
+        holder.unbind('click');
+        holder.html(val);
+        holder.siblings(".inline-editable-prompt").html("refresh to update");
+        
+      }, 'json');
+      
+      return "Saving..."
+    }, {
+      onblur    : 'submit',
+      type      : 'select',
+      style     : 'display: inline;',
+      data      : function (value, settings) {
+        if(value == 'BUY' || value == 'SELL') {
+          return { 'BUY' : 'Buy Securities', 'SELL' : 'Sell Securities', 'selected' : value };
+        } else {
+          return { 'DEPOSIT' : 'Deposit Cash', 'WITHDRAW' : 'Withdraw Cash', 'ADJUST' : 'Adjust Cash', 'selected' : value };
+        }
+      }
     });
   });
   
@@ -204,6 +244,17 @@ $(function() {
     $("#requestTransactionsForm").show();
   });
   
+  $("#cancelImportRequest").click(function(e) {
+    e.preventDefault();
+    $("#requestTransactionsForm").hide();
+    $("#importTransactionsForm").show();
+    
+  });
+  
+  $("#transactionSymbolFilter").change(function() {
+    $(this).submit();
+  });
+  
 });
 
 function scanForBannerMessages() {
@@ -240,13 +291,15 @@ function initializeProfitLossChart(container) {
   $.plot(container,
     [ 
       { data: dataPercent, yaxis: 2, label: "P/L %" },
-      { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (SPY)' },
+      { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (' + benchmarkSymbol + ')' },
     ],
     {
       series: {
-          lines: { show: true }
+        lines: { show: true },
       },
       xaxis: {
+        ticks: dates.length / 7,
+        minTickSize: 1,
         tickFormatter: function (value, axis) {
           if(value >= 0 && value < dates.length) {
             return $.datepicker.formatDate('mm/dd', dates[value]);
@@ -282,14 +335,17 @@ function initializeAllocationChart(container) {
         series: {
           pie: { 
             show: true, 
-            radius: 1,
+            radius: 0.98,
             label: {
                 show: true,
-                radius: 3/4,
+                radius: 0.8,
                 formatter: function(label, series) {
-                    return '<div style="font-size:8pt;text-align:center;padding:2px;color:white;">'+label+'<br/>'+series.percent.toFixed(2)+'%</div>';
+                    return '<div style="font-size:8pt;text-align:center;padding:2px;color:white; border: 1px solid #ccc;">'+label+'<br/>'+series.percent.toFixed(2)+'%</div>';
                 },
-                background: { opacity: 0.5 }
+                background: { opacity: 0.5, color: '#666' }
+            },
+            combine: {
+              threshold: 0.05
             }
           },
         },

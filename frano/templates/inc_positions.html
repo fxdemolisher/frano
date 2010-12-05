@@ -5,7 +5,8 @@
     <table class="dataTable positionTable" width="100%" cellpadding="0" cellspacing="0">
       <thead>
         <tr>
-          <td>Symbol</td>
+          <td class="left">Symbol</td>
+          <td>Allocation</td>
           <td>Qty</td>
           <td>Price</td>
           <td>Cost Price</td>
@@ -32,6 +33,7 @@
                   <div class="holdingsMeta error">Unknown symbol</div>
                 {% endifequal %}
               </td>
+              <td>{{ position.allocation|floatformat:'2' }}%</td>
               <td>{{ position.quantity|num_format }}</td>
               <td>${{ position.price|num_format }}</td>
               <td>${{ position.cost_price|num_format }}</td>
