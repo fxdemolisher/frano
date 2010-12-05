@@ -212,6 +212,13 @@ def remove_transaction(request, portfolio, is_sample, transaction_id):
   return redirect_to_portfolio('transactions', portfolio, is_sample) 
 
 @portfolio_manipilation_decorator
+def remove_all_transactions(request, portfolio, is_sample):
+  Transaction.objects.filter(portfolio__id__exact = portfolio.id).delete()
+  Position.refresh_if_needed(portfolio, force = True)
+    
+  return redirect_to_portfolio('transactions', portfolio, is_sample)
+
+@portfolio_manipilation_decorator
 def update_transaction(request, portfolio, is_sample, transaction_id):
   transaction = Transaction.objects.filter(id = transaction_id)[0]
   success = False
@@ -556,6 +563,7 @@ def get_sample_user():
 
 def decorate_positions_for_display(positions, symbols):
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
+  as_of_date = min([quote.last_trade.date() for symbol, quote in quotes.items()])
   
   total_market_value = 0
   for position in positions:
@@ -567,9 +575,10 @@ def decorate_positions_for_display(positions, symbols):
     
   for position in positions:
     position.allocation = ((position.market_value / total_market_value * 100) if total_market_value != 0 else 0)
+    position.effective_as_of_date = as_of_date
   
 def get_summary(positions, transactions):
-  as_of_date = max([position.as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
+  as_of_date = max([position.effective_as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
   start_date = min([transaction.as_of_date for transaction in transactions]) if len(transactions) > 0 else datetime.now().date()
     
   cost_basis = 0

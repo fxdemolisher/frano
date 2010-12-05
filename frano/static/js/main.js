@@ -97,8 +97,14 @@ $(function() {
     
   });
   
-  $("#deleteTransaction").click(function (e) {
+  $(".deleteTransaction").click(function (e) {
     if(!confirm('Are you sure you wish to remove this transaction?')) {
+      e.preventDefault();
+    }
+  });
+  
+  $(".removeAllTransactions").click(function (e) {
+    if(!confirm('Are you sure you wish to remove ALL transactions from this portfolio?\nThis action cannot be undone.')) {
       e.preventDefault();
     }
   });

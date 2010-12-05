@@ -50,7 +50,7 @@
                     <div class="inline-editable" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format }}</div>
                     <div class="inline-editable-prompt">click to edit</div>
                   </td>
-                  <td><a id="deleteTransaction" href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div class="icon delete"></div></a></td>
+                  <td><a class="deleteTransaction" href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div class="icon delete"></div></a></td>
                 </tr>
               {% endfor %}
             {% endfor %}
@@ -66,11 +66,16 @@
   </div>
   <div id="content" >
     <div class="column-row export-transactions-form">
-      <div class="eight columns">
+      <div class="four columns">
        <div class="transactionsCopy">
          Export all your transactions as: 
          <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
          <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
+       </div>
+      </div>
+      <div class="four columns">
+       <div class="transactionsCopy">
+         If you need to start over: <a href="/{{portfolio.id}}/removeAllTransactions.html" class="buttonLink importButton removeAllTransactions">Remove All Transactions</a>
        </div>
      </div>
    </div>
