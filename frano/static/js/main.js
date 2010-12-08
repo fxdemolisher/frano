@@ -9,9 +9,7 @@ $(function() {
   
   scanForBannerMessages();
   $("#banner").click(function() {
-    $(this).fadeOut(function() {
-      scanForBannerMessages();
-    });
+    $(this).fadeOut();
   })
   
   $('#symbol').autocomplete({ source: symbols });
@@ -98,13 +96,13 @@ $(function() {
   });
   
   $(".deleteTransaction").click(function (e) {
-    if(!confirm('Are you sure you wish to remove this transaction?')) {
+    if(!confirm('Are you sure you want to remove this transaction?')) {
       e.preventDefault();
     }
   });
   
   $(".removeAllTransactions").click(function (e) {
-    if(!confirm('Are you sure you wish to remove ALL transactions from this portfolio?\nThis action cannot be undone.')) {
+    if(!confirm('Are you sure you want to remove ALL transactions from this portfolio?\nThis action cannot be undone.')) {
       e.preventDefault();
     }
   });
@@ -233,7 +231,7 @@ $(function() {
   });
   
   $("#deletePortfolio").click(function (e) {
-    if(!confirm('Are you sure you wish to remove this portfolio?')) {
+    if(!confirm('Are you sure you want to remove this portfolio?')) {
       e.preventDefault();
     }
   });
@@ -260,9 +258,12 @@ $(function() {
 function scanForBannerMessages() {
   var msg = $('.message').first()
   if(msg.length > 0) {
-    $("#banner").html(msg.html() + "[need a close button]");
-    $("#banner").fadeIn();
-    msg.remove();
+    $("#banner").html(msg.html() + " &nbsp;&nbsp;<a onclick='return false;' href='#'>Close</a>");
+    $("#banner").fadeIn(function() {
+        window.setTimeout('$("#banner").fadeOut(1000)',4500);
+    
+    });
+    
   }
 }
 

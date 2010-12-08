@@ -1,15 +1,16 @@
 {% load frano_filters %}
 
 {% if transaction_sets.0 %}
+   
   <div id="content" >
-    <div class="column-row export-transactions-form">
+     <div class="column-row export-transactions-form">
       <div class="four columns">
         <div class="transactionsCopy">
           See transactions for: 
-          <form method="get" id="transactionSymbolFilter">
+          <form method="get" action="#transactionSymbolFilter" id="transactionSymbolFilter">
             <select name="filter">
               <option value="">All Symbols</option>
-              <option value="*CASH" {% ifequal symbol_filter "*CASH" %}selected{% endifequal %}>Cash</option>
+              <option value="*CASH#" {% ifequal symbol_filter "*CASH" %}selected{% endifequal %}>Cash</option>
               {% for symbol in symbols|sorted_set %}
                 <option {% ifequal symbol_filter symbol %}selected{% endifequal %}>{{ symbol }}</option>
               {% endfor %}
@@ -18,14 +19,11 @@
         </div>
       </div>
       <div class="four columns">
-       <div class="transactionsCopy">
+       <div class="transactionsCopy floatright">
          If you need to start over: <a href="/{{portfolio.id}}/removeAllTransactions.html" class="buttonLink importButton removeAllTransactions">Remove All Transactions</a>
        </div>
      </div>
    </div>
-  </div>
-
-  <div id="content" >
     <div class="column-row">
       <div class="eight columns">
         <table class="dataTable transactionTable" width="100%" cellpadding="0" cellspacing="0">
@@ -88,20 +86,18 @@
       
           </tbody>
         </table>
+      
+         
+           <div class="transactionsCopy exportTransactions">
+             Export all your transactions as: 
+             <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
+             <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
+           </div>
+         
       </div>
     </div>
   </div>
-  <div id="content" >
-    <div class="column-row export-transactions-form">
-      <div class="eight columns">
-       <div class="transactionsCopy">
-         Export all your transactions as: 
-         <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
-         <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
-       </div>
-     </div>
-   </div>
-  </div>
+
 {% endif %}
 
 {% comment %}
