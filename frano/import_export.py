@@ -81,7 +81,7 @@ def parse_transactions(type, file):
     transaction = Transaction()
     transaction.as_of_date = row['date']
     transaction.type = row['type']
-    transaction.symbol = row['symbol']
+    transaction.symbol = row['symbol'].upper()
     transaction.quantity = row['quantity']
     transaction.price = row['price']
     transaction.total = row['total']
@@ -226,7 +226,11 @@ def parse_zecco_transactions(reader):
       continue
     
     # deposits/withdrawals happen on the cash journal
-    elif transaction_type == 'Cash Journal' and (description_field.startswith('ACH DEPOSIT') or description_field.startswith('ACH DISBURSEMENT')):
+    elif transaction_type == 'Cash Journal' and (
+        description_field.startswith('ACH DEPOSIT') or description_field.startswith('ACH DISBURSEMENT') or 
+        description_field.startswith('W/T FRM CUST') or description_field.startswith('W/T TO CUST')
+      ):
+      
       symbol = Quote.CASH_SYMBOL
       type = ('DEPOSIT' if float(net_amount_field) >= 0 else 'WITHDRAW')
       quantity = (abs(float(net_amount_field)))

@@ -107,11 +107,16 @@ def demo(request):
   summary = get_summary(positions, transactions)
   pl_history = get_pl_history(portfolio, DAYS_IN_PL_HISTORY)
   
+  symbol_filter = request.GET.get('filter')
+  if symbol_filter != None and symbol_filter != '':
+    transactions = transactions.filter(symbol = symbol_filter)
+  
   context = {
       'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
       'portfolio' : portfolio, 
       'positions': positions, 
-      'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ], 
+      'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ],
+      'symbol_filter' : symbol_filter, 
       'summary' : summary,
       'pl_history' : pl_history,
       'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
@@ -193,7 +198,7 @@ def add_transaction(request, portfolio, is_sample):
     transaction.portfolio = portfolio
     transaction.type = type
     transaction.as_of_date = form.cleaned_data.get('as_of_date')
-    transaction.symbol = form.cleaned_data.get('symbol').encode('UTF-8')
+    transaction.symbol = form.cleaned_data.get('symbol').encode('UTF-8').upper()
     transaction.quantity = form.cleaned_data.get('quantity')
     transaction.price = form.cleaned_data.get('price')
     transaction.total = (transaction.quantity * transaction.price) + commission
@@ -229,8 +234,8 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
       current_commission = transaction.total - (transaction.price * transaction.quantity)
       
       type = form.cleaned_data.get('type')
-      if type != None:
-        transaction.type = type
+      if type != None and type != '':
+        transaction.type = type.encode('UTF-8')
       
       as_of_date = form.cleaned_data.get('date')
       if as_of_date != None:
@@ -238,7 +243,7 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
         
       symbol = form.cleaned_data.get('symbol')
       if symbol != None and symbol != '':
-        transaction.symbol = symbol.encode('UTF-8')
+        transaction.symbol = symbol.encode('UTF-8').upper()
         
       quantity = form.cleaned_data.get('quantity')
       if quantity != None:
@@ -427,7 +432,7 @@ def process_import_transactions(request, portfolio, is_sample):
       transaction.portfolio = portfolio
       transaction.type = cd.get('type').encode('UTF-8')
       transaction.as_of_date = cd.get('as_of_date')
-      transaction.symbol = cd.get('symbol').encode('UTF-8')
+      transaction.symbol = cd.get('symbol').encode('UTF-8').upper()
       transaction.quantity = cd.get('quantity')
       transaction.price = cd.get('price')
       transaction.total = cd.get('total')

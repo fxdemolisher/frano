@@ -7,10 +7,10 @@
       <div class="four columns">
         <div class="transactionsCopy">
           See transactions for: 
-          <form method="get" action="#transactionSymbolFilter" id="transactionSymbolFilter">
+          <form method="get" action="" id="transactionSymbolFilter">
             <select name="filter">
               <option value="">All Symbols</option>
-              <option value="*CASH#" {% ifequal symbol_filter "*CASH" %}selected{% endifequal %}>Cash</option>
+              <option value="*CASH" {% ifequal symbol_filter "*CASH" %}selected{% endifequal %}>Cash</option>
               {% for symbol in symbols|sorted_set %}
                 <option {% ifequal symbol_filter symbol %}selected{% endifequal %}>{{ symbol }}</option>
               {% endfor %}
