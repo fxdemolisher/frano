@@ -47,7 +47,7 @@
         {% endfor %}
         
         <tr class="lastRow">
-          <td colspan="5">&nbsp;</td>
+          <td colspan="6">&nbsp;</td>
           <td class="{{ summary.day_pl|sign_choice:'pos,neg,' }}">${{ summary.day_pl|num_format }}</td>
           <td class="{{ summary.day_pl|sign_choice:'pos,neg,' }}">{{ summary.day_pl_percent|floatformat:2 }}%</td>
           <td class="{{ summary.pl|sign_choice:'pos,neg,' }}">${{ summary.pl|num_format }}</td>
