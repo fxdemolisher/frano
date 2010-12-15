@@ -258,12 +258,10 @@ $(function() {
 function scanForBannerMessages() {
   var msg = $('.message').first()
   if(msg.length > 0) {
-    $("#banner").html(msg.html() + " &nbsp;&nbsp;<a onclick='return false;' href='#'>Close</a>");
+    $("#banner").html(msg.html());
     $("#banner").fadeIn(function() {
-        window.setTimeout('$("#banner").fadeOut(1000)',4500);
-    
+      window.setTimeout('$("#banner").fadeOut(1000)',4500);
     });
-    
   }
 }
 

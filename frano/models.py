@@ -7,7 +7,7 @@ import string
 import random
 
 from datetime import date, datetime, timedelta
-from django.db import models
+from django.db import models, connection
 from exceptions import StopIteration
 from urllib import urlopen
 
@@ -290,17 +290,12 @@ class TaxLot(models.Model):
     return out;
   
 class Quote(models.Model):
-  TIMEOUT_DELTA = timedelta(minutes = 15)
-  HISTORY_TIMEOUT_DELTA = timedelta(days = 1)
-  HISTORY_START_DATE = date(1900, 1, 1)
   CASH_SYMBOL = '*CASH'
   
   symbol = models.CharField(max_length = 5, unique = True)
   name = models.CharField(max_length = 255)
   price = models.FloatField()
   last_trade = models.DateTimeField()
-  quote_date = models.DateTimeField()
-  history_date = models.DateTimeField()
   cash_equivalent = models.BooleanField()
   
   class Meta:
@@ -309,49 +304,80 @@ class Quote(models.Model):
   def __unicode__(self):
     return "%s - %s" % (self.symbol, self.name)
   
-  def refresh(self):
-    self.last_trade = self.history_date = self.quote_date = datetime.now()
-      
-    if self.symbol == Quote.CASH_SYMBOL:
-      self.name = 'US Dollars'
-      self.price = 1.0
-            
-    else:
+  @classmethod
+  def by_symbol(cls, symbol):
+    quotes = Quote.objects.filter(symbol = symbol)
+    if quotes.count() == 0:
+      Quote.get_quotes_by_symbols([ symbol ])
+    
+    quote = quotes[0]
+    
+    if quote.pricehistory_set.count() == 0:
+      quote.refresh_history()
+          
+    return quote
+  
+  @classmethod
+  def get_quotes_by_symbols(cls, symbols):
+    
+    # load or prime quotes for each symbol
+    existing_quotes = dict([ (q.symbol, q) for q in Quote.objects.filter(symbol__in = symbols) ])
+    quotes = { }
+    symbols_to_retrieve = []
+    for symbol in symbols:
+      quote = existing_quotes.get(symbol, None)
+      if quote == None:
+        quote = Quote(symbol = symbol, last_trade = datetime.now())
+        
+      quotes[symbol] = quote
+      if symbol != Quote.CASH_SYMBOL:
+        symbols_to_retrieve.append(symbol)
+        
+      else:
+        quote.name = 'US Dollars'
+        quote.price = 1.0
+        quote.cash_equivalent = True
+    
+    # retrieve fresh prices from yahoo
+    if len(symbols_to_retrieve) > 0:
       u = None
       try:
-        u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=sl1d1t1n&e=.csv' % self.symbol)
-        row = csv.reader(u).next()
-        if len(row) < 5:
-          return
+        u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=sl1d1t1n&e=.csv' % (",".join(symbols_to_retrieve)))
+        for row in csv.reader(u):
+          if len(row) < 5:
+            continue
         
-        self.name = row[4]
-        self.cash_equivalent = row[1].endswith('%')
-        self.price = (1.0 if self.cash_equivalent else float(row[1]))
+          quote = quotes.get(row[0])
+          quote.cash_equivalent = row[1].endswith('%')
+          quote.price = (1.0 if quote.cash_equivalent else float(row[1]))
+          quote.name = row[4]
         
-        if row[2] != 'N/A' and row[3] != 'N/A':
-          month, day, year = [int(f) for f in row[2].split('/')]
-          time = datetime.strptime(row[3], '%I:%M%p')
-          self.last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
+          if row[2] != 'N/A' and row[3] != 'N/A':
+            month, day, year = [int(f) for f in row[2].split('/')]
+            time = datetime.strptime(row[3], '%I:%M%p')
+            quote.last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
           
       finally:
         if u != None:
           u.close()
         
-    self.save()
-    return self
+    # save all changes
+    for quote in quotes.values():
+      quote.save()
   
   def refresh_history(self):
     history = []
     u = None
     try:
+      start_date = self.last_trade - timedelta(days = 90)
       u = urlopen('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (
           self.symbol, 
-          (Quote.HISTORY_START_DATE.month - 1), 
-          Quote.HISTORY_START_DATE.day, 
-          Quote.HISTORY_START_DATE.year, 
-          (self.quote_date.month - 1), 
-          self.quote_date.day, 
-          self.quote_date.year)
+          (start_date.month - 1), 
+          start_date.day, 
+          start_date.year, 
+          (self.last_trade.month - 1), 
+          self.last_trade.day, 
+          self.last_trade.year)
         )
       
       reader = csv.reader(u)
@@ -389,26 +415,6 @@ class Quote(models.Model):
   
   def previous_close_price(self):
     return self.price_as_of(self.last_trade - timedelta(days = 1))
-  
-  @classmethod
-  def by_symbol(cls, symbol_to_find):
-    candidate = Quote.objects.filter(symbol = symbol_to_find)
-    quote = None
-    if candidate.count() > 0:
-      quote = candidate[0]
-    else:
-      quote = Quote(symbol = symbol_to_find)
-    
-    needs_refresh = (quote.quote_date == None or (datetime.now() - quote.quote_date) > Quote.TIMEOUT_DELTA) 
-    needs_history_refresh = (quote.symbol != Quote.CASH_SYMBOL and (quote.history_date == None or (datetime.now() - quote.history_date) > Quote.HISTORY_TIMEOUT_DELTA))
-    
-    if needs_refresh:
-      quote.refresh()
-    
-    if needs_history_refresh and not quote.cash_equivalent:
-      quote.refresh_history()
-          
-    return quote
   
 class PriceHistory(models.Model):
   quote = models.ForeignKey('Quote')
