@@ -113,8 +113,8 @@ body.ie .two-thirds .column-row { width: 964px; }
 = HIGHLIGHTING =
 \**************/
 
-.pos {color:#3C3;}
-.neg {color:#C33;}
+.pos {color:#393;}
+.neg {color:#933;}
 .error { color: #CC0000; }
 
 /********\
@@ -213,6 +213,7 @@ BUTTON {
 .dataMeta {font-size:13px;font-weight:normal;margin-top:2px;}
 TD.right { text-align: right !important; }
 TD.left { text-align: left !important; }
+TD.center { text-align: center !important; }
 
 .lastRow TD { border-bottom: none; }
 
@@ -247,6 +248,11 @@ TD.left { text-align: left !important; }
 
 .add {background-position:0 -22px;cursor:pointer;}
 
+.showLots { color: #3333CC !important; font-size: 14px; } 
+.lotRow { border: 1px solid #CCCCCC; }
+.lotTable TBODY TD { font-size: 14px; }
+
+
 /******************\
 = POSITION SUMMARY =
 \******************/
@@ -256,6 +262,9 @@ TD.left { text-align: left !important; }
 .importantData .value {font-size:40px;margin-bottom:7px; white-space:nowrap;}
 .importantData .related {color:#666; white-space:nowrap;}
 .importantData .related STRONG {font-weight:bold; white-space:nowrap;}
+
+#seeAllPositions TD { text-align: center }
+#seeAllPositions A { font-size: 14px; color: #3333CC; }
 
 /**************\
 = TRANSACTIONS =

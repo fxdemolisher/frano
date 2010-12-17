@@ -20,6 +20,16 @@
       </li>
     </ul>
   </div>
+  
+  <div class="two columns offset-by-one">
+    <ul class="importantData">
+      <li class="name">Todays P/L $</li>
+      <li class="value {{ summary.day_pl|sign_choice:'pos,neg,' }}">${{ summary.day_pl|num_format }}</li>
+      <li class="related">
+        <strong>As %:</strong> <span class="{{ summary.day_pl_percent|sign_choice:'pos,neg,' }}">{{ summary.day_pl_percent|floatformat:'2' }}%</span>
+      </li>
+    </ul>
+  </div>
 
 </div>
 

@@ -253,6 +253,17 @@ $(function() {
     $(this).submit();
   });
   
+  $(".showLots").click(function(e) {
+    e.preventDefault();
+    var myRow = $(this).parents("TR").next(".lotRow");
+    var showMyRow = (myRow.css("display") == 'none');
+    
+    $(".lotRow").hide();
+    if(showMyRow) {
+      myRow.show();
+    }
+  })
+  
 });
 
 function scanForBannerMessages() {

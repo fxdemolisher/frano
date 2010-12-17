@@ -1,6 +1,7 @@
 {% load frano_filters %}
 
 <div class="column-row">
+  
   <div class="eight columns">
     <table class="dataTable positionTable" width="100%" cellpadding="0" cellspacing="0">
       <thead>
@@ -10,52 +11,97 @@
           <td>Qty</td>
           <td>Price</td>
           <td>Cost Price</td>
-          <td>Mkt Value</td>                                
-          <td>Day's P/L $</td>
-          <td>Day's P/L %</td>
-          <td>P/L $</td>
-          <td>P/L %</td>
+          <td>Market Value</td>                                
+          <td>Unrealized P/L $</td>
+          <td>Unrealized P/L %</td>
+          <td>&nbsp;</td>
         </tr>
       </thead>
       <tbody>
 
         {% for position in positions %}
-          {% ifnotequal position.quantity 0 %}
-            <tr>
-              <td class="left">
-                {% ifequal position.symbol '*CASH' %}
-                  <div class="tickerSymbol">{{ position.symbol }}</div>
-                {% else %}
-                  <a href="http://finance.yahoo.com/q?s={{ position.symbol|lower }}" class="tickerSymbol" target="_blank" title="{{ position.name }}">{{ position.symbol }}</a>
-                {% endifequal %}
-                
-                {% ifequal position.price 0 %}
-                  <div class="holdingsMeta error">Unknown symbol</div>
-                {% endifequal %}
+        
+          <tr {% if not position.show %}class="hidden"{% endif %}>
+            <td class="left">
+              {% ifequal position.symbol '*CASH' %}
+                <div class="tickerSymbol">{{ position.symbol }}</div>
+              {% else %}
+                <a href="http://finance.yahoo.com/q?s={{ position.symbol|lower }}" class="tickerSymbol" target="_blank" title="{{ position.name }}">{{ position.symbol }}</a>
+              {% endifequal %}
+              
+              {% ifequal position.price 0 %}
+                <div class="holdingsMeta error">Unknown symbol</div>
+              {% endifequal %}
+            </td>
+            <td>{{ position.allocation|floatformat:'2' }}%</td>
+            <td>{{ position.quantity|num_format }}</td>
+            <td>${{ position.price|num_format }}</td>
+            <td>${{ position.cost_price|num_format }}</td>
+            <td>${{ position.market_value|num_format }}</td>
+            <td class="{{ position.pl|sign_choice:'pos,neg,' }}">${{ position.pl|num_format }}</td>
+            <td class="{{ position.pl|sign_choice:'pos,neg,' }}">{{ position.pl_percent|floatformat:2 }}%</td>
+            <td>
+              {% ifnotequal position.lots|length 0 %}
+                <a href="#" class="showLots">more...</a>
+              {% else %}
+                &nbsp;
+              {% endifnotequal %}
+            </td>
+          </tr>
+          
+          {% ifnotequal position.lots|length 0 %}
+            <tr class="hidden lotRow">
+              <td colspan="9">
+                <table class="dataTable lotTable" width="100%" cellpadding="0" cellspacing="0">
+                  <thead>
+                    <tr>
+                      <td class="center">Date</td>
+                      <td>Quantity</td>
+                      <td>Cost Price</td>
+                      <td>Unrealized P/L $</td>
+                      <td>Unrealized P/L %</td>
+                      <td>Quantity Sold</td>
+                      <td>Avg. Sell Price</td>
+                      <td>Realized P/L $</td>                                
+                      <td class="center">Status</td>
+                      <td>&nbsp;</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for lot in position.lots %}
+                      <tr>
+                        <td class="center">{{ lot.as_of_date|date:'m/d/Y' }}</td>
+                        <td>{{ lot.quantity|num_format }}</td>
+                        <td>${{ lot.cost_price|num_format }}</td>
+                        <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">${{ lot.unrealized_pl|num_format }}</td>
+                        <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">{{ lot.unrealized_pl_percent|floatformat:2 }}%</td>
+                        <td>{{ lot.sold_quantity|num_format }}</td>
+                        <td>${{ lot.sold_price|num_format }}</td>
+                        <td class="{{ lot.realized_pl|sign_choice:'pos,neg,' }}">${{ lot.realized_pl|num_format }}</td>
+                        <td class="center">{{ lot.status }}
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
               </td>
-              <td>{{ position.allocation|floatformat:'2' }}%</td>
-              <td>{{ position.quantity|num_format }}</td>
-              <td>${{ position.price|num_format }}</td>
-              <td>${{ position.cost_price|num_format }}</td>
-              <td>${{ position.market_value|num_format }}</td>
-              <td class="{{ position.day_pl|sign_choice:'pos,neg,' }}">${{ position.day_pl|num_format }}</td>
-              <td class="{{ position.day_pl|sign_choice:'pos,neg,' }}">{{ position.day_pl_percent|floatformat:2 }}%</td>
-              <td class="{{ position.pl|sign_choice:'pos,neg,' }}">${{ position.pl|num_format }}</td>
-              <td class="{{ position.pl|sign_choice:'pos,neg,' }}">{{ position.pl_percent|floatformat:2 }}%</td>
             </tr>
           {% endifnotequal %}
         {% endfor %}
-        
-        <tr class="lastRow">
-          <td colspan="6">&nbsp;</td>
-          <td class="{{ summary.day_pl|sign_choice:'pos,neg,' }}">${{ summary.day_pl|num_format }}</td>
-          <td class="{{ summary.day_pl|sign_choice:'pos,neg,' }}">{{ summary.day_pl_percent|floatformat:2 }}%</td>
-          <td class="{{ summary.pl|sign_choice:'pos,neg,' }}">${{ summary.pl|num_format }}</td>
-          <td class="{{ summary.pl|sign_choice:'pos,neg,' }}">{{ summary.pl_percent|floatformat:2 }}%</td>
+
+        <tr id="seeAllPositions">
+          <td colspan="9">
+            {% ifequal request.GET.showClosedPositions "true" %}
+              <a href="?">Hide closed positions</a>
+            {% else %}
+              <a href="?showClosedPositions=true">See all positions (even closed ones)</a>
+            {% endifequal %}
+          </td>
         </tr>
+
       </tbody>
     </table>
   </div>
+
 </div>
 
 {% comment %}

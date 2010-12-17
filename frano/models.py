@@ -117,8 +117,6 @@ class Position(models.Model):
     self.market_value = self.quantity * self.price
     self.cost_basis = self.quantity * self.cost_price
     self.previous_market_value = self.quantity * self.previous_price
-    self.day_pl = (self.market_value - self.previous_market_value)
-    self.day_pl_percent = (((self.day_pl / self.previous_market_value) * 100) if self.previous_market_value != 0 else 0)
     self.pl = (self.market_value - self.cost_basis)
     self.pl_percent = (((self.pl / self.cost_basis) * 100) if self.cost_basis != 0 else 0)
   
@@ -200,7 +198,7 @@ class Position(models.Model):
     
     for date in dates:
       current_transactions = transactions_by_date.get(date)
-      current_lot_set = dict([ (symbol, [lot.clone(date) for lot in lots]) for symbol, lots in last_lot_set.items()])
+      current_lot_set = dict([ (symbol, [lot.clone() for lot in lots]) for symbol, lots in last_lot_set.items()])
       current_cash = last_cash.clone(date)
       
       for transaction in current_transactions:
@@ -219,7 +217,7 @@ class Position(models.Model):
           current_lot_set[transaction.symbol] = lots
           
           if transaction.type == 'BUY':
-            buy_in_lots(lots, date, transaction.quantity, transaction.price)
+            buy_in_lots(lots, transaction.as_of_date, transaction.quantity, transaction.price)
                         
           elif transaction.type == 'SELL':
             sell_in_lots(lots, transaction.quantity, transaction.price)
@@ -279,15 +277,13 @@ class TaxLot(models.Model):
   def __unicode__(self):
     return "%.2f on %s @ %.2f with %.2f sold at %.2f" % (self.quantity, self.as_of_date.strftime('%m/%d/%Y'), self.cost_price, self.sold_quantity, self.sold_price)
   
-  def clone(self, as_of_date = None):
-    out = TaxLot()
-    out.as_of_date = (self.as_of_date if as_of_date == None else as_of_date)
-    out.quantity = self.quantity
-    out.cost_price = self.cost_price
-    out.sold_quantity = self.sold_quantity
-    out.sold_price = self.sold_price
-    
-    return out;
+  def clone(self):
+    return TaxLot(as_of_date = self.as_of_date,
+        quantity = self.quantity,
+        cost_price = self.cost_price,
+        sold_quantity = self.sold_quantity,
+        sold_price = self.sold_price
+      )
   
 class Quote(models.Model):
   CASH_SYMBOL = '*CASH'

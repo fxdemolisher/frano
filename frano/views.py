@@ -103,7 +103,7 @@ def demo(request):
     
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   positions = Position.get_latest(portfolio)
-  decorate_positions_for_display(positions, symbols)
+  decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
   summary = get_summary(positions, transactions)
   performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
@@ -275,7 +275,7 @@ def portfolio_positions(request, user, portfolio, is_sample):
   
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   positions = Position.get_latest(portfolio)
-  decorate_positions_for_display(positions, symbols)
+  decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
   summary = get_summary(positions, transactions)
   performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
@@ -335,7 +335,7 @@ def portfolio_read_only(request, read_only_token):
   
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   positions = Position.get_latest(portfolio)
-  decorate_positions_for_display(positions, symbols)
+  decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
   summary = get_summary(positions, transactions)
   performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
@@ -573,7 +573,7 @@ def get_sample_user():
     user.save()
     return user
 
-def decorate_positions_for_display(positions, symbols):
+def decorate_positions_for_display(positions, symbols, showClosedPositions):
   quotes = dict((symbol, Quote.by_symbol(symbol)) for symbol in symbols)
   as_of_date = min([quote.last_trade.date() for symbol, quote in quotes.items()])
   
@@ -584,6 +584,27 @@ def decorate_positions_for_display(positions, symbols):
     
     position.decorate_with_prices(price, previous_price)
     total_market_value += position.market_value
+    
+    lots = []
+    for lot in position.taxlot_set.order_by('-as_of_date'):
+      lot.unrealized_pl = (lot.quantity - lot.sold_quantity) * (price - lot.cost_price)
+      lot.unrealized_pl_percent = ((((price / lot.cost_price) - 1) * 100) if lot.cost_price <> 0 and abs(lot.unrealized_pl) > 0.01 else 0)
+      lot.realized_pl = lot.sold_quantity * (lot.sold_price - lot.cost_price)
+      
+      days_open = (datetime.now().date() - lot.as_of_date).days
+      if abs(lot.quantity - lot.sold_quantity) < 0.0001:
+        lot.status = 'Closed'
+        
+      elif days_open <= 365:
+        lot.status = 'Open / Short'
+        
+      else:
+        lot.status = 'Open / Long'
+    
+      lots.append(lot)
+    
+    position.lots = lots
+    position.show = (showClosedPositions or abs(position.quantity) > 0.01)
     
   for position in positions:
     position.allocation = ((position.market_value / total_market_value * 100) if total_market_value != 0 else 0)
