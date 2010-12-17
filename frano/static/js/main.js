@@ -282,14 +282,14 @@ function toggleEditPrompt(holder, promptClass,  state) {
 function initializeProfitLossChart(container) {
   var dataPercent = []
   var benchmarkPercent = []
-  for(var i = 0; i < profitLossPercent.length; i++) {
-    dataPercent[i] = [ i, profitLossPercent[i] ]
+  for(var i = 0; i < performance.length; i++) {
+    dataPercent[i] = [ i, performance[i] ]
     benchmarkPercent[i] = [ i, benchmark[i] ]
   }
   
   $.plot(container,
     [ 
-      { data: dataPercent, yaxis: 2, label: "P/L %" },
+      { data: dataPercent, yaxis: 2, label: "Performance %" },
       { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (' + benchmarkSymbol + ')' },
     ],
     {

@@ -21,15 +21,6 @@
     </ul>
   </div>
 
-  <div class="two columns offset-by-one">
-    <ul class="importantData">
-      <li class="name">Realized Profit Loss</li>
-      <li class="value {{ summary.realized_pl|sign_choice:'pos,neg,' }}">${{ summary.realized_pl|num_format }}</li>
-      <li class="related">
-        <strong>Total P/L:</strong> <span class="{{ summary.total_pl|sign_choice:'pos,neg,' }}">${{ summary.total_pl|num_format }}</span>
-      </li>
-    </ul>
-  </div>
 </div>
 
 {% comment %}

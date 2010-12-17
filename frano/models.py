@@ -291,6 +291,7 @@ class TaxLot(models.Model):
   
 class Quote(models.Model):
   CASH_SYMBOL = '*CASH'
+  HISTORY_START_DATE = date(1900, 1, 1)
   
   symbol = models.CharField(max_length = 5, unique = True)
   name = models.CharField(max_length = 255)
@@ -369,12 +370,11 @@ class Quote(models.Model):
     history = []
     u = None
     try:
-      start_date = self.last_trade - timedelta(days = 90)
       u = urlopen('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (
           self.symbol, 
-          (start_date.month - 1), 
-          start_date.day, 
-          start_date.year, 
+          (Quote.HISTORY_START_DATE.month - 1), 
+          Quote.HISTORY_START_DATE.day, 
+          Quote.HISTORY_START_DATE.year, 
           (self.last_trade.month - 1), 
           self.last_trade.day, 
           self.last_trade.year)

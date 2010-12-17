@@ -28,8 +28,8 @@ from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
 
 SAMPLE_USER_OPEN_ID = 'SAMPLE_USER_ONLY'
 TRANSACTIONS_BEFORE_SEE_ALL = 20
-DAYS_IN_PL_HISTORY = 90
-PL_BENCHMARK_SYMBOL = 'ACWI'
+DAYS_IN_PERFORMANCE_HISTORY = 90
+PERFORMANCE_BENCHMARK_SYMBOL = 'ACWI'
 
 #--------------\
 #  DECORATORS  |
@@ -105,7 +105,7 @@ def demo(request):
   positions = Position.get_latest(portfolio)
   decorate_positions_for_display(positions, symbols)
   summary = get_summary(positions, transactions)
-  pl_history = get_pl_history(portfolio, DAYS_IN_PL_HISTORY)
+  performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
   symbol_filter = request.GET.get('filter')
   if symbol_filter != None and symbol_filter != '':
@@ -118,8 +118,8 @@ def demo(request):
       'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ],
       'symbol_filter' : symbol_filter, 
       'summary' : summary,
-      'pl_history' : pl_history,
-      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
+      'performance_history' : performance_history,
+      'benchmark_symbol' : PERFORMANCE_BENCHMARK_SYMBOL,
     }
   
   return render_to_response('demo.html', context, context_instance = RequestContext(request))
@@ -277,15 +277,15 @@ def portfolio_positions(request, user, portfolio, is_sample):
   positions = Position.get_latest(portfolio)
   decorate_positions_for_display(positions, symbols)
   summary = get_summary(positions, transactions)
-  pl_history = get_pl_history(portfolio, DAYS_IN_PL_HISTORY)
+  performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
   return render_to_response('positions.html', { 
       'portfolio' : portfolio, 
       'positions': positions, 
       'summary' : summary, 
       'current_tab' : 'positions',
-      'pl_history' : pl_history, 
-      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
+      'performance_history' : performance_history, 
+      'benchmark_symbol' : PERFORMANCE_BENCHMARK_SYMBOL,
     }, context_instance = RequestContext(request))
 
 @login_required_decorator
@@ -337,15 +337,15 @@ def portfolio_read_only(request, read_only_token):
   positions = Position.get_latest(portfolio)
   decorate_positions_for_display(positions, symbols)
   summary = get_summary(positions, transactions)
-  pl_history = get_pl_history(portfolio, DAYS_IN_PL_HISTORY)
+  performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
   return render_to_response('read_only.html', { 
       'supress_navigation' : True, 
       'portfolio' : portfolio, 
       'positions': positions, 
       'summary' : summary,
-      'pl_history' : pl_history, 
-      'benchmark_symbol' : PL_BENCHMARK_SYMBOL,
+      'performance_history' : performance_history, 
+      'benchmark_symbol' : PERFORMANCE_BENCHMARK_SYMBOL,
     }, context_instance = RequestContext(request))
 
 def price_quote(request):
@@ -658,76 +658,110 @@ def redirect_to_portfolio(action, portfolio, is_sample, query_string = None):
   else:
     return redirect("/%d/%s.html%s" % (portfolio.id, action, ('' if query_string == None else "?%s" % query_string)))
 
-def get_pl_history(portfolio, days):
+def get_performance_history(portfolio, days):
   query = """
-        SELECT D.portfolio_date,
-             SUM(P.quantity * P.cost_price) as cost_basis,
-             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value,
-             SUM(P.realized_pl) as realized_pl
+      SELECT D.portfolio_date,
+             D.deposit,
+             D.withdrawal,
+             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value
         FROM position P
              JOIN
              (
-                 SELECT D.portfolio_date,
-                        MAX(P.as_of_date) as position_date
+                 SELECT D.portfolio_id,
+                        D.portfolio_date,
+                        D.position_date,
+                        SUM(CASE WHEN T.type = 'DEPOSIT' THEN T.total ELSE 0 END) as deposit,
+                        SUM(CASE WHEN T.type = 'WITHDRAW' THEN T.total ELSE 0 END) as withdrawal
                    FROM (
-                          SELECT DISTINCT 
-                                 DATE(H.as_of_date) as portfolio_date
-                            FROM price_history H
-                                 JOIN quote Q ON (Q.id = H.quote_id)
-                                 JOIN
-                                 (
-                                   SELECT DISTINCT
-                                          P.symbol
-                                     FROM position P
-                                    WHERE P.portfolio_id = %s
-                                      AND P.symbol != '*CASH'
-                                 ) S ON (Q.symbol = S.symbol)
-                                 JOIN
-                                 (
-                                   SELECT MIN(as_of_date) as start_date
-                                     FROM position P
-                                    WHERE P.portfolio_id = %s
-                                 ) D ON (H.as_of_date >= D.start_date)
-                           WHERE DATEDIFF(NOW(), H.as_of_date) < %s
+                            SELECT P.portfolio_id,
+                                   D.portfolio_date,
+                                   MAX(P.as_of_date) as position_date
+                              FROM (
+                                     SELECT DISTINCT
+                                            D.portfolio_id,
+                                            DATE(H.as_of_date) as portfolio_date
+                                       FROM (
+                                              SELECT DISTINCT
+                                                     P.portfolio_id,
+                                                     P.symbol
+                                                FROM position P
+                                               WHERE P.symbol != '*CASH'
+                                            ) S
+                                            JOIN quote Q ON (Q.symbol = S.symbol)
+                                            JOIN price_history H ON (H.quote_id = Q.id)
+                                            JOIN
+                                            (
+                                                SELECT P.portfolio_id,
+                                                       MIN(as_of_date) as start_date
+                                                  FROM position P
+                                              GROUP BY P.portfolio_id
+                                            ) D ON (D.portfolio_id = S.portfolio_id AND H.as_of_date >= D.start_date)
+                                      WHERE DATEDIFF(NOW(), H.as_of_date) < %s
+                                   ) D
+                                   JOIN 
+                                   (
+                                     SELECT DISTINCT 
+                                            P.portfolio_id,
+                                            P.as_of_date
+                                       FROM position P
+                                   )  P ON (P.portfolio_id = D.portfolio_id AND P.as_of_date <= D.portfolio_date)
+                          GROUP BY D.portfolio_id,
+                                   D.portfolio_date
                         ) D
-                        JOIN 
+                        LEFT JOIN
                         (
-                          SELECT DISTINCT 
-                                 P.as_of_date
-                            FROM position P
-                           WHERE P.portfolio_id = %s
-                        )  P ON (P.as_of_date <= D.portfolio_date)
-               GROUP BY D.portfolio_date
-             ) D ON (P.as_of_date = D.position_date)
+                          SELECT T.portfolio_id,
+                                 T.as_of_date,
+                                 T.type,
+                                 T.total
+                            FROM transaction T
+                           WHERE T.type IN ('DEPOSIT', 'WITHDRAW')
+                        ) T ON (T.portfolio_id = D.portfolio_id AND T.as_of_date = D.portfolio_date)
+               GROUP BY D.portfolio_id,
+                        D.portfolio_date
+             ) D ON (P.portfolio_id = D.portfolio_id AND P.as_of_date = D.position_date)
              LEFT JOIN quote Q ON (Q.symbol = P.symbol)
              LEFT JOIN price_history H ON (H.quote_id = Q.id AND H.as_of_date = D.portfolio_date)
        WHERE P.quantity <> 0
          AND P.portfolio_id = %s
-    GROUP BY D.portfolio_date"""
+    GROUP BY D.portfolio_date
+    ORDER BY D.portfolio_date"""
   
   cursor = connection.cursor()
-  cursor.execute(query, [portfolio.id, portfolio.id, days, portfolio.id, portfolio.id])
+  cursor.execute(query, [days, portfolio.id])
   
-  benchmark_quote = Quote.by_symbol(PL_BENCHMARK_SYMBOL)
-  cutoff_date = datetime.now().date() - timedelta(days = DAYS_IN_PL_HISTORY)
-  benchmark_pl = {}
-  first_price = None
+  benchmark_quote = Quote.by_symbol(PERFORMANCE_BENCHMARK_SYMBOL)
+  cutoff_date = datetime.now().date() - timedelta(days = DAYS_IN_PERFORMANCE_HISTORY)
+  benchmark_price = {}
   for history in benchmark_quote.pricehistory_set.filter(as_of_date__gte = cutoff_date).order_by('as_of_date'):
-    benchmark_pl[history.as_of_date.date()] = (((history.price - first_price) / first_price) if first_price != None else 0.0)
-    if first_price == None: 
-      first_price = history.price
+    benchmark_price[history.as_of_date.date()] = history.price
     
-  offset = None
+  shares = None
+  last_price = None
+  first_benchmark = None
   out = []
   for row in cursor.fetchall():
     as_of_date = row[0]
-    benchmark = benchmark_pl.get(as_of_date, 0.0)
-    pl = (((row[2] / row[1]) - 1) if row[1] <> 0 else 0.0)
+    deposit = float(row[1])
+    withdraw = float(row[2])
+    market_value = float(row[3])
     
-    if offset == None:
-      offset = pl
-     
-    out.append(ProfitLossHistory(as_of_date, ((pl - offset) if offset != None else 0.0), benchmark))
+    benchmark = benchmark_price.get(as_of_date, 0.0)
+    if first_benchmark == None:
+      first_benchmark = benchmark
+    
+    performance = 0
+    if shares == None:
+      shares = market_value
+      
+    else:
+      net_inflow = deposit - withdraw
+      shares += net_inflow / last_price
+      performance = (((market_value / shares) - 1) if shares <> 0 else 0) 
+    
+    last_price = ((market_value / shares) if shares <> 0 else 1.0)
+    benchmark_performance = (((benchmark / first_benchmark) - 1) if first_benchmark <> 0 else 0)
+    out.append(PerformanceHistory(as_of_date, performance, benchmark_performance))
     
   return out
   
@@ -753,9 +787,9 @@ class Summary:
     self.annualized_pl_percent = (self.pl_percent / (self.days / 365.0)) if self.days != 0 else 0
     self.total_pl = self.pl + self.realized_pl
 
-class ProfitLossHistory:
-  def __init__(self, as_of_date, profit_loss_percent, benchmark_profit_loss_percent):
+class PerformanceHistory:
+  def __init__(self, as_of_date, percent, benchmark_percent):
     self.as_of_date = as_of_date
-    self.profit_loss_percent = profit_loss_percent
-    self.benchmark_profit_loss_percent = benchmark_profit_loss_percent
+    self.percent = percent
+    self.benchmark_percent = benchmark_percent
     

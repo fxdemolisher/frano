@@ -14,6 +14,7 @@ class Command(BaseCommand):
     
     stdout.write('Found %d quotes to refresh price history\nStarting...\n' % quotes.count())
     for quote in quotes:
+      stdout.write('Refreshing price history for: %s\n' % quote.symbol)
       quote.refresh_history()
     
     stdout.write('Successfully refreshed priced history\n')

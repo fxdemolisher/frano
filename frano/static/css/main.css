@@ -303,6 +303,6 @@ TD.left { text-align: left !important; }
 #allocationChartColumn { width: 280px; }
 #allocationChart { padding:5px;height: 270px; width: 100%; border: 1px solid #999; background-color:#FFF;-moz-border-radius: 3px;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
 
-#plChartColumn { width: 612px; }
-#plChartContainer { height: 275px; padding: 5px 5px 0px 10px; border: 1px solid #999999;background-color:#FFF;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
-#plChart { height: 270px; }
+#performanceChartColumn { width: 612px; }
+#performanceChartContainer { height: 275px; padding: 5px 5px 0px 10px; border: 1px solid #999999;background-color:#FFF;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
+#performanceChart { height: 270px; }
