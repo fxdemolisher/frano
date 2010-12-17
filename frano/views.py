@@ -546,12 +546,6 @@ def get_sample_portfolio(request):
   portfolio.create_date = datetime.now()
   portfolio.save()
   
-  # poor man's cleanup processes, every 100 new portfolios created on the front page
-  if portfolio.id % 100 == 0:
-    Session.objects.filter(expire_date__lte = datetime.now()).delete()
-    cutoff_date = datetime.now() - timedelta(weeks = 2)
-    Portfolio.objects.filter(user__id__exact = user.id, create_date__lte = cutoff_date).delete()
-  
   for sample_transaction in DEFAULT_SAMPLE_TRANSACTIONS:
     transaction = Transaction()
     transaction.portfolio = portfolio
