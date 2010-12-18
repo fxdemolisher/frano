@@ -12,6 +12,16 @@ $(function() {
     $(this).fadeOut();
   })
   
+  $("#signIn").click(function(e) {
+    e.preventDefault();
+    var box = $(".signInBox");
+    if(box.css("display") == 'none') {
+      box.fadeIn();
+    } else {
+      box.fadeOut();
+    }
+  })
+  
   $('#symbol').autocomplete({ source: symbols });
     
   var lastTransactionType = 'BUY';

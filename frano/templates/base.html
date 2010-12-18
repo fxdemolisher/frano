@@ -19,16 +19,7 @@
     {% block extraJs %}{% endblock %}
     
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
-    
-    <script type="text/javascript">
-      var rpxJsHost = (("https:" == document.location.protocol) ? "https://" : "http://static.");
-      document.write(unescape("%3Cscript src='" + rpxJsHost + "rpxnow.com/js/lib/rpx.js' type='text/javascript'%3E%3C/script%3E"));
-    </script>
-    <script type="text/javascript">
-      RPXNOW.overlay = true;
-      RPXNOW.language_preference = 'en';
-    </script>
-    
+
   </head>
   <body>
 
@@ -86,7 +77,11 @@
                 {% if user %}
                   <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
                 {% else %}
-                  <li><a class="rpxnow buttonLink navLink" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html">Sign In</a></li>
+                  <div class="signInBox hidden">
+                    <iframe src="http://frano.rpxnow.com/openid/embed?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html" scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
+                  </div>
+                  
+                  <li><a class="buttonLink navLink" id="signIn" href="#">Sign In</a></li> 
                 {% endif %}
               {% endif %} 
             </ul>
@@ -94,18 +89,56 @@
         </div>
       </div>    
 
-<!-- header row -->    
-      {% if not supress_navigation and user %}
-        {% ifequal portfolio.user.id user.id %}
-          <div class="subNav">
+<!-- header row -->
+      <div class="subNav">    
+        {% if not supress_navigation and user %}
+          {% ifequal portfolio.user.id user.id %}
             <ul class="horizontallist">
               <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
               <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
               <li {% ifequal current_tab 'import' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/importTransactions.html">Import</a></li>
             </ul>
-          </div>      
-        {% endifequal %}
-      {% endif %}
+          {% endifequal %}
+        {% endif %}
+        
+        <div class="socialButtons">
+          {% comment %} Flattr button {% endcomment %}
+          <script type="text/javascript">
+          /* <![CDATA[ */
+            (function() {
+              var s = document.createElement('script'), t = document.getElementsByTagName('script')[0];
+              s.type = 'text/javascript';
+              s.async = true;
+              s.src = 'http://api.flattr.com/js/0.6/load.js?mode=auto';
+              t.parentNode.insertBefore(s, t);
+           })();
+          /* ]]> */
+          </script>
+          <a class="FlattrButton" style="display:none;" rev="flattr;button:compact;" href="http://frano.carelessmusings.com"></a>
+          &nbsp;
+          
+          {% comment %} Reddit Button {% endcomment %}
+          <a href="http://reddit.com/submit" onclick="window.location = 'http://reddit.com/submit?url=' + encodeURIComponent(window.location); return false" id="redditButton"><img src="http://reddit.com/static/spreddit7.gif" alt="submit to reddit" border="0" /></a>
+          &nbsp;
+          
+          {% comment %} Digg Button {% endcomment %}
+          <script type="text/javascript">
+            (function() {
+              var s = document.createElement('SCRIPT'), s1 = document.getElementsByTagName('SCRIPT')[0];
+              s.type = 'text/javascript';
+              s.async = true;
+              s.src = 'http://widgets.digg.com/buttons.js';
+              s1.parentNode.insertBefore(s, s1);
+            })();
+          </script>
+          <a class="DiggThisButton DiggCompact"></a>
+          &nbsp;
+          
+          {% comment %} Facebook like button {% endcomment %}
+          <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Ffrano.carelessmusings.com&amp;layout=button_count&amp;show_faces=false&amp;width=100&amp;action=recommend&amp;colorscheme=light&amp;height=21" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100px; height:21px;" allowTransparency="true"></iframe>
+              
+        </div>
+      </div>
 <!-- END: header row -->
 
 <!-- main content -->        
