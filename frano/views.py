@@ -104,6 +104,7 @@ def demo(request):
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   positions = Position.get_latest(portfolio)
   decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
+  decorate_positions_with_lots(positions)
   summary = get_summary(positions, transactions)
   performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
@@ -276,6 +277,7 @@ def portfolio_positions(request, user, portfolio, is_sample):
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   positions = Position.get_latest(portfolio)
   decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
+  decorate_positions_with_lots(positions)
   summary = get_summary(positions, transactions)
   performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
@@ -336,10 +338,11 @@ def portfolio_read_only(request, read_only_token):
   symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
   positions = Position.get_latest(portfolio)
   decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
+  decorate_positions_with_lots(positions)
   summary = get_summary(positions, transactions)
   performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
-  return render_to_response('read_only.html', { 
+  return render_to_response('positions.html', { 
       'supress_navigation' : True, 
       'portfolio' : portfolio, 
       'positions': positions, 
@@ -349,7 +352,8 @@ def portfolio_read_only(request, read_only_token):
     }, context_instance = RequestContext(request))
 
 def price_quote(request):
-  as_of_date = date(int(request.GET.get('year')), int(request.GET.get('month')), int(request.GET.get('day')))
+  today = datetime.now().date()
+  as_of_date = date(int(request.GET.get('year', today.year)), int(request.GET.get('month', today.month)), int(request.GET.get('day', today.day)))
   quote = Quote.by_symbol(request.GET.get('symbol'))
   return HttpResponse("{ \"price\": %f }" % quote.price_as_of(as_of_date), mimetype="application/json")
 
@@ -414,7 +418,7 @@ def import_transactions(request, portfolio, is_sample):
           transaction.is_duplicate = is_duplicate
     
   return render_to_response('importTransactions.html', 
-      { 'portfolio' : portfolio, 'transactions' : transactions, 'current_tab' : 'import', 'auto_detect_error' : auto_detect_error }, 
+      { 'portfolio' : portfolio, 'transactions' : transactions, 'current_tab' : 'transactions', 'auto_detect_error' : auto_detect_error }, 
       context_instance = RequestContext(request)
     )  
 
@@ -466,6 +470,22 @@ def request_import_type(request, portfolio, is_sample):
   email.send(fail_silently = False)
   
   return redirect("/%d/importTransactions.html?requestSent=true" % portfolio.id)
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_allocation(request, user, portfolio, is_sample):
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
+  Position.refresh_if_needed(portfolio, transactions)
+  
+  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
+  positions = Position.get_latest(portfolio)
+  decorate_positions_for_display(positions, symbols, False)
+  
+  return render_to_response('allocation.html', { 
+      'portfolio' : portfolio, 
+      'positions': positions, 
+      'current_tab' : 'allocation',
+    }, context_instance = RequestContext(request))
 
 #--------\
 #  FORMS |
@@ -583,12 +603,20 @@ def decorate_positions_for_display(positions, symbols, showClosedPositions):
     previous_price = (1.0 if position.symbol == Quote.CASH_SYMBOL else quotes[position.symbol].previous_close_price())
     
     position.decorate_with_prices(price, previous_price)
+    position.show = (showClosedPositions or abs(position.quantity) > 0.01)
+    
     total_market_value += position.market_value
     
+  for position in positions:
+    position.allocation = ((position.market_value / total_market_value * 100) if total_market_value != 0 else 0)
+    position.effective_as_of_date = as_of_date
+    
+def decorate_positions_with_lots(positions):
+  for position in positions:
     lots = []
     for lot in position.taxlot_set.order_by('-as_of_date'):
-      lot.unrealized_pl = (lot.quantity - lot.sold_quantity) * (price - lot.cost_price)
-      lot.unrealized_pl_percent = ((((price / lot.cost_price) - 1) * 100) if lot.cost_price <> 0 and abs(lot.unrealized_pl) > 0.01 else 0)
+      lot.unrealized_pl = (lot.quantity - lot.sold_quantity) * (position.price - lot.cost_price)
+      lot.unrealized_pl_percent = ((((position.price / lot.cost_price) - 1) * 100) if lot.cost_price <> 0 and abs(lot.unrealized_pl) > 0.01 else 0)
       lot.realized_pl = lot.sold_quantity * (lot.sold_price - lot.cost_price)
       
       days_open = (datetime.now().date() - lot.as_of_date).days
@@ -604,11 +632,6 @@ def decorate_positions_for_display(positions, symbols, showClosedPositions):
       lots.append(lot)
     
     position.lots = lots
-    position.show = (showClosedPositions or abs(position.quantity) > 0.01)
-    
-  for position in positions:
-    position.allocation = ((position.market_value / total_market_value * 100) if total_market_value != 0 else 0)
-    position.effective_as_of_date = as_of_date
   
 def get_summary(positions, transactions):
   as_of_date = max([position.effective_as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()

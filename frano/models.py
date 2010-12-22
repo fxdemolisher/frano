@@ -366,14 +366,15 @@ class Quote(models.Model):
     history = []
     u = None
     try:
+      end_date = self.last_trade + timedelta(days = 1)
       u = urlopen('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (
           self.symbol, 
           (Quote.HISTORY_START_DATE.month - 1), 
           Quote.HISTORY_START_DATE.day, 
           Quote.HISTORY_START_DATE.year, 
-          (self.last_trade.month - 1), 
-          self.last_trade.day, 
-          self.last_trade.year)
+          (end_date.month - 1), 
+          end_date.day, 
+          end_date.year)
         )
       
       reader = csv.reader(u)
@@ -403,7 +404,7 @@ class Quote(models.Model):
     return self
   
   def price_as_of(self, as_of):
-    if self.cash_equivalent:
+    if self.cash_equivalent or self.last_trade.date() == as_of:
       return self.price
     else:
       candidates = self.pricehistory_set.filter(as_of_date__lte = as_of.strftime('%Y-%m-%d')).order_by('-as_of_date')

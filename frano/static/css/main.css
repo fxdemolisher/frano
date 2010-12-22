@@ -223,6 +223,7 @@ TD.left { text-align: left !important; }
 TD.center { text-align: center !important; }
 
 .lastRow TD { border-bottom: none; }
+.unknownSymbol { font-size: 10px; }
 
 .positionTable THEAD TD { text-align: right; padding-right: 5px;}
 .positionTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
@@ -259,6 +260,8 @@ TD.center { text-align: center !important; }
 .lotRow { border: 1px solid #CCCCCC; }
 .lotTable TBODY TD { font-size: 14px; }
 
+.allocationTable THEAD TD { text-align: right; padding-right: 5px;}
+.allocationTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
 
 /******************\
 = POSITION SUMMARY =
@@ -278,6 +281,17 @@ TD.center { text-align: center !important; }
 #seeAllPositions A { font-size: 14px; color: #3333CC; }
 
 .twitter-share-button { vertical-align: middle; }
+  
+/************\
+= ALLOCATION =
+\************/
+
+#moreInstruments TD { text-align: center }
+#moreInstruments A { font-size: 14px; color: #3333CC; }
+  
+.spinner { vertical-align: middle; }
+
+.allocateButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }
   
 /**************\
 = TRANSACTIONS =
@@ -319,6 +333,10 @@ TD.center { text-align: center !important; }
 .transactionsCopy .highlight {color:#F90;font-weight:bold;}
 .transactionsCopy STRONG { font-weight: bolder; }
 
+.allocationCopy {line-height:24px;font-size:17px;}
+.allocationCopy .highlight {color:#F90;font-weight:bold;}
+.allocationCopy STRONG { font-weight: bolder; }
+
 /********\
 = CHARTS =
 \********/
@@ -328,3 +346,6 @@ TD.center { text-align: center !important; }
 #performanceChartColumn { width: 612px; }
 #performanceChartContainer { height: 275px; padding: 5px 5px 0px 10px; border: 1px solid #999999;background-color:#FFF;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
 #performanceChart { height: 270px; }
+
+#currentAllocationChartColumn, #finalAllocationChartColumn { width: 440px; }
+#currentAllocationChart, #finalAllocationChart { padding:5px; width: 430px; height: 470px; width: 100%; border: 1px solid #999; background-color:#FFF;-moz-border-radius: 3px;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}

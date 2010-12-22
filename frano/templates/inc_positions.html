@@ -30,7 +30,7 @@
               {% endifequal %}
               
               {% ifequal position.price 0 %}
-                <div class="holdingsMeta error">Unknown symbol</div>
+                <div class="unknownSymbol error">Unknown symbol</div>
               {% endifequal %}
             </td>
             <td>{{ position.allocation|floatformat:'2' }}%</td>
