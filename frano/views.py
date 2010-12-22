@@ -619,7 +619,9 @@ DEFAULT_SAMPLE_TRANSACTIONS = [
 def get_sample_portfolio(request):
   portfolio_id = request.session.get('sample_portfolio_id')
   if portfolio_id != None:
-    return Portfolio.objects.filter(id = portfolio_id)[0]
+    candidate = Portfolio.objects.filter(id = portfolio_id)
+    if candidate.count() == 1:
+      return candidate[0]
   
   user = get_sample_user()
   portfolio = Portfolio()
