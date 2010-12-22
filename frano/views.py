@@ -181,7 +181,14 @@ def logout(request):
 @login_required_decorator
 def create_portfolio(request, user):
   portfolios = Portfolio.objects.filter(user__id__exact = user.id)
-  new_name = 'Default-%d' % (len(portfolios) + 1)
+  names = set([ p.name for p in portfolios])
+  
+  index = 1
+  new_name = 'Default-%d' % index
+  while new_name in names:
+    new_name = 'Default-%d' % index
+    index += 1
+    
   portfolio = Portfolio.create(user, new_name)
   return redirect('/%d/importTransactions.html' % portfolio.id)
   
@@ -859,6 +866,7 @@ def get_performance_history(portfolio, days):
     benchmark_performance = (((benchmark / first_benchmark) - 1) if first_benchmark <> 0 else 0)
     out.append(PerformanceHistory(as_of_date, performance, benchmark_performance))
     
+  cursor.close()
   return out
   
 #-----------------\

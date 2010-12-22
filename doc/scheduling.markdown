@@ -36,3 +36,11 @@ The clean up of sample portfolio older than two weeks should be done every day
 at 1AM via a cron trigger to:
 
 python manage.py cleanup_sample_portfolios
+
+Unused Quote and Price History Cleanup
+--------------------------------------
+
+The clean up of unused quotes and price history should be done every day at 
+1:30AM via a cron trigger to:
+
+python manage.py cleanup_unused_quotes
