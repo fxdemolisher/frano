@@ -30,6 +30,7 @@ urlpatterns = patterns('frano.views',
   (r'^(?P<portfolio_id>\d+)/processImportTransactions.html', 'process_import_transactions'),
   (r'^(?P<portfolio_id>\d+)/requestImportType.html', 'request_import_type'),
   (r'^(?P<portfolio_id>\d+)/allocation.html', 'portfolio_allocation'),
+  (r'^(?P<portfolio_id>\d+)/income.html', 'portfolio_income'),
   (r'^(?P<read_only_token>\w{10})/', 'portfolio_read_only'),
   (r'^priceQuote.json', 'price_quote'),
 )

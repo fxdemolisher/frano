@@ -95,6 +95,7 @@
           {% ifequal portfolio.user.id user.id %}
             <ul class="horizontallist">
               <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
+              <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
               <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
               <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
             </ul>

@@ -77,6 +77,7 @@ class Transaction(models.Model):
   quantity = models.FloatField()
   price = models.FloatField()
   total = models.FloatField()
+  linked_symbol = models.CharField(max_length = 5, null = True)
   
   class Meta:
     db_table = 'transaction'
@@ -411,7 +412,7 @@ class Quote(models.Model):
       return (candidates[0].price if candidates.count() > 0 else 0)
   
   def previous_close_price(self):
-    return self.price_as_of(self.last_trade - timedelta(days = 1))
+    return self.price_as_of(self.last_trade.date() - timedelta(days = 1))
   
 class PriceHistory(models.Model):
   quote = models.ForeignKey('Quote')

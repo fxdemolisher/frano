@@ -20,6 +20,10 @@
             to let us know what kind of find you are trying to import. We will implement this type of import as soon as possible and let you know.
           {% endifequal %}
           <br class="clear" />
+          <br class="clear" />
+          
+          You may also enter your transactions manually by <a href="/{{portfolio.id}}/transactions.html">clicking here</a>.
+          <br class="clear" />
         </div>
         
         <form action="/{{portfolio.id}}/requestImportType.html" method="post" enctype="multipart/form-data" class="hidden" id="requestTransactionsForm">
@@ -115,6 +119,7 @@
                   <td>Qty</td>
                   <td>Price</td>
                   <td>Total</td>
+                  <td>Linked To</td>
                   <td>Exclude</td>
                 </tr>
               </thead>
@@ -127,6 +132,7 @@
                   <input type="hidden" name="form-{{ forloop.counter0 }}-quantity" value="{{ transaction.quantity }}" />
                   <input type="hidden" name="form-{{ forloop.counter0 }}-price" value="{{ transaction.price }}" />
                   <input type="hidden" name="form-{{ forloop.counter0 }}-total" value="{{ transaction.total }}" />
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-linked_symbol" value="{{ transaction.linked_symbol|default_if_none:"" }}" />
                   
                   <tr {% if transaction.is_duplicate %}class="transactionDuplicate"{% endif %}>
                     <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type }}</div></td>
@@ -135,6 +141,7 @@
                     <td>{{ transaction.quantity|num_format }}</td>
                     <td>${{ transaction.price|num_format }}</td>
                     <td>${{ transaction.total|num_format }}</td>
+                    <td>{{ transaction.linked_symbol|default_if_none:"" }}</td>
                     <td>
                       <input type="checkbox" name="form-{{ forloop.counter0 }}-exclude" value="true" {% if transaction.is_duplicate %}checked="checked"{% endif %}/>
                       {% if transaction.is_duplicate %}<span class="duplicateText">Possible Duplicate</span>{% endif %}

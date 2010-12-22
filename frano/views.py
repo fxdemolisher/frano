@@ -183,7 +183,7 @@ def create_portfolio(request, user):
   portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   new_name = 'Default-%d' % (len(portfolios) + 1)
   portfolio = Portfolio.create(user, new_name)
-  return redirect('/%d/transactions.html' % portfolio.id)
+  return redirect('/%d/importTransactions.html' % portfolio.id)
   
 @portfolio_manipilation_decorator
 def add_transaction(request, portfolio, is_sample):
@@ -234,33 +234,37 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
     if form.is_valid():
       current_commission = transaction.total - (transaction.price * transaction.quantity)
       
-      type = form.cleaned_data.get('type')
+      type = form.get_if_present('type')
       if type != None and type != '':
         transaction.type = type.encode('UTF-8')
       
-      as_of_date = form.cleaned_data.get('date')
+      as_of_date = form.get_if_present('date')
       if as_of_date != None:
         transaction.as_of_date = as_of_date
         
-      symbol = form.cleaned_data.get('symbol')
+      symbol = form.get_if_present('symbol')
       if symbol != None and symbol != '':
         transaction.symbol = symbol.encode('UTF-8').upper()
         
-      quantity = form.cleaned_data.get('quantity')
+      quantity = form.get_if_present('quantity')
       if quantity != None:
         transaction.quantity = quantity
         transaction.total = (transaction.price * transaction.quantity) + current_commission
       
-      price = form.cleaned_data.get('price')
+      price = form.get_if_present('price')
       if price != None:
         transaction.price = price
         transaction.total = (transaction.price * transaction.quantity) + current_commission
       
-      total = form.cleaned_data.get('total')
+      total = form.get_if_present('total')
       if total != None:
         transaction.total = total
         if transaction.symbol == Quote.CASH_SYMBOL:
           transaction.quantity = transaction.total
+      
+      linked_symbol = form.get_if_present('linkedsymbol')
+      if linked_symbol != None:
+        transaction.linked_symbol = (linked_symbol.encode('UTF-8').upper() if linked_symbol.strip() != '' else None)
       
       transaction.save()
       Position.refresh_if_needed(portfolio, force = True)
@@ -440,6 +444,11 @@ def process_import_transactions(request, portfolio, is_sample):
       transaction.quantity = cd.get('quantity')
       transaction.price = cd.get('price')
       transaction.total = cd.get('total')
+      
+      linked_symbol = cd.get('linked_symbol').encode('UTF-8')
+      if linked_symbol != None and linked_symbol != '':
+        transaction.linked_symbol = linked_symbol
+        
       transaction.save()
     
   Position.refresh_if_needed(portfolio, force = True)
@@ -486,6 +495,44 @@ def portfolio_allocation(request, user, portfolio, is_sample):
       'positions': positions, 
       'current_tab' : 'allocation',
     }, context_instance = RequestContext(request))
+  
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_income(request, user, portfolio, is_sample):
+  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
+  Position.refresh_if_needed(portfolio, transactions)
+  
+  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
+  positions = Position.get_latest(portfolio)
+  decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
+  
+  summary_map = {}
+  for position in positions:
+    summary_map[position.symbol] = IncomeSummary(position.symbol, position.market_value, position.cost_basis, position.pl, position.pl_percent, position.show)
+  
+  total_summary = IncomeSummary('*TOTAL*', 0.0, 0.0, 0.0, 0.0, True)
+  for transaction in transactions:
+    if transaction.type != 'ADJUST':
+      continue
+    
+    symbol = transaction.linked_symbol
+    if symbol == None or symbol == '':
+      symbol = transaction.symbol
+      
+    summary = summary_map.get(symbol)
+    summary.add_income(transaction.as_of_date, transaction.total)
+    
+    if summary.show:
+      total_summary.add_income(transaction.as_of_date, transaction.total)
+    
+  summaries = sorted(summary_map.values(), key = (lambda summary: summary.symbol))
+  
+  return render_to_response('income.html', { 
+      'portfolio' : portfolio, 
+      'summaries': summaries,
+      'total_summary' : total_summary,
+      'current_tab' : 'income',
+    }, context_instance = RequestContext(request))
 
 #--------\
 #  FORMS |
@@ -506,7 +553,15 @@ class UpdateTransactionForm(forms.Form):
   quantity = forms.FloatField(required = False)
   price = forms.FloatField(required = False, min_value = 0.01)
   total = forms.FloatField(required = False)
-
+  linkedsymbol = forms.CharField(required = False, max_length = 5) # underscore removed due to JS split issue
+  
+  def __init__(self, data):
+    forms.Form.__init__(self, data)
+    self.original_data = data
+    
+  def get_if_present(self, name):
+    return (self.cleaned_data.get(name) if name in self.original_data else None)
+    
 class PortfolioForm(forms.Form):
   name = forms.CharField(min_length = 3, max_length = 50)
   
@@ -535,6 +590,7 @@ class ImportTransactionForm(forms.Form):
   quantity = forms.FloatField()
   price = forms.FloatField(min_value = 0.01)
   total = forms.FloatField()
+  linked_symbol = forms.CharField(max_length = 5, required = False)
   exclude = forms.BooleanField(required = False)
 
 ImportTransactionFormSet = formset_factory(ImportTransactionForm)
@@ -624,10 +680,10 @@ def decorate_positions_with_lots(positions):
         lot.status = 'Closed'
         
       elif days_open <= 365:
-        lot.status = 'Open / Short'
+        lot.status = 'Short'
         
       else:
-        lot.status = 'Open / Long'
+        lot.status = 'Long'
     
       lots.append(lot)
     
@@ -646,7 +702,9 @@ def get_summary(positions, transactions):
     cost_basis += position.cost_price * position.quantity
     realized_pl += position.realized_pl
     previous_market_value += position.previous_market_value
-    
+  
+  print market_value
+  print previous_market_value  
   xirr_percent = get_xirr_percent_for_transactions(transactions, as_of_date, market_value)
 
   return Summary(as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent)
@@ -831,3 +889,33 @@ class PerformanceHistory:
     self.percent = percent
     self.benchmark_percent = benchmark_percent
     
+class IncomeSummary:
+  def __init__(self, symbol, market_value, cost_basis, unrealized_pl, unrealized_pl_percent, show):
+    self.symbol = symbol
+    self.market_value = market_value
+    self.cost_basis = cost_basis
+    self.unrealized_pl = unrealized_pl
+    self.unrealized_pl_percent = unrealized_pl_percent
+    self.show = show
+     
+    self.income_one_month = 0.0
+    self.income_three_months = 0.0
+    self.income_six_months = 0.0
+    self.income_one_year = 0.0
+    self.total_income = 0.0
+    
+  def add_income(self, as_of_date, amount):
+    current = datetime.now().date()
+    self.total_income += amount
+    if (current - as_of_date).days < 365:
+      self.income_one_year += amount
+      
+    if (current - as_of_date).days < 180:
+      self.income_six_months += amount
+      
+    if (current - as_of_date).days < 90:
+      self.income_three_months += amount
+      
+    if (current - as_of_date).days < 30:
+      self.income_one_month += amount
+        

@@ -146,11 +146,18 @@ $(function() {
       
       return "Saving..."
     }, {
-      onblur    : 'submit',
-      height    : 17,
-      width     : parseInt(components[3]),
-      style     : 'display: inline;',
-      data      : function(value, settings) { return value.replace(/[,\$]/gi, ''); }
+      placeholder : '<div style="width:59px;">&nbsp;</div>',
+      onblur      : 'submit',
+      height      : 17,
+      width       : parseInt(components[3]),
+      style       : 'display: inline;',
+      data        : function(value, settings) {
+                      if (value.indexOf('<div') == 0) {
+                        return $('<div/>').html(value).text().trim();
+                      } else {
+                        return value.replace(/[,\$]/gi, '');
+                      }
+                    },
     });
   });
   

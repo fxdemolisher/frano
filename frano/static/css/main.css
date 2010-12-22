@@ -263,6 +263,9 @@ TD.center { text-align: center !important; }
 .allocationTable THEAD TD { text-align: right; padding-right: 5px;}
 .allocationTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
 
+.incomeTable THEAD TD { text-align: right; padding-right: 5px;}
+.incomeTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
+
 /******************\
 = POSITION SUMMARY =
 \******************/
@@ -336,6 +339,10 @@ TD.center { text-align: center !important; }
 .allocationCopy {line-height:24px;font-size:17px;}
 .allocationCopy .highlight {color:#F90;font-weight:bold;}
 .allocationCopy STRONG { font-weight: bolder; }
+
+.incomeCopy {line-height:24px;font-size:17px;}
+.incomeCopy .highlight {color:#F90;font-weight:bold;}
+.incomeCopy STRONG { font-weight: bolder; }
 
 /********\
 = CHARTS =
