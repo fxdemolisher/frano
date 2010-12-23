@@ -1,15 +1,19 @@
 {% load frano_filters %}
 
 <script type="text/javascript">
-  var dates = [ {% for history in pl_history %}new Date({{ history.as_of_date.year }}, {{ history.as_of_date.month|add:'-1' }}, {{ history.as_of_date.day }}), {% endfor %} ];
-  var profitLossPercent = [ {% for history in pl_history %}{{ history.profit_loss_percent}}, {% endfor %} ];
-  var benchmark  = [ {% for history in pl_history %}{{ history.benchmark_profit_loss_percent}}, {% endfor %} ];
+  var dates = []
+  var performance = []
+  var benchmark  = []
   var benchmarkSymbol = '{{ benchmark_symbol|escapejs }}';
-
-  var allocation = [ {% for position in positions %}[ '{{ position.symbol|escapejs }}', {{ position.allocation }} ], {% endfor %} ]
+  
+  {% for history in performance_history %}
+    dates[dates.length] = new Date({{ history.as_of_date.year }}, {{ history.as_of_date.month|add:'-1' }}, {{ history.as_of_date.day }}); performance[performance.length] = {{ history.percent}}; benchmark[benchmark.length] = {{ history.benchmark_percent}};
+  {% endfor %}
+  
+  var allocation = [ {% for position in positions %}[ '{{ position.symbol|escapejs }}', {{ position.allocation }} ] {% if not forloop.last %},{% endif %} {% endfor %} ]
   
   $(function() {
-    initializeProfitLossChart($("#plChart"));
+    initializeProfitLossChart($("#performanceChart"));
     initializeAllocationChart($("#allocationChart"));
   });
 </script>
@@ -19,9 +23,9 @@
     <div id="allocationChart">&nbsp;</div>
   </div>
   
-  <div class="columns" id="plChartColumn">
-    <div id="plChartContainer">
-      <div id="plChart">&nbsp;</div>
+  <div class="columns" id="performanceChartColumn">
+    <div id="performanceChartContainer">
+      <div id="performanceChart">&nbsp;</div>
     </div>
   </div>
 </div>

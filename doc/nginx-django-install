@@ -245,3 +245,5 @@ server {
 }
 ================================================================================
 
+- set up cron jobs described in doc/scheduling.markdown
+  

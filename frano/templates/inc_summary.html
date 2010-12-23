@@ -20,16 +20,17 @@
       </li>
     </ul>
   </div>
-
+  
   <div class="two columns offset-by-one">
     <ul class="importantData">
-      <li class="name">Realized Profit Loss</li>
-      <li class="value {{ summary.realized_pl|sign_choice:'pos,neg,' }}">${{ summary.realized_pl|num_format }}</li>
+      <li class="name">Todays P/L $</li>
+      <li class="value {{ summary.day_pl|sign_choice:'pos,neg,' }}">${{ summary.day_pl|num_format }}</li>
       <li class="related">
-        <strong>Total P/L:</strong> <span class="{{ summary.total_pl|sign_choice:'pos,neg,' }}">${{ summary.total_pl|num_format }}</span>
+        <strong>As %:</strong> <span class="{{ summary.day_pl_percent|sign_choice:'pos,neg,' }}">{{ summary.day_pl_percent|floatformat:'2' }}%</span>
       </li>
     </ul>
   </div>
+
 </div>
 
 {% comment %}

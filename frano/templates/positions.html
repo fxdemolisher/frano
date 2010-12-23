@@ -17,8 +17,20 @@
   
   <div id="content" >
       <div class="eight columns readOnlyCopy">
-        <strong class="highlight">Use this URL to share this portfolio with friends:</strong>
+        <strong class="highlight">You can share your portfolio with friends using:</strong>
+               
+        <a name="fb_share" share_url="http://{{ request.META.HTTP_HOST }}/{{ portfolio.read_only_token }}/"></a> 
+        <script src="http://static.ak.fbcdn.net/connect.php/js/FB.Share" type="text/javascript"></script>
+        
+        or 
+        
+        <a href="http://twitter.com/share?url=http%3A%2F%2F{{ request.META.HTTP_HOST|urlencode }}%2F{{ portfolio.read_only_token }}%2F" class="twitter-share-button" data-count="none">Tweet</a>
+        <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+        
+        or 
+        
         <a href="http://{{ request.META.HTTP_HOST }}/{{ portfolio.read_only_token }}/" target="_blank">http://{{ request.META.HTTP_HOST }}/{{ portfolio.read_only_token }}/</a>
+        
       </div>
   </div>
 {% endblock %}

@@ -1,12 +1,13 @@
 {% load frano_filters %}
 
 {% if transaction_sets.0 %}
+   
   <div id="content" >
-    <div class="column-row export-transactions-form">
+     <div class="column-row export-transactions-form">
       <div class="four columns">
         <div class="transactionsCopy">
           See transactions for: 
-          <form method="get" id="transactionSymbolFilter">
+          <form method="get" action="" id="transactionSymbolFilter">
             <select name="filter">
               <option value="">All Symbols</option>
               <option value="*CASH" {% ifequal symbol_filter "*CASH" %}selected{% endifequal %}>Cash</option>
@@ -18,14 +19,11 @@
         </div>
       </div>
       <div class="four columns">
-       <div class="transactionsCopy">
+       <div class="transactionsCopy floatright">
          If you need to start over: <a href="/{{portfolio.id}}/removeAllTransactions.html" class="buttonLink importButton removeAllTransactions">Remove All Transactions</a>
        </div>
      </div>
    </div>
-  </div>
-
-  <div id="content" >
     <div class="column-row">
       <div class="eight columns">
         <table class="dataTable transactionTable" width="100%" cellpadding="0" cellspacing="0">
@@ -37,6 +35,7 @@
               <td>Qty</td>
               <td>Price</td>
               <td>Total</td>
+              <td>Linked To</td>
               <td>&nbsp;</td>
             </tr>
           </thead>
@@ -54,8 +53,12 @@
                     <div class="inline-editable-prompt">click to edit</div>
                   </td>
                   <td>
-                    <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_symbol_59 tickerSymbol">{{ transaction.symbol }}</div>
-                    <div class="inline-editable-prompt">click to edit</div>
+                    {% ifnotequal transaction.symbol "*CASH" %}
+                      <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_symbol_59 tickerSymbol">{{ transaction.symbol }}</div>
+                      <div class="inline-editable-prompt">click to edit</div>
+                    {% else %}
+                      {{ transaction.symbol }}
+                    {% endifnotequal %}
                   </td>
                   <td>
                     {% ifnotequal transaction.symbol "*CASH" %}
@@ -77,6 +80,10 @@
                     <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format }}</div>
                     <div class="inline-editable-prompt">click to edit</div>
                   </td>
+                  <td>
+                    <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_linkedsymbol_59">{{ transaction.linked_symbol|default_if_none:"" }}</div>
+                    <div class="inline-editable-prompt">click to edit</div>
+                  </td>
                   <td><a class="deleteTransaction" href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div class="icon delete"></div></a></td>
                 </tr>
               {% endfor %}
@@ -88,20 +95,18 @@
       
           </tbody>
         </table>
+      
+         
+           <div class="transactionsCopy exportTransactions">
+             Export all your transactions as: 
+             <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
+             <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
+           </div>
+         
       </div>
     </div>
   </div>
-  <div id="content" >
-    <div class="column-row export-transactions-form">
-      <div class="eight columns">
-       <div class="transactionsCopy">
-         Export all your transactions as: 
-         <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
-         <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
-       </div>
-     </div>
-   </div>
-  </div>
+
 {% endif %}
 
 {% comment %}

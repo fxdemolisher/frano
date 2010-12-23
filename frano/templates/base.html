@@ -7,35 +7,33 @@
     <link rel="stylesheet" href="/css/jquery-ui-1.8.6.custom.css" type="text/css"/>
     <link rel="stylesheet" href="/css/main.css" type="text/css"/>
 
-    <!--[if IE]><script type="text/javascript" src="/js/excanvas.compiled-r3.js"></script><![endif]-->
-    <script language="javascript" type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery-1.4.4.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine-en.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.jeditable.mini-1.7.1.js"></script>
-    <script language="javascript" type="text/javascript" src="/js/jquery-ui-1.8.6.custom.min.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/jquery-ui-1.8.7.custom.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jshashtable-2.1.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.numberformatter-1.2.1.min.js"></script>
+    
+    <!--[if IE]>
+      <script language="javascript" type="text/javascript" src="/js/excanvas.min.js"></script>
+    <![endif]-->
     
     {% block extraJs %}{% endblock %}
     
     <script language="javascript" type="text/javascript" src="/js/main.js"></script>
-    
-    <script type="text/javascript">
-      var rpxJsHost = (("https:" == document.location.protocol) ? "https://" : "http://static.");
-      document.write(unescape("%3Cscript src='" + rpxJsHost + "rpxnow.com/js/lib/rpx.js' type='text/javascript'%3E%3C/script%3E"));
-    </script>
-    <script type="text/javascript">
-      RPXNOW.overlay = true;
-      RPXNOW.language_preference = 'en';
-    </script>
-    
+
   </head>
   <body>
 
-<!-- banner -->    
+<!-- banner -->
     <div id="banner"></div>
-<!-- END: banner -->    
-    
+<!-- END: banner -->
+
+<!--[if IE]>
+    <div id="ieRoot">
+<![endif]-->
+
 <!-- main container -->
     <div id="container">
       <div id="nav" class="column-row">
@@ -61,7 +59,7 @@
                 <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit Name</a>
                 
                 <form id="portfolioNameForm" class="hidden">
-                  <input type="text" id="portfolioName" class="selectPortfolio" value="{{ portfolio.name }}" />
+                  <input type="text" id="portfolioName" class="selectPortfolio" />
                   <button class="navButton" id="setPortfolioName" value="{{portfolio.id}}">Set</button>
                   <button class="navButton" id="cancelPortfolioName">Cancel</button>
                 </form>
@@ -86,7 +84,11 @@
                 {% if user %}
                   <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
                 {% else %}
-                  <li><a class="rpxnow buttonLink navLink" onclick="return false;" href="https://frano.rpxnow.com/openid/v2/signin?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html">Sign In</a></li>
+                  <div class="signInBox hidden">
+                    <iframe src="http://frano.rpxnow.com/openid/embed?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html" scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
+                  </div>
+                  
+                  <li><a class="buttonLink navLink" id="signIn" href="#">Sign In</a></li> 
                 {% endif %}
               {% endif %} 
             </ul>
@@ -94,18 +96,57 @@
         </div>
       </div>    
 
-<!-- header row -->    
-      {% if not supress_navigation and user %}
-        {% ifequal portfolio.user.id user.id %}
-          <div class="subNav">
+<!-- header row -->
+      <div class="subNav">    
+        {% if not supress_navigation and user %}
+          {% ifequal portfolio.user.id user.id %}
             <ul class="horizontallist">
               <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
+              <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
+              <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
               <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
-              <li {% ifequal current_tab 'import' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/importTransactions.html">Import</a></li>
             </ul>
-          </div>      
-        {% endifequal %}
-      {% endif %}
+          {% endifequal %}
+        {% endif %}
+        
+        <div class="socialButtons">
+          {% comment %} Flattr button {% endcomment %}
+          <script type="text/javascript">
+          /* <![CDATA[ */
+            (function() {
+              var s = document.createElement('script'), t = document.getElementsByTagName('script')[0];
+              s.type = 'text/javascript';
+              s.async = true;
+              s.src = 'http://api.flattr.com/js/0.6/load.js?mode=auto';
+              t.parentNode.insertBefore(s, t);
+           })();
+          /* ]]> */
+          </script>
+          <a class="FlattrButton" style="display:none;" rev="flattr;button:compact;" href="http://frano.carelessmusings.com"></a>
+          &nbsp;
+          
+          {% comment %} Reddit Button {% endcomment %}
+          <a href="http://reddit.com/submit" onclick="window.location = 'http://reddit.com/submit?url=' + encodeURIComponent(window.location); return false" id="redditButton"><img src="http://reddit.com/static/spreddit7.gif" alt="submit to reddit" border="0" /></a>
+          &nbsp;
+          
+          {% comment %} Digg Button {% endcomment %}
+          <script type="text/javascript">
+            (function() {
+              var s = document.createElement('SCRIPT'), s1 = document.getElementsByTagName('SCRIPT')[0];
+              s.type = 'text/javascript';
+              s.async = true;
+              s.src = 'http://widgets.digg.com/buttons.js';
+              s1.parentNode.insertBefore(s, s1);
+            })();
+          </script>
+          <a class="DiggThisButton DiggCompact"></a>
+          &nbsp;
+          
+          {% comment %} Facebook like button {% endcomment %}
+          <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Ffrano.carelessmusings.com&amp;layout=button_count&amp;show_faces=false&amp;action=recommend&amp;colorscheme=light" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100px; height:21px;" align="right" allowTransparency="true"></iframe>
+              
+        </div>
+      </div>
 <!-- END: header row -->
 
 <!-- main content -->        
@@ -136,7 +177,11 @@
                  
     </div>
     <br style="clear:both;"/>
-<!-- END: main container -->    
+<!-- END: main container -->
+
+<!--[if IE]>
+    </div>
+<![endif]-->    
 
 <!-- START: Google Analytics -->
     <script type="text/javascript">

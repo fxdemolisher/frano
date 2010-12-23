@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load frano_filters %}
+
+{% block title %}Frano: Income - {{ portfolio.name }}{% endblock %}
+
+{% block mainContent %}
+  <div id="mainContent" >
+    <div class="column-row">
+      <div class="eight columns">
+        <div class="allocationCopy">
+          <strong class="highlight">Income Report</strong>
+          <br class="clear" />
+          
+          The table below shows the historical income from dividend, interest and distributions on current and past positions
+          in your portfolio. The amounts are cumulative from one month through total amount.  
+          <br class="clear" />
+          
+        </div>
+      </div>
+    
+      <div class="eight columns">
+        <table class="dataTable incomeTable" width="100%" cellpadding="0" cellspacing="0">
+          <thead>
+            <tr>
+              <td class="left">Symbol</td>
+              <td>Market Value</td>
+              <td>Cost Basis</td>
+              <td>Unrealized P/L $</td>
+              <td>Unrealized P/L %</td>
+              <td>One Month</td>
+              <td>Three Months</td>
+              <td>Six Months</td>
+              <td>One Year</td>
+              <td>Total</td>
+            </tr>
+          </thead>
+          <tbody>
+    
+            {% for summary in summaries %}
+            
+              <tr {% if not summary.show %}class="hidden"{% endif %}>
+                <td class="left">
+                  <div class="tickerSymbol">{{ summary.symbol }}</div>
+                </td>
+                <td>${{ summary.market_value|num_format }}</td>
+                <td>${{ summary.cost_basis|num_format }}</td>
+                <td class="{{ summary.unrealized_pl|sign_choice:'pos,neg,' }}">${{ summary.unrealized_pl|num_format }}</td>
+                <td class="{{ summary.unrealized_pl|sign_choice:'pos,neg,' }}">{{ summary.unrealized_pl_percent|floatformat:2 }}%</td>
+                <td class="{{ summary.income_one_month|sign_choice:'pos,neg,' }}">${{ summary.income_one_month|num_format }}</td>
+                <td class="{{ summary.income_three_months|sign_choice:'pos,neg,' }}">${{ summary.income_three_months|num_format }}</td>
+                <td class="{{ summary.income_six_months|sign_choice:'pos,neg,' }}">${{ summary.income_six_months|num_format }}</td>
+                <td class="{{ summary.income_one_year|sign_choice:'pos,neg,' }}">${{ summary.income_one_year|num_format }}</td>
+                <td class="{{ summary.total_income|sign_choice:'pos,neg,' }}">${{ summary.total_income|num_format }}</td>
+              </tr>
+              
+            {% endfor %}
+            
+            <tr>
+              <td colspan="5">&nbsp;</td>
+              <td class="{{ total_summary.income_one_month|sign_choice:'pos,neg,' }}">${{ total_summary.income_one_month|num_format }}</td>
+              <td class="{{ total_summary.income_three_months|sign_choice:'pos,neg,' }}">${{ total_summary.income_three_months|num_format }}</td>
+              <td class="{{ total_summary.income_six_months|sign_choice:'pos,neg,' }}">${{ total_summary.income_six_months|num_format }}</td>
+              <td class="{{ total_summary.income_one_year|sign_choice:'pos,neg,' }}">${{ total_summary.income_one_year|num_format }}</td>
+              <td class="{{ total_summary.total_income|sign_choice:'pos,neg,' }}">${{ total_summary.total_income|num_format }}</td>
+            </tr>
+            
+            <tr id="seeAllPositions">
+              <td colspan="10">
+                {% ifequal request.GET.showClosedPositions "true" %}
+                  <a href="?">Hide closed positions</a>
+                {% else %}
+                  <a href="?showClosedPositions=true">See all positions (even closed ones)</a>
+                {% endifequal %}
+              </td>
+            </tr>
+              
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}

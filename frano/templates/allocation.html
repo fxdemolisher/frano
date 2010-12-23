@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load frano_filters %}
+
+{% block title %}Frano: Allocation - {{ portfolio.name }}{% endblock %}
+
+{% block extraJs %}
+  <script language="javascript" type="text/javascript" src="/js/jquery.flot.0.6.min.js"></script>
+  <script language="javascript" type="text/javascript" src="/js/jquery.flot.pie.0.6.js"></script>
+  <script language="javascript" type="text/javascript">
+    $(function() {
+      updateAllocationCharts();
+    });
+  </script>
+{% endblock %}
+
+{% block mainContent %}
+  <div id="mainContent" >
+    <div class="column-row">
+      <div class="eight columns">
+        <div class="allocationCopy">
+          <strong class="highlight">Allocation Worksheet</strong>
+          <br class="clear" />
+          
+          You can use this worksheet to see how planned trades will affect the allocation in your portfolio. 
+          <br class="clear" />
+          
+          Enter cash deposits (<input type="text" value="0" class="deposit cashIn" size="6" />) and 
+          cash withdrawals(<input type="text" value="0" class="withdraw cashOut" size="6" />)
+          then either <a href="#" class="buttonLink allocateButton">Allocate Equally</a> or enter the trades below.
+          <br class="clear" />
+        </div>
+      </div>
+    
+      <div class="eight columns">
+        <table class="dataTable allocationTable" width="100%" cellpadding="0" cellspacing="0">
+          <thead>
+            <tr>
+              <td class="left">Symbol</td>
+              <td>Price</td>
+              <td>Qty</td>
+              <td>Market Value</td>
+              <td class="center">Current Allocation</td>
+              <td class="left">Buy Qty</td>
+              <td class="left">Sell Qty</td>
+              <td class="center">Final Allocation</td>
+              <td>Final Market Value</td>
+            </tr>
+          </thead>
+          <tbody>
+    
+            {% for position in positions %}
+            
+              <tr {% if not position.show %}class="hidden"{% endif %}>
+                <td class="left">
+                  <div class="tickerSymbol">{{ position.symbol }}</div>
+                  
+                  {% ifequal position.price 0 %}
+                    <div class="holdingsMeta error">Unknown symbol</div>
+                  {% endifequal %}
+                </td>
+                <td class="price">${{ position.price|num_format }}</td>
+                <td class="quantity">{{ position.quantity|num_format }}</td>
+                <td>${{ position.market_value|num_format }}</td>
+                <td class="center currentAllocation">{{ position.allocation|floatformat:'2' }}%</td>
+                <td class="left buy">
+                  <input type="text" class="allocationField" value="0.00" size="6" {% ifequal position.symbol '*CASH' %}disabled="disabled"{% endifequal %}/>
+                </td>
+                <td class="left sell">
+                  <input type="text" class="allocationField" value="0.00" size="6" {% ifequal position.symbol '*CASH' %}disabled="disabled"{% endifequal %}/>
+                </td>
+                <td class="center finalAllocation">{{ position.allocation|floatformat:'2' }}%</td>
+                <td class="finalMarketValue">${{ position.market_value|num_format }}</td>
+              </tr>
+              
+            {% endfor %}
+            
+            <tr>
+              <td class="left">
+                <input type="text" class="symbol allocationField" size="6" />
+                <img src="/img/spinner.gif" class="spinner hidden"/>
+                <div class="hidden unknownSymbol error">Unknown symbol</div>
+              </td>
+              <td class="price">$0.00</td>
+              <td class="quantity">0.00</td>
+              <td>$0.00</td>
+              <td class="center currentAllocation">0.00%</td>
+              <td class="left buy"><input type="text" class="allocationField" value="0.00" size="6" /></td>
+              <td class="left sell"><input type="text" class="allocationField" value="0.00" size="6" /></td>
+              <td class="center finalAllocation">0.00%</td>
+              <td class="finalMarketValue">$0.00</td>
+            </tr>
+    
+            <tr id="moreInstruments">
+              <td colspan="10">
+                <a href="#" id="allocationAddInstrument">Add more instruments</a>
+              </td>
+            </tr>
+    
+          </tbody>
+        </table>
+      </div>
+      
+      <br class="clear" />
+      <br class="clear" />
+      <div class="columns" id="currentAllocationChartColumn">
+        <div id="currentAllocationChart">&nbsp;</div>
+      </div>
+      
+      <div class="columns" id="finalAllocationChartColumn">
+        <div id="finalAllocationChart">&nbsp;</div>
+      </div>
+      
+    </div>
+  </div>
+{% endblock %}
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}

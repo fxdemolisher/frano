@@ -8,7 +8,7 @@ from models import Quote, Transaction
 #  CONSTANTS |
 #------------/
 
-FRANO_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TYPE', 'SYMBOL', 'QUANTITY', 'PRICE', 'TOTAL' ]
+FRANO_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TYPE', 'SYMBOL', 'QUANTITY', 'PRICE', 'TOTAL', 'LINKED_SYMBOL' ]
 GOOGLE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Name', 'Type', 'Date', 'Shares', 'Price', 'Cash value', 'Commission', 'Notes' ]
 AMERITRADE_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TRANSACTION ID', 'DESCRIPTION', 'QUANTITY', 'SYMBOL', 'PRICE', 'COMMISSION', 'AMOUNT', 'NET CASH BALANCE', 'SALES FEE', 'SHORT-TERM RDM FEE', 'FUND REDEMPTION FEE', ' DEFERRED SALES CHARGE' ]
 ZECCO_TRANSACTION_EXPORT_HEADER = [ 'TradeDate', 'AccountTypeDescription', 'TransactionType', 'Symbol', 'Cusip', 'ActivityDescription', 'SecuritySubDescription', 'Quantity', 'Price', 'Currency', 'PrincipalAmount', 'NetAmount', 'TradeNumber' ]
@@ -41,7 +41,7 @@ def transactions_as_csv(target, portfolio):
   
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   for transaction in transactions:
-    writer.writerow([transaction.as_of_date.strftime('%m/%d/%Y'), transaction.type, transaction.symbol, transaction.quantity, transaction.price, transaction.total])
+    writer.writerow([transaction.as_of_date.strftime('%m/%d/%Y'), transaction.type, transaction.symbol, transaction.quantity, transaction.price, transaction.total, transaction.linked_symbol])
 
 def parse_transactions(type, file):
   parsed = None
@@ -81,10 +81,11 @@ def parse_transactions(type, file):
     transaction = Transaction()
     transaction.as_of_date = row['date']
     transaction.type = row['type']
-    transaction.symbol = row['symbol']
+    transaction.symbol = row['symbol'].upper()
     transaction.quantity = row['quantity']
     transaction.price = row['price']
     transaction.total = row['total']
+    transaction.linked_symbol = row.get('linked_symbol', None)
     
     transactions.append(transaction)
     
@@ -114,6 +115,7 @@ def parse_frano_transactions(reader):
         'quantity' : float(row[3]),
         'price' : float(row[4]),
         'total' : float(row[5]),
+        'linked_symbol' : (row[6] if row[6] != '' else None),
       });
       
   return parsed
@@ -165,6 +167,7 @@ def parse_ameritrade_transactions(reader):
     commission_field = row[6]
     amount_field = row[7]
     net_cash_field = row[8]
+    linked_symbol = None
     
     # skip no amount and no net cash transactions...for now
     if abs(float(amount_field)) < 0.01 or abs(float(net_cash_field)) < 0.01:
@@ -180,11 +183,12 @@ def parse_ameritrade_transactions(reader):
       
     # symbol is there, but price is not, dividend
     elif symbol_field != '':
-      symbol = symbol_field
+      symbol = Quote.CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(amount_field)
       price = 1.0
       commission = 0.0
+      linked_symbol = symbol_field
     
     # otherwise its a cash movement
     else:
@@ -205,6 +209,7 @@ def parse_ameritrade_transactions(reader):
         'quantity' : quantity,
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
+        'linked_symbol': linked_symbol,
       });
       
   return parsed
@@ -220,13 +225,18 @@ def parse_zecco_transactions(reader):
     quantity_field = row[7]
     price_field = row[8]
     net_amount_field = row[11]
+    linked_symbol = None
     
     # skip credit sweeps
     if description_field.find('Credit Sweep') >= 0:
       continue
     
     # deposits/withdrawals happen on the cash journal
-    elif transaction_type == 'Cash Journal' and (description_field.startswith('ACH DEPOSIT') or description_field.startswith('ACH DISBURSEMENT')):
+    elif transaction_type == 'Cash Journal' and (
+        description_field.startswith('ACH DEPOSIT') or description_field.startswith('ACH DISBURSEMENT') or 
+        description_field.startswith('W/T FRM CUST') or description_field.startswith('W/T TO CUST')
+      ):
+      
       symbol = Quote.CASH_SYMBOL
       type = ('DEPOSIT' if float(net_amount_field) >= 0 else 'WITHDRAW')
       quantity = (abs(float(net_amount_field)))
@@ -248,6 +258,7 @@ def parse_zecco_transactions(reader):
       quantity = float(net_amount_field)
       price = 1.0
       commission = 0.0
+      linked_symbol = symbol_field
       
     # otherwise just skip it for now
     else:
@@ -264,6 +275,7 @@ def parse_zecco_transactions(reader):
         'quantity' : quantity,
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
+        'linked_symbol': linked_symbol,
       });
       
   return parsed
@@ -278,6 +290,7 @@ def parse_scottrade_transactions(reader):
     date_field = row[4]
     amount_field = row[7]
     commission_field = row[8]
+    linked_symbol = None
     
     # deposits and withdrawals
     if action_field == 'IRA Receipt' or action_field == 'Journal':
@@ -319,6 +332,7 @@ def parse_scottrade_transactions(reader):
       quantity = float(amount_field)
       price = 1.0
       commission = 0.0
+      linked_symbol = (symbol_field if symbol_field != 'Cash' else None)
       
     commission_multiplier = 1.0
     if type == 'SELL':
@@ -331,6 +345,7 @@ def parse_scottrade_transactions(reader):
         'quantity' : quantity,
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
+        'linked_symbol': linked_symbol,
       });
       
   return parsed
@@ -345,6 +360,7 @@ def parse_charles_transactions(reader):
     price_field = row[5].replace('$', '').strip(' ')
     amount_field = row[6].replace('$', '').strip(' ')
     commission_field = row[7].replace('$', '').strip(' ')
+    linked_symbol = None
     
     # deposits and withdrawals have no symbols or prices
     if symbol_field == '' and price_field == '':
@@ -388,6 +404,7 @@ def parse_charles_transactions(reader):
       quantity = float(amount_field)
       price = 1.0
       commission = 0.0
+      linked_symbol = symbol_field
       
     commission_multiplier = 1.0
     if type == 'SELL':
@@ -400,6 +417,7 @@ def parse_charles_transactions(reader):
         'quantity' : quantity,
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
+        'linked_symbol': linked_symbol,
       });
       
   return parsed
