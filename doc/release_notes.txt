@@ -1,4 +1,66 @@
 /================\
+| Release 0.7    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+#81 - Performance chart now shows what the portfolio would look like if it was
+      a fund.
+      https://github.com/fxdemolisher/frano/issues#issue/81    
+
+#44 - Position screen now has a drill down to tax lots 
+      https://github.com/fxdemolisher/frano/issues#issue/44
+      
+#67 - Added recommendation and sharing buttons. Also added flattr.
+      https://github.com/fxdemolisher/frano/issues#issue/67
+      
+#9 -  Portfolio allocation worksheet now available 
+      https://github.com/fxdemolisher/frano/issues#issue/9
+      
+#102 - Added a tab to show income over time (dividends)
+      https://github.com/fxdemolisher/frano/issues#issue/102
+      
+Fixes
+-------------------------------------------------------------------------------
+#88 - Visual fixes on positions screen
+      https://github.com/fxdemolisher/frano/issues#issue/88      
+
+#85 - Making symbol names non case sensitive (all to upper case)
+      https://github.com/fxdemolisher/frano/issues#issue/85
+      
+#86 - Fixes to transaction editing
+      https://github.com/fxdemolisher/frano/issues#issue/86
+      
+#84 - Fix for transaction edit (blank type)
+      https://github.com/fxdemolisher/frano/issues#issue/84
+      
+#83 - Symbol filter is now working on demo screen
+      https://github.com/fxdemolisher/frano/issues#issue/83
+      
+#87 - Fixed zecco import with wire transfers
+      https://github.com/fxdemolisher/frano/issues#issue/87
+            
+#99 - Removed realized gain from summary
+      https://github.com/fxdemolisher/frano/issues#issue/99      
+
+#104 - Fixed auto naming on portfolio create
+      https://github.com/fxdemolisher/frano/issues#issue/104
+      
+#107 - Compatibility fixes for multiple browsers
+      https://github.com/fxdemolisher/frano/issues#issue/107
+            
+Infrastructure
+-------------------------------------------------------------------------------
+#98 - Refactor of the price history/quote system
+      https://github.com/fxdemolisher/frano/issues#issue/98      
+
+#100 - Refactored cleanup processed into management commands 
+      https://github.com/fxdemolisher/frano/issues#issue/100
+      
+#105 - Added a management command to flush unused quotes
+      https://github.com/fxdemolisher/frano/issues#issue/
+      
+/================\
 | Release 0.6    |
 \================/
 
