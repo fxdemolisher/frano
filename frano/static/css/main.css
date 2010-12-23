@@ -71,6 +71,7 @@ div#content, #mainContent {
   font-size: 15px; 
   line-height: 1.2em;
   z-index: 1;
+  border-radius: 5px;
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px; 
   margin-left:-20px;
@@ -129,6 +130,7 @@ H2 {font-size:24px;}
 BUTTON {
   text-align:center;
   padding:4px 6px 7px 6px;
+  border-radius: 3px;
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.5);
@@ -140,6 +142,7 @@ BUTTON {
 .buttonLink {
   text-align:center;
   padding: 4px 6px 7px 6px;
+  border-radius: 3px;
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   -moz-box-shadow: 3px 3px 3px rgba(0,0,0,.25);
@@ -182,7 +185,7 @@ BUTTON {
 
 .selectPortfolio { font-size: 22px; vertical-align: middle; width: 260px; }
 
-.signInBox { position: absolute; background-color: #FFFFFF; margin-left: -354px; margin-top: 30px; border: 10px solid #999999; border-radius: 10px; -moz-border-radius: 10px; }
+.signInBox { position: absolute; background-color: #FFFFFF; margin-left: -354px; margin-top: 30px; border: 10px solid #999999; border-radius: 10px; -moz-border-radius: 10px; -webkit-border-radius: 10px}
 .signInBox IFRAME { position: relative; width: 400px; height: 240px; }
 
 /*********\
@@ -197,6 +200,8 @@ BUTTON {
   background-color: #CCCCCC; 
   -moz-border-radius-topleft: 5px; 
   -moz-border-radius-topright: 5px;
+  -webkit-border-radius-topleft: 5px;
+  -webkit-border-radius-topright: 5px;
   border-top-left-radius: 5px; 
   border-top-right-radius: 5px;
   border-bottom: 1px solid #333333;
@@ -207,7 +212,7 @@ BUTTON {
 
 .subNav LI A { font-size: 14px; color: #3333CC; text-decoration: none; }
 
-.socialButtons { vertical-align: top; float: right; height: 25px; }
+.socialButtons { vertical-align: top; float: right; height: 25px; text-align: right; width: 50%; }
 
 /*************\
 = DATA TABLES =
@@ -317,6 +322,8 @@ TD.center { text-align: center !important; }
 
 .exportTransactions {width:350px;margin:0 auto;}
 
+#addTransactionForm TABLE TBODY TR TD INPUT#total { background-color: #CCCCCC; }
+
 /*************\
 = COPY BLOCKS =
 \*************/
@@ -347,12 +354,13 @@ TD.center { text-align: center !important; }
 /********\
 = CHARTS =
 \********/
+
 #allocationChartColumn { width: 280px; }
-#allocationChart { padding:5px;height: 270px; width: 100%; border: 1px solid #999; background-color:#FFF;-moz-border-radius: 3px;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
+#allocationChart { padding:5px;height: 270px; width: 100%; border: 1px solid #999; background-color:#FFF;border-radius: 3px;-moz-border-radius: 3px;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
 
 #performanceChartColumn { width: 612px; }
-#performanceChartContainer { height: 275px; padding: 5px 5px 0px 10px; border: 1px solid #999999;background-color:#FFF;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
+#performanceChartContainer { height: 275px; padding: 5px 5px 0px 10px; border: 1px solid #999999;background-color:#FFF;border-radius: 3px;-moz-border-radius: 3px;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
 #performanceChart { height: 270px; }
 
 #currentAllocationChartColumn, #finalAllocationChartColumn { width: 440px; }
-#currentAllocationChart, #finalAllocationChart { padding:5px; width: 430px; height: 470px; width: 100%; border: 1px solid #999; background-color:#FFF;-moz-border-radius: 3px;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}
+#currentAllocationChart, #finalAllocationChart { padding:5px; width: 430px; height: 470px; width: 100%; border: 1px solid #999; background-color:#FFF; border-radius: 3px; -moz-border-radius: 3px;-webkit-border-radius: 3px;-webkit-box-shadow: 2px 3px 3px #999;-moz-box-shadow: 2px 3px 3px #BBB;}

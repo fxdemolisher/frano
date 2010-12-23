@@ -10,7 +10,7 @@
     dates[dates.length] = new Date({{ history.as_of_date.year }}, {{ history.as_of_date.month|add:'-1' }}, {{ history.as_of_date.day }}); performance[performance.length] = {{ history.percent}}; benchmark[benchmark.length] = {{ history.benchmark_percent}};
   {% endfor %}
   
-  var allocation = [ {% for position in positions %}[ '{{ position.symbol|escapejs }}', {{ position.allocation }} ], {% endfor %} ]
+  var allocation = [ {% for position in positions %}[ '{{ position.symbol|escapejs }}', {{ position.allocation }} ] {% if not forloop.last %},{% endif %} {% endfor %} ]
   
   $(function() {
     initializeProfitLossChart($("#performanceChart"));

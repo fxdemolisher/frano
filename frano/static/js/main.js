@@ -11,7 +11,7 @@ $(function() {
   $("#banner").click(function() {
     $(this).fadeOut();
   })
-  
+ 
   $("#signIn").click(function(e) {
     e.preventDefault();
     var box = $(".signInBox");
@@ -33,11 +33,11 @@ $(function() {
     
     if(isCash != wasCash) {
       if(isCash) {
-        $(".securitiesField").attr("disabled", "disabled").val("");
-        $(".cashField").attr("disabled", "").filter('[type=text]').val("");
+        $(".securitiesField").attr("disabled", "disabled").val("").css("background-color", "#CCCCCC");
+        $(".cashField").attr("disabled", "").filter('[type=text]').val("").css("background-color", "#FFFFFF");
       } else {
-        $(".securitiesField").attr("disabled", "").val("");
-        $(".cashField").attr("disabled", "disabled").filter('[type=text]').val("");
+        $(".securitiesField").attr("disabled", "").val("").css("background-color", "#FFFFFF");
+        $(".cashField").attr("disabled", "disabled").filter('[type=text]').val("").css("background-color", "#CCCCCC");
       }
     }
     
@@ -91,7 +91,7 @@ $(function() {
       return;
     }
     
-    var symbol = $('#symbol').val().trim();
+    var symbol = trim($('#symbol').val());
     if(symbol == null || symbol == '') {
       return;
     }
@@ -152,12 +152,12 @@ $(function() {
       width       : parseInt(components[3]),
       style       : 'display: inline;',
       data        : function(value, settings) {
-                      if (value.indexOf('<div') == 0) {
-                        return $('<div/>').html(value).text().trim();
+                      if (value.toLowerCase().indexOf('<div') == 0) {
+                        return trim($('<div/>').html(value).text());
                       } else {
                         return value.replace(/[,\$]/gi, '');
                       }
-                    },
+                    }
     });
   });
   
@@ -202,9 +202,10 @@ $(function() {
   
   $("#editPortfolioName").click(function(e) {
     e.preventDefault();
+    var name = $("SELECT.selectPortfolio :selected").text();
     $("SELECT.selectPortfolio,#editPortfolioName").hide();
     $("#portfolioNameForm").css("display", 'inline');
-    $("INPUT.selectPortfolio").focus();
+    $("INPUT.selectPortfolio").val(name).focus();
   });
   
   $("#cancelPortfolioName").click(function (e) {
@@ -378,11 +379,11 @@ function initializeProfitLossChart(container) {
   $.plot(container,
     [ 
       { data: dataPercent, yaxis: 2, label: "Performance %" },
-      { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (' + benchmarkSymbol + ')' },
+      { data: benchmarkPercent, yaxis: 2, label: 'Benchmark (' + benchmarkSymbol + ')' }
     ],
     {
       series: {
-        lines: { show: true },
+        lines: { show: true }
       },
       xaxis: {
         ticks: dates.length / 7,
@@ -399,7 +400,7 @@ function initializeProfitLossChart(container) {
         }
       },
       grid: {
-        backgroundColor: { colors: ["#ffffff", "#eeeeee"] },
+        backgroundColor: { colors: ["#ffffff", "#eeeeee"] }
       },
       legend: {
         show: true,
@@ -429,7 +430,7 @@ function initializeAllocationPieChart(container, data, combineThreshold, chartTi
             combine: {
               threshold: combineThreshold
             }
-          },
+          }
         },
         legend: {
           show: false
@@ -529,7 +530,7 @@ function allocateEqually() {
           symbol: symbol,
           row: obj,
           price: $.parseNumber(obj.find(".price").html(), {format:"$#,##0.00", locale:"us"}),
-          allocation: $.parseNumber(obj.find(".currentAllocation").html(), {format:"#0.00%", locale:"us"}),
+          allocation: $.parseNumber(obj.find(".currentAllocation").html(), {format:"#0.00%", locale:"us"})
         };
     }
   });
@@ -566,4 +567,8 @@ function updateAllocationCharts() {
   
   initializeAllocationPieChart($("#currentAllocationChart"), data, 0.00, "Current Allocation");
   initializeAllocationPieChart($("#finalAllocationChart"), finalData, 0.00, "Final Allocation");
+}
+
+function trim(str) {
+  return str.replace(/^[ \u00A0]*((?:.|[\n])*?)[ \u00A0]*$/gi, '$1');
 }

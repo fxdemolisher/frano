@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/jquery-ui-1.8.6.custom.css" type="text/css"/>
     <link rel="stylesheet" href="/css/main.css" type="text/css"/>
 
-    <!--[if IE]><script type="text/javascript" src="/js/excanvas.compiled-r3.js"></script><![endif]-->
     <script language="javascript" type="text/javascript" src="/js/jquery-1.4.4.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine-en.1.7.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.validationEngine.1.7.js"></script>
@@ -15,6 +14,10 @@
     <script language="javascript" type="text/javascript" src="/js/jquery-ui-1.8.7.custom.min.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jshashtable-2.1.js"></script>
     <script language="javascript" type="text/javascript" src="/js/jquery.numberformatter-1.2.1.min.js"></script>
+    
+    <!--[if IE]>
+      <script language="javascript" type="text/javascript" src="/js/excanvas.min.js"></script>
+    <![endif]-->
     
     {% block extraJs %}{% endblock %}
     
@@ -26,7 +29,11 @@
 <!-- banner -->
     <div id="banner"></div>
 <!-- END: banner -->
-    
+
+<!--[if IE]>
+    <div id="ieRoot">
+<![endif]-->
+
 <!-- main container -->
     <div id="container">
       <div id="nav" class="column-row">
@@ -52,7 +59,7 @@
                 <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit Name</a>
                 
                 <form id="portfolioNameForm" class="hidden">
-                  <input type="text" id="portfolioName" class="selectPortfolio" value="{{ portfolio.name }}" />
+                  <input type="text" id="portfolioName" class="selectPortfolio" />
                   <button class="navButton" id="setPortfolioName" value="{{portfolio.id}}">Set</button>
                   <button class="navButton" id="cancelPortfolioName">Cancel</button>
                 </form>
@@ -136,7 +143,7 @@
           &nbsp;
           
           {% comment %} Facebook like button {% endcomment %}
-          <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Ffrano.carelessmusings.com&amp;layout=button_count&amp;show_faces=false&amp;width=100&amp;action=recommend&amp;colorscheme=light&amp;height=21" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100px; height:21px;" allowTransparency="true"></iframe>
+          <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Ffrano.carelessmusings.com&amp;layout=button_count&amp;show_faces=false&amp;action=recommend&amp;colorscheme=light" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100px; height:21px;" align="right" allowTransparency="true"></iframe>
               
         </div>
       </div>
@@ -170,7 +177,11 @@
                  
     </div>
     <br style="clear:both;"/>
-<!-- END: main container -->    
+<!-- END: main container -->
+
+<!--[if IE]>
+    </div>
+<![endif]-->    
 
 <!-- START: Google Analytics -->
     <script type="text/javascript">
