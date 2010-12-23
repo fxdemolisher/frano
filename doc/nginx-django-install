@@ -245,11 +245,5 @@ server {
 }
 ================================================================================
 
-- set up cron jobs to run the following every 15 minutes:
-
-  manage.py refresh_quotes
-  
-- set up cron jobs to run the following every 4 hours:
-
-  manage.py refresh_price_history
+- set up cron jobs described in doc/scheduling.markdown
   
