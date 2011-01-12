@@ -34,7 +34,7 @@
               {% endifequal %}
             </td>
             <td>{{ position.allocation|floatformat:'2' }}%</td>
-            <td>{{ position.quantity|num_format }}</td>
+            <td>{{ position.quantity|num_format:"4" }}</td>
             <td>${{ position.price|num_format }}</td>
             <td>${{ position.cost_price|num_format }}</td>
             <td>${{ position.market_value|num_format }}</td>
@@ -71,11 +71,11 @@
                     {% for lot in position.lots %}
                       <tr>
                         <td class="center">{{ lot.as_of_date|date:'m/d/Y' }}</td>
-                        <td>{{ lot.quantity|num_format }}</td>
+                        <td>{{ lot.quantity|num_format:"4" }}</td>
                         <td>${{ lot.cost_price|num_format }}</td>
                         <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">${{ lot.unrealized_pl|num_format }}</td>
                         <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">{{ lot.unrealized_pl_percent|floatformat:2 }}%</td>
-                        <td>{{ lot.sold_quantity|num_format }}</td>
+                        <td>{{ lot.sold_quantity|num_format:"4" }}</td>
                         <td>${{ lot.sold_price|num_format }}</td>
                         <td class="{{ lot.realized_pl|sign_choice:'pos,neg,' }}">${{ lot.realized_pl|num_format }}</td>
                         <td class="center">{{ lot.status }}

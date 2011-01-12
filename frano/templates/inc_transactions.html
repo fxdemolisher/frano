@@ -62,10 +62,10 @@
                   </td>
                   <td>
                     {% ifnotequal transaction.symbol "*CASH" %}
-                      <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_quantity_83">{{ transaction.quantity|num_format }}</div>
+                      <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_quantity_83">{{ transaction.quantity|num_format:"4" }}</div>
                       <div class="inline-editable-prompt">click to edit</div>
                     {% else %}
-                      {{ transaction.quantity|num_format }}
+                      {{ transaction.quantity|num_format:"4" }}
                     {% endifnotequal %}
                   </td>
                   <td>
@@ -77,7 +77,7 @@
                     {% endifnotequal %}
                   </td>
                   <td>
-                    <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format }}</div>
+                    <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format:"4" }}</div>
                     <div class="inline-editable-prompt">click to edit</div>
                   </td>
                   <td>

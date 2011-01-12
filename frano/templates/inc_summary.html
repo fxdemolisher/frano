@@ -1,7 +1,7 @@
 {% load frano_filters %}
 
 <div class="column-row">                
-  <div class="two columns">
+  <div class="three columns">
     <ul class="importantData">
       <li class="name">Market Value</li>
       <li class="value">${{ summary.market_value|num_format }}</li>
@@ -9,7 +9,7 @@
     </ul>
   </div>
   
-  <div class="two columns offset-by-one">
+  <div class="three columns">
     <ul class="importantData">
       <li class="name">Unrealized Profit Loss</li>
       <li class="value {{ summary.pl|sign_choice:'pos,neg,' }}">${{ summary.pl|num_format }}</li>
@@ -21,7 +21,7 @@
     </ul>
   </div>
   
-  <div class="two columns offset-by-one">
+  <div class="two columns">
     <ul class="importantData">
       <li class="name">Todays P/L $</li>
       <li class="value {{ summary.day_pl|sign_choice:'pos,neg,' }}">${{ summary.day_pl|num_format }}</li>

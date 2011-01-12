@@ -712,8 +712,6 @@ def get_summary(positions, transactions):
     realized_pl += position.realized_pl
     previous_market_value += position.previous_market_value
   
-  print market_value
-  print previous_market_value  
   xirr_percent = get_xirr_percent_for_transactions(transactions, as_of_date, market_value)
 
   return Summary(as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent)

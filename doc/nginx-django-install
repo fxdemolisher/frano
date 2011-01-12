@@ -253,9 +253,9 @@ server {
 # frano (django) scheduled jobs
 
 */15 * * * MON-FRI www-data /var/lib/django/frano-command.sh refresh_quotes >> /var/log/cron/frano.log 2>&1
-0 */4 * * * www-data /var/lib/django/frano-command.sh refresh_price_history >> /var/log/cron/frano.log 2>&1
-0 1 * * * www-data /var/lib/django/frano-command.sh cleanup_unused_quotes >> /var/log/cron/frano.log 2>&1
-5 1 * * * www-data /var/lib/django/frano-command.sh cleanup_sessions >> /var/log/cron/frano.log 2>&1
-10 1 * * * www-data /var/lib/django/frano-command.sh cleanup_sample_portfolios >> /var/log/cron/frano.log 2>&1
+5 */4 * * * www-data /var/lib/django/frano-command.sh refresh_price_history >> /var/log/cron/frano.log 2>&1
+5 1 * * * www-data /var/lib/django/frano-command.sh cleanup_unused_quotes >> /var/log/cron/frano.log 2>&1
+10 1 * * * www-data /var/lib/django/frano-command.sh cleanup_sessions >> /var/log/cron/frano.log 2>&1
+15 1 * * * www-data /var/lib/django/frano-command.sh cleanup_sample_portfolios >> /var/log/cron/frano.log 2>&1
   
   Make sure to create the /var/log/cron/frano.log file and chown it to www-data  

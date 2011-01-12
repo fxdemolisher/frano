@@ -87,6 +87,8 @@ class Transaction(models.Model):
     return "%.2f-%s @ %.2f on %s" % (self.quantity, self.symbol, self.price, self.as_of_date.strftime('%m/%d/%Y'))
   
 class Position(models.Model):
+  QUANTITY_TOLERANCE = 0.000001
+  
   portfolio = models.ForeignKey(Portfolio)
   as_of_date = models.DateField()
   symbol = models.CharField(max_length = 5)
@@ -248,10 +250,20 @@ class Position(models.Model):
         
           if lot.sold_quantity > 0:
             position.realized_pl += (lot.sold_quantity * (lot.sold_price - lot.cost_price))
+            
+        if abs(position.quantity) < Position.QUANTITY_TOLERANCE:
+          position.quantity = 0.0
         
         position.save()
         for lot in lots:
           lot.position = position
+          
+          if abs(lot.quantity) < Position.QUANTITY_TOLERANCE:
+            lot.quantity = 0.0
+          
+          if abs(lot.sold_quantity) < Position.QUANTITY_TOLERANCE:
+            lot.sold_quantity = 0.0
+          
           lot.save()
 
   # done here      

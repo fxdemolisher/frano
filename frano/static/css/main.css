@@ -275,7 +275,7 @@ TD.center { text-align: center !important; }
 = POSITION SUMMARY =
 \******************/
 
-.importantData {color:#000; white-space:nowrap;padding:10px;background-color:#EFEFEF;border:1px solid #DDDDDD;}
+.importantData {color:#000; white-space:nowrap;padding:10px;background-color:#EFEFEF;border:1px solid #DDDDDD; float: left;}
 .importantData .name {font-size:14px;font-weight:bold; white-space:nowrap;}
 .importantData .value {font-size:40px;margin-bottom:7px; white-space:nowrap;}
 .importantData .related {color:#666; white-space:nowrap;}

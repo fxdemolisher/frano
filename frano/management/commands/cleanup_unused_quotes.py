@@ -5,6 +5,7 @@
 from django.core.management.base import BaseCommand
 from django.db import connection
 from frano.models import Quote
+from frano.views import PERFORMANCE_BENCHMARK_SYMBOL
 from sys import stdout
 
 class Command(BaseCommand):
@@ -31,6 +32,7 @@ class Command(BaseCommand):
       
     cursor.close()
     
+    symbols.remove(PERFORMANCE_BENCHMARK_SYMBOL)
     unused = Quote.objects.filter(symbol__in = symbols)
     stdout.write('Found %d unused quotes\n' % unused.count())
     
