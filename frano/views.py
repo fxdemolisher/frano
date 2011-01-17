@@ -74,7 +74,8 @@ def login_required_decorator(view_function):
     
     else:
       user = User.objects.filter(id = user_id)[0]
-      return view_function(request, user = user, **args)
+      args['user'] = user
+      return view_function(request, **args)
     
   return view_function_decorated
 
@@ -160,7 +161,7 @@ def create_portfolio(request, user):
   return redirect('/%d/importTransactions.html' % portfolio.id)
   
 @portfolio_manipilation_decorator
-def add_transaction(request, portfolio, is_sample):
+def add_transaction(request, portfolio, is_sample, read_only):
   form = TransactionForm(request.POST)
   if form.is_valid():
     commission = form.cleaned_data.get('commission')
@@ -184,23 +185,23 @@ def add_transaction(request, portfolio, is_sample):
   return redirect_to_portfolio('transactions', portfolio, is_sample)
 
 @portfolio_manipilation_decorator
-def remove_transaction(request, portfolio, is_sample, transaction_id):
+def remove_transaction(request, portfolio, is_sample, read_only, transaction_id):
   transaction = Transaction.objects.filter(id = transaction_id)[0]
   if transaction.portfolio.id == portfolio.id:
     transaction.delete()
     Position.refresh_if_needed(portfolio, force = True)
     
-  return redirect_to_portfolio('transactions', portfolio, is_sample) 
+  return redirect_to_portfolio('transactions', portfolio) 
 
 @portfolio_manipilation_decorator
-def remove_all_transactions(request, portfolio, is_sample):
+def remove_all_transactions(request, portfolio, is_sample, read_only):
   Transaction.objects.filter(portfolio__id__exact = portfolio.id).delete()
   Position.refresh_if_needed(portfolio, force = True)
     
-  return redirect_to_portfolio('transactions', portfolio, is_sample)
+  return redirect_to_portfolio('transactions', portfolio)
 
 @portfolio_manipilation_decorator
-def update_transaction(request, portfolio, is_sample, transaction_id):
+def update_transaction(request, portfolio, is_sample, read_only, transaction_id):
   transaction = Transaction.objects.filter(id = transaction_id)[0]
   success = False
   if transaction.portfolio.id == portfolio.id:
@@ -247,7 +248,7 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
   return HttpResponse("{ \"success\": \"%s\" }" % success)
 
 @portfolio_manipilation_decorator
-def portfolio_positions(request, portfolio, is_sample, read_only = False):
+def portfolio_positions(request, portfolio, is_sample, read_only):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   Position.refresh_if_needed(portfolio, transactions)
   
@@ -279,7 +280,7 @@ def portfolio_read_only_positions(request, read_only_token):
 
 @login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_set_name(request, user, portfolio, is_sample):
+def portfolio_set_name(request, user, portfolio, is_sample, read_only):
   form = PortfolioForm(request.POST)
   success = False
   if form.is_valid():
@@ -291,14 +292,14 @@ def portfolio_set_name(request, user, portfolio, is_sample):
 
 @login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_remove(request, user, portfolio, is_sample):
+def portfolio_remove(request, user, portfolio, is_sample, read_only):
   portfolio.delete()
   
   portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   return redirect_to_portfolio('positions', portfolios[0], False)
 
 @portfolio_manipilation_decorator
-def portfolio_transactions(request, portfolio, is_sample):
+def portfolio_transactions(request, portfolio, is_sample, read_only):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions])
   
@@ -323,7 +324,7 @@ def price_quote(request):
   return HttpResponse("{ \"price\": %f }" % quote.price_as_of(as_of_date), mimetype="application/json")
 
 @portfolio_manipilation_decorator
-def export_transactions(request, portfolio, is_sample, format):
+def export_transactions(request, portfolio, is_sample, read_only, format):
   format = format.lower()
   name = ('DEMO' if is_sample else portfolio.name)
   
@@ -352,7 +353,7 @@ def export_transactions(request, portfolio, is_sample, format):
   return response
 
 @portfolio_manipilation_decorator
-def import_transactions(request, portfolio, is_sample):
+def import_transactions(request, portfolio, is_sample, read_only):
   transactions = None
   auto_detect_error = False
   if request.method == 'POST':
@@ -388,7 +389,7 @@ def import_transactions(request, portfolio, is_sample):
     )  
 
 @portfolio_manipilation_decorator
-def process_import_transactions(request, portfolio, is_sample):
+def process_import_transactions(request, portfolio, is_sample, read_only):
   formset = ImportTransactionFormSet(request.POST)
   if not formset.is_valid():
     raise Exception('Invalid import set');
@@ -413,10 +414,10 @@ def process_import_transactions(request, portfolio, is_sample):
       transaction.save()
     
   Position.refresh_if_needed(portfolio, force = True)
-  return redirect_to_portfolio('transactions', portfolio, is_sample)
+  return redirect_to_portfolio('transactions', portfolio)
 
 @portfolio_manipilation_decorator
-def request_import_type(request, portfolio, is_sample):
+def request_import_type(request, portfolio, is_sample, read_only):
   form = RequestImportForm(request.POST, request.FILES)
   if not form.is_valid():
     raise Exception('Bad file for request');
@@ -442,7 +443,7 @@ def request_import_type(request, portfolio, is_sample):
   return redirect("/%d/importTransactions.html?requestSent=true" % portfolio.id)
 
 @portfolio_manipilation_decorator
-def portfolio_allocation(request, portfolio, is_sample):
+def portfolio_allocation(request, portfolio, is_sample, read_only):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   Position.refresh_if_needed(portfolio, transactions)
   
@@ -457,7 +458,7 @@ def portfolio_allocation(request, portfolio, is_sample):
     }, context_instance = RequestContext(request))
   
 @portfolio_manipilation_decorator
-def portfolio_income(request, portfolio, is_sample, read_only = False):
+def portfolio_income(request, portfolio, is_sample, read_only):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   Position.refresh_if_needed(portfolio, transactions)
   
@@ -664,12 +665,8 @@ def get_summary(positions, transactions):
   
   return Summary(as_of_date, start_date, market_value, cost_basis, risk_capital, realized_pl, previous_market_value)
   
-def redirect_to_portfolio(action, portfolio, is_sample, query_string = None):
-  if is_sample:
-    return redirect("/demo.html%s" % ('' if query_string == None else "?%s" % query_string))
-  
-  else:
-    return redirect("/%d/%s.html%s" % (portfolio.id, action, ('' if query_string == None else "?%s" % query_string)))
+def redirect_to_portfolio(action, portfolio, query_string = None):
+  return redirect("/%d/%s.html%s" % (portfolio.id, action, ('' if query_string == None else "?%s" % query_string)))
 
 def get_performance_history(portfolio, days):
   query = """

@@ -56,7 +56,7 @@
               </select>
               
               {% ifequal portfolio.user.id user.id %}
-                <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit Name</a>
+                <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit</a>
                 
                 <form id="portfolioNameForm" class="hidden">
                   <input type="text" id="portfolioName" class="selectPortfolio" />
@@ -68,7 +68,7 @@
                   <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
                 {% endifnotequal %}
                 
-                <a href="/createPortfolio.html" class="buttonLink navLink">Create New</a>
+                <a href="/createPortfolio.html" class="buttonLink navLink">Create</a>
               {% endifequal %}
 
             {% else %}

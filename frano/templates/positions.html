@@ -29,15 +29,15 @@
     <div class="column-row">
       <div class="summaryColumn columns">
         <ul class="importantData">
-          <li class="name">Market Value</li>
+          <li class="name">Market Value<a href="http://en.wikipedia.org/wiki/Market_value" class="wikipediaLink" target="_blank">&nbsp;</a></li>
           <li class="value">${{ summary.market_value|num_format }}</li>
-          <li class="related"><strong>Risk Capital:</strong> ${{ summary.risk_capital|num_format }}</li>
+          <li class="related"><strong>Risk Capital<a href="http://en.wikipedia.org/wiki/Equity_%28finance%29" class="wikipediaLink" target="_blank">&nbsp;</a>:</strong> ${{ summary.risk_capital|num_format }}</li>
         </ul>
       </div>
             
       <div class="summaryColumn summaryOffset columns">
         <ul class="importantData">
-          <li class="name">Unrealized Profit Loss</li>
+          <li class="name">Unrealized Profit Loss<a href="http://www.investopedia.com/ask/answers/04/021204.asp" class="wikipediaLink" target="_blank">&nbsp;</a></li>
           <li class="value {{ summary.pl|sign_choice:'pos,neg,' }}">${{ summary.pl|num_format }}</li>
           <li class="related">
             <strong>As %:</strong> <span class="{{ summary.pl_percent|sign_choice:'pos,neg,' }}">{{ summary.pl_percent|floatformat:'2' }}%</span>
@@ -69,7 +69,7 @@
           <thead>
             <tr>
               <td class="left">Symbol</td>
-              <td>Allocation</td>
+              <td>Allocation<a href="http://en.wikipedia.org/wiki/Asset_allocation" class="wikipediaLink" target="_blank">&nbsp;</a></td>
               <td>Qty</td>
               <td>Price</td>
               <td>Cost Price</td>
@@ -124,9 +124,9 @@
                           <td class="center">Date</td>
                           <td>Quantity</td>
                           <td>Cost Price</td>
-                          <td>Cost Basis</td>
-                          <td>Unrealized P/L $</td>
-                          <td>Unrealized P/L %</td>
+                          <td>Cost Basis<a href="http://en.wikipedia.org/wiki/Cost_basis" class="wikipediaLink" target="_blank">&nbsp;</a></td>
+                          <td>Unreal. P/L $</td>
+                          <td>Unreal. P/L %</td>
                           <td>Quantity Sold</td>
                           <td>Avg. Sell Price</td>
                           <td>Realized P/L $</td>                                

@@ -167,11 +167,20 @@ BUTTON {
 .floatright {float:right;}
 .floatleft {float:left;}
 
+.wikipediaLink {
+  line-height: 12px;
+  font-size: 10px;
+  margin-left: 2px;
+  vertical-align: top;
+  background: url(/img/question_mark.gif) top left no-repeat;
+  padding-right: 10px;
+}
+
 /*********\
 = TOP NAV =
 \*********/
 
-.pageHeading {font-size:34px;color:#FFF;float:left; margin-top: 3px; margin-left: -25px; }
+.pageHeading {font-size:30px;color:#FFF;float:left; margin-top: 5px; margin-left: -25px; vertical-align: middle; }
 .horizontallist LI {float:left;margin-left:10px;}
 .horizontallist LI:first-child {margin-left:0;}
 
@@ -183,7 +192,7 @@ BUTTON {
 
 .userLinks {float:right;font-size:17px;color:#FFF;padding-top:15px;white-space:nowrap;right:0;}
 
-.selectPortfolio { font-size: 22px; vertical-align: middle; width: 220px; }
+.selectPortfolio { font-size: 20px; vertical-align: middle; width: 220px; }
 
 .signInBox { position: absolute; background-color: #FFFFFF; margin-left: -354px; margin-top: 30px; border: 10px solid #999999; border-radius: 10px; -moz-border-radius: 10px; -webkit-border-radius: 10px}
 .signInBox IFRAME { position: relative; width: 400px; height: 240px; }
