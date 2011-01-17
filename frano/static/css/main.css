@@ -312,6 +312,7 @@ TD.center { text-align: center !important; }
 .spinner { vertical-align: middle; }
 
 .allocateButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }
+.resetAllocationButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }
   
 /**************\
 = TRANSACTIONS =

@@ -342,6 +342,13 @@ $(function() {
     updateAllocationCharts();
   });
   
+  $(".resetAllocationButton").click(function (e) {
+    e.preventDefault();
+    resetAllocation();
+    refreshAllocation();
+    updateAllocationCharts();
+  });
+  
 });
 
 function scanForBannerMessages() {
@@ -567,6 +574,32 @@ function updateAllocationCharts() {
   
   initializeAllocationPieChart($("#currentAllocationChart"), data, 0.00, "Current Allocation");
   initializeAllocationPieChart($("#finalAllocationChart"), finalData, 0.00, "Final Allocation");
+}
+
+function resetAllocation() {
+  $(".cashIn").val('0')
+  $(".cashOut").val('0')
+  
+  var firstNewRow = true;
+  $(".allocationTable TBODY TR").each(function (index, domObj) {
+    var obj = $(domObj);
+    var symbolField = obj.find(".symbol");
+    if (symbolField.length == 1) {
+      if(firstNewRow) {
+        firstNewRow = false;
+        symbolField.val('');
+        obj.find(".price, .finalMarketValue").html("$0.00")
+        obj.find(".finalAllocation").html("0.00%")
+      } else {
+        obj.remove();
+        return;
+      }
+    }
+    
+    obj.find(".buy INPUT").val('0.00');
+    obj.find(".sell INPUT").val('0.00');
+  });
+
 }
 
 function trim(str) {
