@@ -472,9 +472,9 @@ def portfolio_income(request, portfolio, is_sample, read_only = False):
   
   summary_map = {}
   for position in positions:
-    summary_map[position.symbol] = IncomeSummary(position.symbol, position.market_value, position.cost_basis, position.pl, position.pl_percent, position.show)
+    summary_map[position.symbol] = IncomeSummary(position.symbol, position.market_value, position.cost_basis, position.pl, position.pl_percent, position.realized_pl, position.show)
   
-  total_summary = IncomeSummary('*TOTAL*', 0.0, 0.0, 0.0, 0.0, True)
+  total_summary = IncomeSummary('*TOTAL*', 0.0, 0.0, 0.0, 0.0, 0.0, True)
   for transaction in transactions:
     if transaction.type != 'ADJUST':
       continue
@@ -627,6 +627,7 @@ def decorate_positions_with_lots(positions):
   for position in positions:
     lots = []
     for lot in position.taxlot_set.order_by('-as_of_date'):
+      lot.cost_basis = lot.cost_price * lot.quantity
       lot.unrealized_pl = (lot.quantity - lot.sold_quantity) * (position.price - lot.cost_price)
       lot.unrealized_pl_percent = ((((position.price / lot.cost_price) - 1) * 100) if lot.cost_price <> 0 and abs(lot.unrealized_pl) > 0.01 else 0)
       lot.realized_pl = lot.sold_quantity * (lot.sold_price - lot.cost_price)
@@ -649,6 +650,13 @@ def get_summary(positions, transactions):
   as_of_date = max([position.effective_as_of_date for position in positions]) if len(positions) > 0 else datetime.now().date()
   start_date = min([transaction.as_of_date for transaction in transactions]) if len(transactions) > 0 else datetime.now().date()
   
+  risk_capital = 0
+  for transaction in transactions:
+    if transaction.type == 'DEPOSIT':
+      risk_capital = risk_capital + transaction.total
+    elif transaction.type == 'WITHDRAW':
+      risk_capital = risk_capital - transaction.total
+  
   market_value = 0  
   cost_basis = 0
   realized_pl = 0
@@ -659,48 +667,8 @@ def get_summary(positions, transactions):
     realized_pl += position.realized_pl
     previous_market_value += position.previous_market_value
   
-  xirr_percent = get_xirr_percent_for_transactions(transactions, as_of_date, market_value)
-
-  return Summary(as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent)
+  return Summary(as_of_date, start_date, market_value, cost_basis, risk_capital, realized_pl, previous_market_value)
   
-def get_xirr_percent_for_transactions(transactions, as_of_date, market_value):
-  transactions = sorted(transactions, key = (lambda transaction: transaction.id)) 
-  transactions = sorted(transactions, key = (lambda transaction: transaction.as_of_date))
-
-  dates = []
-  payments = []
-  for transaction in transactions:
-    if transaction.type == 'DEPOSIT' or transaction.type == 'WITHDRAW':
-      dates.append(transaction.as_of_date)
-      payments.append((-1 if transaction.type == 'DEPOSIT' else 1) * transaction.total)
-      
-  dates.append(as_of_date)
-  payments.append(market_value)
-  
-  xirr_candidate = xirr(dates, payments)
-  return (xirr_candidate * 100) if xirr_candidate != None else 0 
-
-def xirr(dates, payments):
-  years = [ (date - dates[0]).days / 365.0 for date in dates ]
-  residual = 1
-  step = 0.05
-  guess = 0.1
-  limit = 10000
-  while abs(residual) > 0.001 and limit > 0:
-    residual = 0
-    for i in range(len(dates)):
-      residual += payments[i] / ((1 + guess)**years[i])
-    
-    limit -= 1
-    if abs(residual) > 0.001:
-      if residual > 0:
-        guess += step
-      else:
-        guess -= step
-        step /= 2.0
-  
-  return (guess if limit > 0 else None)
-
 def redirect_to_portfolio(action, portfolio, is_sample, query_string = None):
   if is_sample:
     return redirect("/demo.html%s" % ('' if query_string == None else "?%s" % query_string))
@@ -821,23 +789,22 @@ def get_performance_history(portfolio, days):
 #-----------------/
 
 class Summary:
-  def __init__(self, as_of_date, start_date, market_value, cost_basis, realized_pl, previous_market_value, xirr_percent):
+  def __init__(self, as_of_date, start_date, market_value, cost_basis, risk_capital, realized_pl, previous_market_value):
     self.as_of_date = as_of_date
     self.start_date = start_date
     self.market_value = market_value
     self.cost_basis = cost_basis
+    self.risk_capital = risk_capital
     self.realized_pl = realized_pl
     self.previous_market_value = previous_market_value
-    self.xirr_percent = xirr_percent
     
-    self.pl = market_value - cost_basis
-    self.pl_percent = ((self.pl / cost_basis) * 100) if cost_basis != 0 else 0
     self.day_pl = market_value - previous_market_value
     self.day_pl_percent = ((self.day_pl / previous_market_value) * 100) if previous_market_value != 0 else 0
-    self.days = (as_of_date - start_date).days
-    self.annualized_pl_percent = (self.pl_percent / (self.days / 365.0)) if self.days != 0 else 0
-    self.total_pl = self.pl + self.realized_pl
-
+    self.pl = market_value - cost_basis
+    self.pl_percent = ((self.pl / cost_basis) * 100) if cost_basis != 0 else 0
+    self.risk_capital_pl = market_value - risk_capital
+    self.risk_capital_pl_percent = ((self.risk_capital_pl / risk_capital) * 100) if risk_capital != 0 else 0
+        
 class PerformanceHistory:
   def __init__(self, as_of_date, percent, benchmark_percent):
     self.as_of_date = as_of_date
@@ -845,12 +812,13 @@ class PerformanceHistory:
     self.benchmark_percent = benchmark_percent
     
 class IncomeSummary:
-  def __init__(self, symbol, market_value, cost_basis, unrealized_pl, unrealized_pl_percent, show):
+  def __init__(self, symbol, market_value, cost_basis, unrealized_pl, unrealized_pl_percent, realized_pl, show):
     self.symbol = symbol
     self.market_value = market_value
     self.cost_basis = cost_basis
     self.unrealized_pl = unrealized_pl
     self.unrealized_pl_percent = unrealized_pl_percent
+    self.realized_pl = realized_pl
     self.show = show
      
     self.income_one_month = 0.0

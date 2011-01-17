@@ -25,34 +25,35 @@
     {% endif %}
   
     <!-- START: summary -->
-  
-    <div class="column-row">                
-      <div class="three columns">
+    
+    <div class="column-row">
+      <div class="summaryColumn columns">
         <ul class="importantData">
           <li class="name">Market Value</li>
           <li class="value">${{ summary.market_value|num_format }}</li>
-          <li class="related"><strong>Cost Basis:</strong> ${{ summary.cost_basis|num_format }}</li>
+          <li class="related"><strong>Risk Capital:</strong> ${{ summary.risk_capital|num_format }}</li>
         </ul>
       </div>
-      
-      <div class="three columns">
+            
+      <div class="summaryColumn summaryOffset columns">
         <ul class="importantData">
           <li class="name">Unrealized Profit Loss</li>
           <li class="value {{ summary.pl|sign_choice:'pos,neg,' }}">${{ summary.pl|num_format }}</li>
           <li class="related">
             <strong>As %:</strong> <span class="{{ summary.pl_percent|sign_choice:'pos,neg,' }}">{{ summary.pl_percent|floatformat:'2' }}%</span>
-            &nbsp;&nbsp;
-            <strong>XIRR:</strong> <span class="{{ summary.xirr_percent|sign_choice:'pos,neg,' }}">{{ summary.xirr_percent|floatformat:2 }}%</span>
+            &nbsp;
+            <strong>Today:</strong> <span class="{{ summary.day_pl|sign_choice:'pos,neg,' }}">${{ summary.day_pl|num_format }} ({{ summary.day_pl_percent|floatformat:'2' }}%)</span>
           </li>
         </ul>
       </div>
       
-      <div class="two columns">
+      <div class="summaryColumn summaryOffset columns">
         <ul class="importantData">
-          <li class="name">Todays P/L $</li>
-          <li class="value {{ summary.day_pl|sign_choice:'pos,neg,' }}">${{ summary.day_pl|num_format }}</li>
+          <li class="name">Risk Capital Profit Loss</li>
+          <li class="value {{ summary.risk_capital_pl|sign_choice:'pos,neg,' }}">${{ summary.risk_capital_pl|num_format }}</li>
           <li class="related">
-            <strong>As %:</strong> <span class="{{ summary.day_pl_percent|sign_choice:'pos,neg,' }}">{{ summary.day_pl_percent|floatformat:'2' }}%</span>
+            <strong>As %:</strong> <span class="{{ summary.risk_capital_pl_percent|sign_choice:'pos,neg,' }}">{{ summary.risk_capital_pl_percent|floatformat:'2' }}%</span>
+            
           </li>
         </ul>
       </div>
@@ -73,8 +74,10 @@
               <td>Price</td>
               <td>Cost Price</td>
               <td>Market Value</td>                                
-              <td>Unrealized P/L $</td>
-              <td>Unrealized P/L %</td>
+              <td>Unreal. P/L $</td>
+              <td>Unreal. P/L %</td>
+              <td>Day's P/L $</td>
+              <td>Day's P/L %</td>
               <td>&nbsp;</td>
             </tr>
           </thead>
@@ -101,6 +104,8 @@
                 <td>${{ position.market_value|num_format }}</td>
                 <td class="{{ position.pl|sign_choice:'pos,neg,' }}">${{ position.pl|num_format }}</td>
                 <td class="{{ position.pl|sign_choice:'pos,neg,' }}">{{ position.pl_percent|floatformat:2 }}%</td>
+                <td class="{{ position.day_pl|sign_choice:'pos,neg,' }}">${{ position.day_pl|num_format }}</td>
+                <td class="{{ position.day_pl|sign_choice:'pos,neg,' }}">{{ position.day_pl_percent|floatformat:2 }}%</td>
                 <td>
                   {% ifnotequal position.lots|length 0 %}
                     <a href="#" class="showLots">more...</a>
@@ -112,13 +117,14 @@
               
               {% ifnotequal position.lots|length 0 %}
                 <tr class="hidden lotRow">
-                  <td colspan="9">
+                  <td colspan="11">
                     <table class="dataTable lotTable" width="100%" cellpadding="0" cellspacing="0">
                       <thead>
                         <tr>
                           <td class="center">Date</td>
                           <td>Quantity</td>
                           <td>Cost Price</td>
+                          <td>Cost Basis</td>
                           <td>Unrealized P/L $</td>
                           <td>Unrealized P/L %</td>
                           <td>Quantity Sold</td>
@@ -134,6 +140,7 @@
                             <td class="center">{{ lot.as_of_date|date:'m/d/Y' }}</td>
                             <td>{{ lot.quantity|num_format:"4" }}</td>
                             <td>${{ lot.cost_price|num_format }}</td>
+                            <td>${{ lot.cost_basis|num_format }}</td>
                             <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">${{ lot.unrealized_pl|num_format }}</td>
                             <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">{{ lot.unrealized_pl_percent|floatformat:2 }}%</td>
                             <td>{{ lot.sold_quantity|num_format:"4" }}</td>

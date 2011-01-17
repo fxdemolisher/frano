@@ -275,11 +275,14 @@ TD.center { text-align: center !important; }
 = POSITION SUMMARY =
 \******************/
 
-.importantData {color:#000; white-space:nowrap;padding:10px;background-color:#EFEFEF;border:1px solid #DDDDDD; float: left;}
+.importantData {color:#000; white-space:nowrap;padding:10px;background-color:#EFEFEF;border:1px solid #DDDDDD; border-radius: 5px;-moz-border-radius: 5px;-webkit-border-radius: 5px;}
 .importantData .name {font-size:14px;font-weight:bold; white-space:nowrap;}
-.importantData .value {font-size:40px;margin-bottom:7px; white-space:nowrap;}
-.importantData .related {color:#666; white-space:nowrap;}
+.importantData .value {font-size:40px; white-space:nowrap;}
+.importantData .related {color:#666; white-space:nowrap; margin-top:7px;}
 .importantData .related STRONG {font-weight:bold; white-space:nowrap;}
+
+.summaryColumn { width: 290px; }
+.summaryOffset { margin-left: 26px; }
 
 /***********\
 = POSITIONS =

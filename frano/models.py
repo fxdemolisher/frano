@@ -134,7 +134,9 @@ class Position(models.Model):
     self.previous_market_value = self.quantity * self.previous_price
     self.pl = (self.market_value - self.cost_basis)
     self.pl_percent = (((self.pl / self.cost_basis) * 100) if self.cost_basis != 0 else 0)
-  
+    self.day_pl = (self.market_value - self.previous_market_value)
+    self.day_pl_percent = (((self.day_pl / self.previous_market_value) * 100) if self.previous_market_value != 0 else 0)
+    
   @classmethod
   def refresh_if_needed(cls, portfolio, transactions = None, force = False):
     if transactions == None:
