@@ -53,19 +53,14 @@ def standard_settings_context(request):
     }
 
 def portfolio_manipilation_decorator(view_function):
-  def view_function_decorated(request, portfolio_id, **args):
-    portfolio_id = int(portfolio_id)
+  def view_function_decorated(request, portfolio_id, read_only = False, **args):
+    portfolio = Portfolio.objects.filter(id = int(portfolio_id))[0]
     sample_portfolio_id = request.session.get('sample_portfolio_id')
     user_id = request.session.get('user_id')
+    is_sample = (portfolio.id == sample_portfolio_id)
     
-    if portfolio_id == sample_portfolio_id:
-      portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
-      return view_function(request, portfolio, True, **args)
-      
-    elif user_id != None:
-      portfolio = Portfolio.objects.filter(id = portfolio_id)[0]
-      if portfolio.user.id == user_id:
-        return view_function(request, portfolio = portfolio, is_sample = False, **args)
+    if is_sample or portfolio.user.id == user_id or read_only:
+      return view_function(request, portfolio = portfolio, is_sample = is_sample, read_only = read_only, **args)
       
     return redirect("/index.html")
     

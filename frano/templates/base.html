@@ -43,7 +43,7 @@
           </div>
         </a>
         
-        <div class="six columns">
+        <div class="five columns">
           <div class="pageHeading">
             {% if not read_only and user and portfolio %}
               Portfolio: 
@@ -72,25 +72,35 @@
               {% endifequal %}
 
             {% else %}
-              &nbsp;
+              {% if read_only and not user %}
+                Want to check out Frano for yourself?
+              {% else %}
+                &nbsp;
+              {% endif %}
             {% endif %}
           </div>
         </div>
         
-        <div class="one columns">
+        <div class="two columns">
           <div class="userLinks">
             <ul class="horizontallist">
-              {% if not read_only %}
-                {% if user %}
+              {% if user %}
+                {% if not read_only %}
                   <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
                 {% else %}
-                  <div class="signInBox hidden">
-                    <iframe src="http://frano.rpxnow.com/openid/embed?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html" scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
-                  </div>
-                  
-                  <li><a class="buttonLink navLink" id="signIn" href="#">Sign In</a></li> 
+                  <li><a href="/" class="buttonLink navLink">Back to Portfolios</a></li>
                 {% endif %}
-              {% endif %} 
+              {% else %}
+                {% if read_only %}
+                  <li><a href="/" class="buttonLink navLink">Try the Demo</a></li>
+                {% endif %}
+                
+                <div class="signInBox hidden">
+                  <iframe src="http://frano.rpxnow.com/openid/embed?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html" scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
+                </div>
+                
+                <li><a class="buttonLink navLink" id="signIn" href="#">Sign In</a></li> 
+              {% endif %}
             </ul>
           </div>
         </div>

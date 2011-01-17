@@ -183,7 +183,7 @@ BUTTON {
 
 .userLinks {float:right;font-size:17px;color:#FFF;padding-top:15px;white-space:nowrap;right:0;}
 
-.selectPortfolio { font-size: 22px; vertical-align: middle; width: 260px; }
+.selectPortfolio { font-size: 22px; vertical-align: middle; width: 220px; }
 
 .signInBox { position: absolute; background-color: #FFFFFF; margin-left: -354px; margin-top: 30px; border: 10px solid #999999; border-radius: 10px; -moz-border-radius: 10px; -webkit-border-radius: 10px}
 .signInBox IFRAME { position: relative; width: 400px; height: 240px; }
