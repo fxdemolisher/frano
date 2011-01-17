@@ -4,6 +4,7 @@
 
 import json, math, random
 
+from StringIO import StringIO
 from datetime import date, datetime, timedelta
 from urllib import urlopen
 
@@ -12,7 +13,7 @@ from django.core.mail import EmailMessage
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.db import connection, transaction
 from django.forms.formsets import formset_factory
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseServerError
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -20,7 +21,7 @@ from django.contrib.sessions.models import Session
 
 from import_export import transactions_as_csv, parse_transactions, detect_transaction_file_type
 from models import User, Portfolio, Transaction, Position, TaxLot, Quote
-from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY
+from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY, SAMPLE_TRANSACTION_FILE
 
 #-------------\
 #  CONSTANTS  |
@@ -66,7 +67,7 @@ def portfolio_manipilation_decorator(view_function):
       if portfolio.user.id == user_id:
         return view_function(request, portfolio = portfolio, is_sample = False, **args)
       
-    return HttpResponseServerError("bad porfolio")
+    return redirect("/index.html")
     
   return view_function_decorated
 
@@ -88,42 +89,13 @@ def login_required_decorator(view_function):
 
 def index(request):
   user_id = request.session.get('user_id')
-  if user_id != None:
+  portfolio = None
+  if user_id != None and request.GET.get('demo') == None:
     portfolio = Portfolio.objects.filter(user__id__exact = user_id)[0]
-    return redirect("/%s/positions.html" % portfolio.id)
-  
   else:
-    return redirect("/demo.html")
-
-def demo(request):
-  portfolio = get_sample_portfolio(request)
-      
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
-  Position.refresh_if_needed(portfolio, transactions)
+    portfolio = get_sample_portfolio(request)
     
-  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
-  positions = Position.get_latest(portfolio)
-  decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
-  decorate_positions_with_lots(positions)
-  summary = get_summary(positions, transactions)
-  performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
-  
-  symbol_filter = request.GET.get('filter')
-  if symbol_filter != None and symbol_filter != '':
-    transactions = transactions.filter(symbol = symbol_filter)
-  
-  context = {
-      'symbols' : symbols.difference([Quote.CASH_SYMBOL]),
-      'portfolio' : portfolio, 
-      'positions': positions, 
-      'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ],
-      'symbol_filter' : symbol_filter, 
-      'summary' : summary,
-      'performance_history' : performance_history,
-      'benchmark_symbol' : PERFORMANCE_BENCHMARK_SYMBOL,
-    }
-  
-  return render_to_response('demo.html', context, context_instance = RequestContext(request))
+  return redirect("/%s/positions.html" % portfolio.id)
 
 def legal(request):
   return render_to_response('legal.html', { }, context_instance = RequestContext(request))
@@ -279,9 +251,8 @@ def update_transaction(request, portfolio, is_sample, transaction_id):
     
   return HttpResponse("{ \"success\": \"%s\" }" % success)
 
-@login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_positions(request, user, portfolio, is_sample):
+def portfolio_positions(request, portfolio, is_sample, read_only = False):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   Position.refresh_if_needed(portfolio, transactions)
   
@@ -292,14 +263,24 @@ def portfolio_positions(request, user, portfolio, is_sample):
   summary = get_summary(positions, transactions)
   performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
   
-  return render_to_response('positions.html', { 
-      'portfolio' : portfolio, 
+  return render_to_response('positions.html', {
+      'read_only' : read_only, 
+      'portfolio' : portfolio,
+      'is_sample' : is_sample, 
       'positions': positions, 
       'summary' : summary, 
       'current_tab' : 'positions',
       'performance_history' : performance_history, 
       'benchmark_symbol' : PERFORMANCE_BENCHMARK_SYMBOL,
     }, context_instance = RequestContext(request))
+
+def portfolio_read_only(request, read_only_token):
+  portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]
+  return redirect("/%s/positions.html" % portfolio.read_only_token)
+
+def portfolio_read_only_positions(request, read_only_token):
+  portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]
+  return portfolio_positions(request, portfolio.id, read_only = True)
 
 @login_required_decorator
 @portfolio_manipilation_decorator
@@ -321,9 +302,8 @@ def portfolio_remove(request, user, portfolio, is_sample):
   portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   return redirect_to_portfolio('positions', portfolios[0], False)
 
-@login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_transactions(request, user, portfolio, is_sample):
+def portfolio_transactions(request, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   symbols = set([t.symbol for t in transactions])
   
@@ -340,27 +320,6 @@ def portfolio_transactions(request, user, portfolio, is_sample):
     }
   
   return render_to_response('transactions.html', context, context_instance = RequestContext(request))
-
-def portfolio_read_only(request, read_only_token):
-  portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
-  Position.refresh_if_needed(portfolio, transactions)
-  
-  symbols = set([t.symbol for t in transactions] + [ Quote.CASH_SYMBOL ])
-  positions = Position.get_latest(portfolio)
-  decorate_positions_for_display(positions, symbols, request.GET.get("showClosedPositions", False))
-  decorate_positions_with_lots(positions)
-  summary = get_summary(positions, transactions)
-  performance_history = get_performance_history(portfolio, DAYS_IN_PERFORMANCE_HISTORY)
-  
-  return render_to_response('positions.html', { 
-      'supress_navigation' : True, 
-      'portfolio' : portfolio, 
-      'positions': positions, 
-      'summary' : summary,
-      'performance_history' : performance_history, 
-      'benchmark_symbol' : PERFORMANCE_BENCHMARK_SYMBOL,
-    }, context_instance = RequestContext(request))
 
 def price_quote(request):
   today = datetime.now().date()
@@ -487,9 +446,8 @@ def request_import_type(request, portfolio, is_sample):
   
   return redirect("/%d/importTransactions.html?requestSent=true" % portfolio.id)
 
-@login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_allocation(request, user, portfolio, is_sample):
+def portfolio_allocation(request, portfolio, is_sample):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   Position.refresh_if_needed(portfolio, transactions)
   
@@ -503,9 +461,8 @@ def portfolio_allocation(request, user, portfolio, is_sample):
       'current_tab' : 'allocation',
     }, context_instance = RequestContext(request))
   
-@login_required_decorator
 @portfolio_manipilation_decorator
-def portfolio_income(request, user, portfolio, is_sample):
+def portfolio_income(request, portfolio, is_sample, read_only = False):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   Position.refresh_if_needed(portfolio, transactions)
   
@@ -534,12 +491,17 @@ def portfolio_income(request, user, portfolio, is_sample):
     
   summaries = sorted(summary_map.values(), key = (lambda summary: summary.symbol))
   
-  return render_to_response('income.html', { 
+  return render_to_response('income.html', {
+      'read_only' : read_only,
       'portfolio' : portfolio, 
       'summaries': summaries,
       'total_summary' : total_summary,
       'current_tab' : 'income',
     }, context_instance = RequestContext(request))
+
+def portfolio_read_only_income(request, read_only_token):
+  portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]
+  return portfolio_income(request, portfolio.id, read_only = True)
 
 #--------\
 #  FORMS |
@@ -606,15 +568,7 @@ ImportTransactionFormSet = formset_factory(ImportTransactionForm)
 #  UTILITIES  |
 #-------------/
 
-DEFAULT_SAMPLE_TRANSACTIONS = [
-    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 5, 1),   'type' : 'DEPOSIT',  'quantity' : 100000, 'price' : 1.0 },
-    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 5, 3),   'type' : 'BUY',      'quantity' : 125,    'price' : 119.14 },
-    { 'symbol' : 'EFA',             'as_of_date' : date(2010, 6, 29),  'type' : 'BUY',      'quantity' : 427,    'price' : 46.83 },
-    { 'symbol' : 'AGG',             'as_of_date' : date(2010, 8, 5),   'type' : 'BUY',      'quantity' : 368,    'price' : 106.86 },
-    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 8, 17),  'type' : 'BUY',      'quantity' : 137,    'price' : 109.01 },
-    { 'symbol' : 'SPY',             'as_of_date' : date(2010, 9, 20),  'type' : 'SELL',     'quantity' : 130,    'price' : 114.21 },
-    { 'symbol' : Quote.CASH_SYMBOL, 'as_of_date' : date(2010, 10, 1),  'type' : 'WITHDRAW', 'quantity' : 10000,  'price' : 1.0 },
-  ]
+DEFAULT_SAMPLE_TRANSACTIONS = parse_transactions(detect_transaction_file_type(StringIO(SAMPLE_TRANSACTION_FILE)), StringIO(SAMPLE_TRANSACTION_FILE))
 
 def get_sample_portfolio(request):
   portfolio_id = request.session.get('sample_portfolio_id')
@@ -632,14 +586,7 @@ def get_sample_portfolio(request):
   portfolio.save()
   
   for sample_transaction in DEFAULT_SAMPLE_TRANSACTIONS:
-    transaction = Transaction()
-    transaction.portfolio = portfolio
-    transaction.type = sample_transaction['type']
-    transaction.as_of_date = sample_transaction['as_of_date']
-    transaction.symbol = sample_transaction['symbol']
-    transaction.quantity = sample_transaction['quantity']
-    transaction.price = sample_transaction['price']
-    transaction.total = transaction.quantity * transaction.price
+    transaction = sample_transaction.clone(portfolio);
     transaction.save()
   
   request.session['sample_portfolio_id'] = portfolio.id

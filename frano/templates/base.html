@@ -45,7 +45,7 @@
         
         <div class="six columns">
           <div class="pageHeading">
-            {% if not supress_navigation and user and portfolio %}
+            {% if not read_only and user and portfolio %}
               Portfolio: 
               
               <select class="selectPortfolio">
@@ -80,7 +80,7 @@
         <div class="one columns">
           <div class="userLinks">
             <ul class="horizontallist">
-              {% if not supress_navigation %}
+              {% if not read_only %}
                 {% if user %}
                   <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
                 {% else %}
@@ -97,17 +97,18 @@
       </div>    
 
 <!-- header row -->
-      <div class="subNav">    
-        {% if not supress_navigation and user %}
-          {% ifequal portfolio.user.id user.id %}
-            <ul class="horizontallist">
-              <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
-              <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
-              <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
-              <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
-            </ul>
-          {% endifequal %}
-        {% endif %}
+      <div class="subNav">
+        <ul class="horizontallist">    
+          {% if not read_only %}
+            <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
+            <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
+            <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
+            <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
+          {% else %}
+            <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/positions.html">Positions</a></li>
+            <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/income.html">Income</a></li>
+          {% endif %}
+        </ul>
         
         <div class="socialButtons">
           {% comment %} Flattr button {% endcomment %}

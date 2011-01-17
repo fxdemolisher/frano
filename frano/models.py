@@ -86,6 +86,18 @@ class Transaction(models.Model):
   def __unicode__(self):
     return "%.2f-%s @ %.2f on %s" % (self.quantity, self.symbol, self.price, self.as_of_date.strftime('%m/%d/%Y'))
   
+  def clone(self, portfolio = None):
+    out = Transaction()
+    out.portfolio = (portfolio if portfolio != None else self.portfolio)
+    out.type = self.type
+    out.as_of_date = self.as_of_date
+    out.symbol = self.symbol
+    out.quantity = self.quantity
+    out.price = self.price
+    out.total = self.total
+    out.linked_symbol = self.linked_symbol
+    return out
+  
 class Position(models.Model):
   QUANTITY_TOLERANCE = 0.000001
   

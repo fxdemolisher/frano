@@ -41,7 +41,6 @@ INSTALLED_APPS = (
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-
 # load external settings
 settings_dir = os.path.realpath(os.path.dirname(__file__))
 settings_files = glob.glob(os.path.join(settings_dir, 'settings/*.py'))

@@ -112,6 +112,10 @@
       
     </div>
   </div>
+  
+  {% if not is_sample %}
+    {% include "inc_sharePortfolio.html" %}
+  {% endif %}
 {% endblock %}
 
 {% comment %}
