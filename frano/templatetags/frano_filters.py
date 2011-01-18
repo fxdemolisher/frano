@@ -54,7 +54,7 @@ def format(number, decimal_sep, decimal_pos, grouping=0, thousand_sep='', min_de
     else:
         sign = ''
     # decimal part
-    str_number = unicode(number)
+    str_number = unicode("%.8f" % float(number))
     if str_number[0] == '-':
         str_number = str_number[1:]
     if '.' in str_number:

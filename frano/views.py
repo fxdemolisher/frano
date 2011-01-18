@@ -611,7 +611,7 @@ def decorate_positions_for_display(positions, symbols, showClosedPositions):
     previous_price = (1.0 if position.symbol == Quote.CASH_SYMBOL else quotes[position.symbol].previous_close_price())
     
     position.decorate_with_prices(price, previous_price)
-    position.show = (showClosedPositions or abs(position.quantity) > 0.01)
+    position.show = (showClosedPositions or abs(position.quantity) > 0.01 or position.symbol == Quote.CASH_SYMBOL)
     
     total_market_value += position.market_value
     
