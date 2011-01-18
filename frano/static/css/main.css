@@ -310,6 +310,7 @@ TD.center { text-align: center !important; }
 #moreInstruments A { font-size: 14px; color: #3333CC; }
   
 .spinner { vertical-align: middle; }
+.finalAllocation { text-align: right; }
 
 .allocateButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }
 .resetAllocationButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }

@@ -72,7 +72,9 @@
                 <td class="left sell">
                   <input type="text" class="allocationField" value="0.00" size="6" {% ifequal position.symbol '*CASH' %}disabled="disabled"{% endifequal %}/>
                 </td>
-                <td class="center finalAllocation">{{ position.allocation|floatformat:'2' }}%</td>
+                <td class="center">
+                  <input type="text" class="allocationField finalAllocation" value="{{ position.allocation|floatformat:'2' }}" size="6" {% ifequal position.symbol '*CASH' %}disabled="disabled"{% endifequal %}/>%
+                </td>
                 <td class="finalMarketValue">${{ position.market_value|num_format }}</td>
               </tr>
               
@@ -90,7 +92,7 @@
               <td class="center currentAllocation">0.00%</td>
               <td class="left buy"><input type="text" class="allocationField" value="0.00" size="6" /></td>
               <td class="left sell"><input type="text" class="allocationField" value="0.00" size="6" /></td>
-              <td class="center finalAllocation">0.00%</td>
+              <td class="center"><input type="text" class="allocationField finalAllocation" value="0.00" size="6" />%</td>
               <td class="finalMarketValue">$0.00</td>
             </tr>
     
