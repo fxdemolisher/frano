@@ -252,7 +252,7 @@ def parse_zecco_transactions(reader):
       commission = abs(float(net_amount_field)) - (quantity * price)
       
     # everything else on the margin account or cash is an adjustment
-    elif transaction_type == 'Interest Paid' or transaction_type == 'Qualified Dividend':
+    elif transaction_type in ['Interest Paid', 'Qualified Dividend', 'Short Term Capital Gain', 'Long Term Capital Gain']:
       symbol = Quote.CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(net_amount_field)

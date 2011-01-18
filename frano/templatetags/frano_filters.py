@@ -1,5 +1,6 @@
 from django import template
 from django.template.defaultfilters import stringfilter
+import locale
 
 register = template.Library()
 
@@ -9,8 +10,8 @@ register = template.Library()
 
 @register.filter
 @stringfilter
-def num_format(value, places = 2):
-  return format(value, '.', int(places), 3, ',')
+def num_format(value, places = 2, min_places = 2):
+  return format(value, '.', int(places), 3, ',', int(min_places))
 
 @register.filter
 @stringfilter
@@ -34,7 +35,7 @@ def sorted_set(value):
 #  UTILITIES  |
 #-------------/
 
-def format(number, decimal_sep, decimal_pos, grouping=0, thousand_sep=''):
+def format(number, decimal_sep, decimal_pos, grouping=0, thousand_sep='', min_decimal_pos = None):
     """
     NOTE: taken from django 1.2.3 source
     
@@ -53,7 +54,7 @@ def format(number, decimal_sep, decimal_pos, grouping=0, thousand_sep=''):
     else:
         sign = ''
     # decimal part
-    str_number = unicode(number)
+    str_number = unicode("%.8f" % float(number))
     if str_number[0] == '-':
         str_number = str_number[1:]
     if '.' in str_number:
@@ -62,8 +63,15 @@ def format(number, decimal_sep, decimal_pos, grouping=0, thousand_sep=''):
             dec_part = dec_part[:decimal_pos]
     else:
         int_part, dec_part = str_number, ''
-    if decimal_pos:
-        dec_part = dec_part + ('0' * (decimal_pos - len(dec_part)))
+        
+    # do not zero pad when its not needed
+    #if decimal_pos:
+    #    dec_part = dec_part + ('0' * (decimal_pos - len(dec_part)))
+    
+    # zero pad to minimum decimal positions
+    if min_decimal_pos:
+        dec_part = dec_part + ('0' * (min_decimal_pos - len(dec_part)))
+    
     if dec_part: dec_part = decimal_sep + dec_part
     # grouping
     if thousand_sep != '' and grouping:

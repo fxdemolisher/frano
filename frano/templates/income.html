@@ -11,8 +11,10 @@
           <strong class="highlight">Income Report</strong>
           <br class="clear" />
           
-          The table below shows the historical income from dividend, interest and distributions on current and past positions
-          in your portfolio. The amounts are cumulative from one month through total amount.  
+          The table below shows the historical income from dividend<a href="http://en.wikipedia.org/wiki/Dividend" class="wikipediaLink" target="_blank">&nbsp;</a>,
+          interest<a href="http://en.wikipedia.org/wiki/Interest" class="wikipediaLink" target="_blank">&nbsp;</a> and 
+          distributions<a href="http://www.investopedia.com/terms/c/capitalgainsdistribution.asp" class="wikipediaLink" target="_blank">&nbsp;</a> 
+          on current and past positions in your portfolio. The amounts are cumulative from one month through total amount.  
           <br class="clear" />
           
         </div>
@@ -23,10 +25,11 @@
           <thead>
             <tr>
               <td class="left">Symbol</td>
-              <td>Market Value</td>
-              <td>Cost Basis</td>
-              <td>Unrealized P/L $</td>
-              <td>Unrealized P/L %</td>
+              <td>Market Value<a href="http://en.wikipedia.org/wiki/Market_value" class="wikipediaLink" target="_blank">&nbsp;</a></td>
+              <td>Cost Basis<a href="http://en.wikipedia.org/wiki/Cost_basis" class="wikipediaLink" target="_blank">&nbsp;</a></td>
+              <td>Unreal. P/L $<a href="http://www.investopedia.com/ask/answers/04/021204.asp" class="wikipediaLink" target="_blank">&nbsp;</a></td>
+              <td>Unreal. P/L %</td>
+              <td>Realized P/L $</td>
               <td>One Month</td>
               <td>Three Months</td>
               <td>Six Months</td>
@@ -46,6 +49,7 @@
                 <td>${{ summary.cost_basis|num_format }}</td>
                 <td class="{{ summary.unrealized_pl|sign_choice:'pos,neg,' }}">${{ summary.unrealized_pl|num_format }}</td>
                 <td class="{{ summary.unrealized_pl|sign_choice:'pos,neg,' }}">{{ summary.unrealized_pl_percent|floatformat:2 }}%</td>
+                <td class="{{ summary.realized_pl|sign_choice:'pos,neg,' }}">${{ summary.realized_pl|num_format }}</td>
                 <td class="{{ summary.income_one_month|sign_choice:'pos,neg,' }}">${{ summary.income_one_month|num_format }}</td>
                 <td class="{{ summary.income_three_months|sign_choice:'pos,neg,' }}">${{ summary.income_three_months|num_format }}</td>
                 <td class="{{ summary.income_six_months|sign_choice:'pos,neg,' }}">${{ summary.income_six_months|num_format }}</td>
@@ -56,7 +60,7 @@
             {% endfor %}
             
             <tr>
-              <td colspan="5">&nbsp;</td>
+              <td colspan="6">&nbsp;</td>
               <td class="{{ total_summary.income_one_month|sign_choice:'pos,neg,' }}">${{ total_summary.income_one_month|num_format }}</td>
               <td class="{{ total_summary.income_three_months|sign_choice:'pos,neg,' }}">${{ total_summary.income_three_months|num_format }}</td>
               <td class="{{ total_summary.income_six_months|sign_choice:'pos,neg,' }}">${{ total_summary.income_six_months|num_format }}</td>
@@ -65,7 +69,7 @@
             </tr>
             
             <tr id="seeAllPositions">
-              <td colspan="10">
+              <td colspan="11">
                 {% ifequal request.GET.showClosedPositions "true" %}
                   <a href="?">Hide closed positions</a>
                 {% else %}
@@ -79,6 +83,10 @@
       </div>
     </div>
   </div>
+  
+  {% if not is_sample %}
+    {% include "inc_sharePortfolio.html" %}
+  {% endif %}
 {% endblock %}
 
 {% comment %}

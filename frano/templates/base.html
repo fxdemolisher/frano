@@ -43,9 +43,9 @@
           </div>
         </a>
         
-        <div class="six columns">
+        <div class="five columns">
           <div class="pageHeading">
-            {% if not supress_navigation and user and portfolio %}
+            {% if not read_only and user and portfolio %}
               Portfolio: 
               
               <select class="selectPortfolio">
@@ -56,7 +56,7 @@
               </select>
               
               {% ifequal portfolio.user.id user.id %}
-                <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit Name</a>
+                <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit</a>
                 
                 <form id="portfolioNameForm" class="hidden">
                   <input type="text" id="portfolioName" class="selectPortfolio" />
@@ -68,46 +68,57 @@
                   <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
                 {% endifnotequal %}
                 
-                <a href="/createPortfolio.html" class="buttonLink navLink">Create New</a>
+                <a href="/createPortfolio.html" class="buttonLink navLink">Create</a>
               {% endifequal %}
 
             {% else %}
-              &nbsp;
+              {% if read_only and not user %}
+                Want to check out Frano for yourself?
+              {% else %}
+                &nbsp;
+              {% endif %}
             {% endif %}
           </div>
         </div>
         
-        <div class="one columns">
+        <div class="two columns">
           <div class="userLinks">
             <ul class="horizontallist">
-              {% if not supress_navigation %}
-                {% if user %}
+              {% if user %}
+                {% if not read_only %}
                   <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
                 {% else %}
-                  <div class="signInBox hidden">
-                    <iframe src="http://frano.rpxnow.com/openid/embed?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html" scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
-                  </div>
-                  
-                  <li><a class="buttonLink navLink" id="signIn" href="#">Sign In</a></li> 
+                  <li><a href="/" class="buttonLink navLink">Back to Portfolios</a></li>
                 {% endif %}
-              {% endif %} 
+              {% else %}
+                {% if read_only %}
+                  <li><a href="/" class="buttonLink navLink">Try the Demo</a></li>
+                {% endif %}
+                
+                <div class="signInBox hidden">
+                  <iframe src="http://frano.rpxnow.com/openid/embed?token_url=http%3A%2F%2F{{ request.META.HTTP_HOST }}%2Flogin.html" scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
+                </div>
+                
+                <li><a class="buttonLink navLink" id="signIn" href="#">Sign In</a></li> 
+              {% endif %}
             </ul>
           </div>
         </div>
       </div>    
 
 <!-- header row -->
-      <div class="subNav">    
-        {% if not supress_navigation and user %}
-          {% ifequal portfolio.user.id user.id %}
-            <ul class="horizontallist">
-              <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
-              <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
-              <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
-              <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
-            </ul>
-          {% endifequal %}
-        {% endif %}
+      <div class="subNav">
+        <ul class="horizontallist">    
+          {% if not read_only %}
+            <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
+            <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
+            <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
+            <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
+          {% else %}
+            <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/positions.html">Positions</a></li>
+            <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/income.html">Income</a></li>
+          {% endif %}
+        </ul>
         
         <div class="socialButtons">
           {% comment %} Flattr button {% endcomment %}
@@ -143,7 +154,7 @@
           &nbsp;
           
           {% comment %} Facebook like button {% endcomment %}
-          <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Ffrano.carelessmusings.com&amp;layout=button_count&amp;show_faces=false&amp;action=recommend&amp;colorscheme=light" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100px; height:21px;" align="right" allowTransparency="true"></iframe>
+          <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Ffrano.carelessmusings.com&amp;layout=button_count&amp;show_faces=false&amp;action=recommend&amp;colorscheme=light&amp;width=140" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width: 140px; height:21px;" align="right" allowTransparency="true"></iframe>
               
         </div>
       </div>

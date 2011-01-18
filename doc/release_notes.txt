@@ -1,4 +1,56 @@
 /================\
+| Release 0.8    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+#118 - Demo page now has all the tabs of a regular portfolio
+       https://github.com/fxdemolisher/frano/issues#issue/118
+
+#109 - Read-only view now has income tab
+       https://github.com/fxdemolisher/frano/issues#issue/109
+      
+#119 - Income screen showing realized P/L
+       https://github.com/fxdemolisher/frano/issues#issue/119
+      
+#125 - Allocation screen reset button
+       https://github.com/fxdemolisher/frano/issues#issue/125
+       
+#123 - Allocation rebalancing
+       https://github.com/fxdemolisher/frano/issues#issue/123
+       
+Fixes
+-------------------------------------------------------------------------------
+#110 - Summary box visual fixes
+       https://github.com/fxdemolisher/frano/issues#issue/110    
+
+#111 - Share url visual fix
+       https://github.com/fxdemolisher/frano/issues#issue/111
+      
+#113 - Quote cleanup process was removing the benchmark quote
+       https://github.com/fxdemolisher/frano/issues#issue/113
+      
+#114 - FB button visual fix
+       https://github.com/fxdemolisher/frano/issues#issue/114
+
+#120 - Position was open with a sub 0.0001 quantity
+       https://github.com/fxdemolisher/frano/issues#issue/120
+       
+#124 - Showing more decimal points on quantity so that calcs are clearer
+       https://github.com/fxdemolisher/frano/issues#issue/124
+       
+Infrastructure
+-------------------------------------------------------------------------------
+#115 - Changes and fixes to positions screen
+       https://github.com/fxdemolisher/frano/issues#issue/115
+
+#117 - Read-only view header changes, visual cues to sign up
+       https://github.com/fxdemolisher/frano/issues#issue/117
+      
+#116 - Added links for term definitions
+       https://github.com/fxdemolisher/frano/issues#issue/116
+      
+/================\
 | Release 0.7    |
 \================/
 

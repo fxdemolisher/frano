@@ -167,11 +167,20 @@ BUTTON {
 .floatright {float:right;}
 .floatleft {float:left;}
 
+.wikipediaLink {
+  line-height: 12px;
+  font-size: 10px;
+  margin-left: 2px;
+  vertical-align: top;
+  background: url(/img/question_mark.gif) top left no-repeat;
+  padding-right: 10px;
+}
+
 /*********\
 = TOP NAV =
 \*********/
 
-.pageHeading {font-size:34px;color:#FFF;float:left; margin-top: 3px; margin-left: -25px; }
+.pageHeading {font-size:30px;color:#FFF;float:left; margin-top: 5px; margin-left: -25px; vertical-align: middle; }
 .horizontallist LI {float:left;margin-left:10px;}
 .horizontallist LI:first-child {margin-left:0;}
 
@@ -183,7 +192,7 @@ BUTTON {
 
 .userLinks {float:right;font-size:17px;color:#FFF;padding-top:15px;white-space:nowrap;right:0;}
 
-.selectPortfolio { font-size: 22px; vertical-align: middle; width: 260px; }
+.selectPortfolio { font-size: 20px; vertical-align: middle; width: 220px; }
 
 .signInBox { position: absolute; background-color: #FFFFFF; margin-left: -354px; margin-top: 30px; border: 10px solid #999999; border-radius: 10px; -moz-border-radius: 10px; -webkit-border-radius: 10px}
 .signInBox IFRAME { position: relative; width: 400px; height: 240px; }
@@ -275,11 +284,14 @@ TD.center { text-align: center !important; }
 = POSITION SUMMARY =
 \******************/
 
-.importantData {color:#000; white-space:nowrap;padding:10px;background-color:#EFEFEF;border:1px solid #DDDDDD;}
+.importantData {color:#000; white-space:nowrap;padding:10px;background-color:#EFEFEF;border:1px solid #DDDDDD; border-radius: 5px;-moz-border-radius: 5px;-webkit-border-radius: 5px;}
 .importantData .name {font-size:14px;font-weight:bold; white-space:nowrap;}
-.importantData .value {font-size:40px;margin-bottom:7px; white-space:nowrap;}
-.importantData .related {color:#666; white-space:nowrap;}
+.importantData .value {font-size:40px; white-space:nowrap;}
+.importantData .related {color:#666; white-space:nowrap; margin-top:7px;}
 .importantData .related STRONG {font-weight:bold; white-space:nowrap;}
+
+.summaryColumn { width: 290px; }
+.summaryOffset { margin-left: 26px; }
 
 /***********\
 = POSITIONS =
@@ -298,8 +310,10 @@ TD.center { text-align: center !important; }
 #moreInstruments A { font-size: 14px; color: #3333CC; }
   
 .spinner { vertical-align: middle; }
+.finalAllocation { text-align: right; }
 
 .allocateButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }
+.resetAllocationButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }
   
 /**************\
 = TRANSACTIONS =

@@ -237,7 +237,7 @@ $(function() {
     previousSelectedPortfolio = $(this).val();
   }).change(function () {
     if ($(this).val() == '') {
-      location.href = "/demo.html"
+      location.href = "/?demo=true"
     } else {
       var tester = new RegExp("^(.*/)" + previousSelectedPortfolio + "(/\\w+\\.html)$", "gi");
       if(tester.exec(location.href) != null) {
@@ -298,7 +298,7 @@ $(function() {
     
     newRow.find(".unknownSymbol").hide();
     newRow.find(".price, .finalMarketValue").html("$0.00");
-    newRow.find(".finalAllocation").html("0.00%");
+    newRow.find(".finalAllocation").val("0.00");
     newRow.find(".allocationField").each(function(index, obj) {
       obj.value = obj.defaultValue;
     });
@@ -326,8 +326,48 @@ $(function() {
         
         row.find(".price").html("$" + price.toFixed(2));
         refreshAllocation();
+        updateAllocationCharts();
       });
     }
+  });
+  
+  $(".allocationTable .finalAllocation").live("change", function(e) {
+    totalMarketValue = 0;
+    $(".allocationTable TBODY TR").each(function (index, domObj) {
+      var obj = $(domObj);
+      var symbol = obj.find(".tickerSymbol").html();
+      if(symbol == null) {
+        symbol = obj.find(".symbol").val();
+      }
+      
+      if(symbol != null && symbol != '') {
+        var price = $.parseNumber(obj.find(".price").html(), {format:"$#,##0.00", locale:"us"});
+        var quantity = $.parseNumber(obj.find(".quantity").html(), {format:"#,##0.00", locale:"us"});
+        quantity += parseFloat(obj.find(".buy INPUT").val());
+        quantity -= parseFloat(obj.find(".sell INPUT").val());
+        
+        totalMarketValue += quantity * price;
+      }
+    });
+    
+    var row = $(this).parents("TR")
+    var price = $.parseNumber(row.find(".price").html(), {format:"$#,##0.00", locale:"us"});
+    var quantity = $.parseNumber(row.find(".quantity").html(), {format:"#,##0.00", locale:"us"});
+    var currentMarketValue = quantity * price;
+    var requestedMarketValue = totalMarketValue * (parseFloat($(this).val()) / 100);
+    
+    if(requestedMarketValue < currentMarketValue) {
+      var sellQuantity = (currentMarketValue - requestedMarketValue) / price;
+      row.find(".buy INPUT").val('0.00');
+      row.find(".sell INPUT").val(sellQuantity.toFixed(2));
+    } else {
+      var buyQuantity = (requestedMarketValue - currentMarketValue) / price;
+      row.find(".buy INPUT").val(buyQuantity.toFixed(2));
+      row.find(".sell INPUT").val('0.00');
+    }
+    
+    refreshAllocation();
+    updateAllocationCharts();
   });
   
   $(".allocationTable .buy, .allocationTable .sell, .cashIn, .cashOut").live("change", function(e) {
@@ -338,6 +378,13 @@ $(function() {
   $(".allocateButton").click(function (e) {
     e.preventDefault();
     allocateEqually();
+    refreshAllocation();
+    updateAllocationCharts();
+  });
+  
+  $(".resetAllocationButton").click(function (e) {
+    e.preventDefault();
+    resetAllocation();
     refreshAllocation();
     updateAllocationCharts();
   });
@@ -511,7 +558,7 @@ function refreshAllocation() {
     current.row.find(".buy INPUT").val(current.buyQuantity.toFixed(2));
     current.row.find(".sell INPUT").val(current.sellQuantity.toFixed(2));
     current.row.find(".finalMarketValue").html($.formatNumber(current.finalMarketValue, {format:"$#,##0.00", locale:"us"}));
-    current.row.find(".finalAllocation").html($.formatNumber(finalAllocation, {format:"#0.00%", locale:"us"}));
+    current.row.find(".finalAllocation").val($.formatNumber(finalAllocation * 100, {format:"#0.00", locale:"us"}));
   }
   
 }
@@ -560,13 +607,39 @@ function updateAllocationCharts() {
     
     if(symbol != null && symbol != '') {
       data[data.length] = { label: symbol, data: $.parseNumber(obj.find(".currentAllocation").html(), {format:"#0.00%", locale:"us"}) * 100 };
-      finalData[finalData.length] = { label: symbol, data: $.parseNumber(obj.find(".finalAllocation").html(), {format:"#0.00%", locale:"us"}) * 100 };
+      finalData[finalData.length] = { label: symbol, data: $.parseNumber(obj.find(".finalAllocation").val(), {format:"#0.00", locale:"us"}) * 100 };
     }
   });
   
   
   initializeAllocationPieChart($("#currentAllocationChart"), data, 0.00, "Current Allocation");
   initializeAllocationPieChart($("#finalAllocationChart"), finalData, 0.00, "Final Allocation");
+}
+
+function resetAllocation() {
+  $(".cashIn").val('0')
+  $(".cashOut").val('0')
+  
+  var firstNewRow = true;
+  $(".allocationTable TBODY TR").each(function (index, domObj) {
+    var obj = $(domObj);
+    var symbolField = obj.find(".symbol");
+    if (symbolField.length == 1) {
+      if(firstNewRow) {
+        firstNewRow = false;
+        symbolField.val('');
+        obj.find(".price, .finalMarketValue").html("$0.00")
+        obj.find(".finalAllocation").val("0.00")
+      } else {
+        obj.remove();
+        return;
+      }
+    }
+    
+    obj.find(".buy INPUT").val('0.00');
+    obj.find(".sell INPUT").val('0.00');
+  });
+
 }
 
 function trim(str) {

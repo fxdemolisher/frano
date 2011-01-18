@@ -4,8 +4,195 @@
 {% block title %}Frano: Transactions - {{ portfolio.name }}{% endblock %}
 
 {% block mainContent %}
-  {% include "inc_transactionForm.html" %}
-  {% include "inc_transactions.html" %}
+  
+  <!-- START: form -->
+  
+  <script type="text/javascript">
+    symbols = [ {% for symbol in symbols %} '{{ symbol }}', {% endfor %} ];
+  </script>
+  
+  <div id="content" >
+    <div class="column-row">
+      <div class="eight columns">
+        <div class="transactionsCopy">
+          <strong class="highlight">Use this form to record transactions in your portfolio or use the</strong>
+          <a href="/{{portfolio.id}}/importTransactions.html" class="buttonLink importButton">Import Tool</a>
+          <br class="clear" />
+        
+          Buys and Sells will automatically adjust the amount of cash in your portfolio, so make sure you record your deposits first. 
+          <br class="clear" />
+        </div>
+        
+        <form action="/{{portfolio.id}}/addTransaction.html" method="post" id="addTransactionForm">
+          <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
+            <tbody>
+              <tr>
+                <td>Transaction Type:</td>
+                <td><input type="radio" name="type" id="typeBuy" value="BUY" checked="checked" class="newTransactionType validate[required]" /><label for="typeBuy">Buy Securities</label></td>
+                <td><input type="radio" name="type" id="typeSell" value="SELL" class="newTransactionType validate[required]" /><label for="typeSell">Sell Securities</label></td>
+                <td><input type="radio" name="type" id="typeDeposit" value="DEPOSIT" class="newTransactionType validate[required]" /><label for="typeDeposit">Deposit Cash</label></td>
+                <td><input type="radio" name="type" id="typeWithdraw" value="WITHDRAW" class="newTransactionType validate[required]" /><label for="typeWithdraw">Withdraw Cash</label></td>
+                <td><input type="radio" name="type" id="typeAdjust" value="ADJUST" class="newTransactionType validate[required]" /><label for="typeAdjust">Adjust Cash</label></td>
+              </tr>
+            </tbody>
+          </table>
+          <table class="dataTable" width="100%" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <td>Date:</td>
+                <td>Symbol:</td>
+                <td>Quantity:</td>
+                <td>Price:</td>
+                <td>Commission:</td>
+                <td>Total:</td>
+                <td>&nbsp;</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" name="as_of_date" id="as_of_date" size="10" value="{{ today|date:'m/d/Y' }}" class="validate[required]"/></td>
+                
+                <td><input type="text" name="symbol" id="symbol" size="5" class="securitiesField validate[required,length[1,5],noSpecialCharacters]"/></td>
+                <td><input type="text" name="quantity" id="quantity" size="8" class="securitiesField validate[required,length[1,9],onlyNumber]"/></td>
+                <td>
+                  $<input type="text" name="price" id="price" size="8" class="securitiesField validate[required,length[1,9],onlyNumber]"/>
+                  <img src="/img/icon_search.gif" style="cursor: pointer;" id="priceLookup" />
+                </td>
+                <td>$<input type="text" name="commission" id="commission" size="5" class="securitiesField validate[length[0,9],onlyNumber]"/></td>
+                
+                <td>
+                  <input type="hidden" name="symbol" value="*CASH" class="cashField" disabled="disabled" />
+                  <input type="hidden" name="price" value="1.0" class="cashField" disabled="disabled" />
+                  $<input type="text" name="quantity" id="total" size="8" class="cashField validate[required,length[1,9],onlyNumber]" disabled="disabled"/>
+                </td>
+                
+                <td><div class="icon add" id="addTransaction"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- END: form -->
+  
+  <!-- START: transactions -->
+  
+  {% if transaction_sets.0 %}
+   
+    <div id="content" >
+       <div class="column-row export-transactions-form">
+        <div class="four columns">
+          <div class="transactionsCopy">
+            See transactions for: 
+            <form method="get" action="" id="transactionSymbolFilter">
+              <select name="filter">
+                <option value="">All Symbols</option>
+                <option value="*CASH" {% ifequal symbol_filter "*CASH" %}selected{% endifequal %}>Cash</option>
+                {% for symbol in symbols|sorted_set %}
+                  <option {% ifequal symbol_filter symbol %}selected{% endifequal %}>{{ symbol }}</option>
+                {% endfor %}
+              </select>
+            </form> 
+          </div>
+        </div>
+        <div class="four columns">
+         <div class="transactionsCopy floatright">
+           If you need to start over: <a href="/{{portfolio.id}}/removeAllTransactions.html" class="buttonLink importButton removeAllTransactions">Remove All Transactions</a>
+         </div>
+       </div>
+     </div>
+      <div class="column-row">
+        <div class="eight columns">
+          <table class="dataTable transactionTable" width="100%" cellpadding="0" cellspacing="0">
+            <thead>
+              <tr>
+                <td>Type</td>
+                <td>Date</td>
+                <td>Symbol</td>
+                <td>Qty</td>
+                <td>Price</td>
+                <td>Total</td>
+                <td>Linked To</td>
+                <td>&nbsp;</td>
+              </tr>
+            </thead>
+            <tbody>
+            
+              {% for transaction_set in transaction_sets %}
+                {% for transaction in transaction_set %}
+                  <tr class="transactionRow {% if forloop.parentloop.last %}hidden{% endif %}">
+                    <td>
+                      <div class="inline-editable transactionType {{ transaction.type|lower }}" id="edit_{{ portfolio.id }}_{{ transaction.id }}"">{{ transaction.type }}</div>
+                      <div class="inline-editable-prompt">click to edit</div>
+                    </td>
+                    <td>
+                      <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_date_83">{{ transaction.as_of_date|date:'m/d/Y' }}</div>
+                      <div class="inline-editable-prompt">click to edit</div>
+                    </td>
+                    <td>
+                      {% ifnotequal transaction.symbol "*CASH" %}
+                        <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_symbol_59 tickerSymbol">{{ transaction.symbol }}</div>
+                        <div class="inline-editable-prompt">click to edit</div>
+                      {% else %}
+                        {{ transaction.symbol }}
+                      {% endifnotequal %}
+                    </td>
+                    <td>
+                      {% ifnotequal transaction.symbol "*CASH" %}
+                        <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_quantity_83">{{ transaction.quantity|num_format:"4" }}</div>
+                        <div class="inline-editable-prompt">click to edit</div>
+                      {% else %}
+                        {{ transaction.quantity|num_format:"4" }}
+                      {% endifnotequal %}
+                    </td>
+                    <td>
+                      {% ifnotequal transaction.symbol "*CASH" %}
+                        <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_price_83">${{ transaction.price|num_format }}</div>
+                        <div class="inline-editable-prompt">click to edit</div>
+                      {% else %}
+                        ${{ transaction.price|num_format }}
+                      {% endifnotequal %}
+                    </td>
+                    <td>
+                      <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format:"4" }}</div>
+                      <div class="inline-editable-prompt">click to edit</div>
+                    </td>
+                    <td>
+                      <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_linkedsymbol_59">{{ transaction.linked_symbol|default_if_none:"" }}</div>
+                      <div class="inline-editable-prompt">click to edit</div>
+                    </td>
+                    <td><a class="deleteTransaction" href="/{{ portfolio.id }}/{{transaction.id}}/remove.html"><div class="icon delete"></div></a></td>
+                  </tr>
+                {% endfor %}
+              {% endfor %}
+              
+              {% if transaction_sets.1 %}
+                <tr id="seeAllTransactions"><td colspan="8" align="center"><a href="#">See All Transactions</a></td></tr>
+              {% endif %}
+        
+            </tbody>
+          </table>
+        
+           
+             <div class="transactionsCopy exportTransactions">
+               Export all your transactions as: 
+               <a href="/{{portfolio.id}}/exportTransactions.csv" class="buttonLink importButton">CSV</a> /
+               <a href="/{{portfolio.id}}/exportTransactions.ofx" class="buttonLink importButton">OFX</a> 
+             </div>
+           
+        </div>
+      </div>
+    </div>
+  
+  {% endif %}
+  
+  <!-- END: transactions -->
+  
+  {% if not is_sample %}
+    {% include "inc_sharePortfolio.html" %}
+  {% endif %}
 {% endblock %}
 
 {% comment %}
