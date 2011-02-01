@@ -539,6 +539,7 @@ class ImportForm(forms.Form):
       ('SCOTTRADE', u'SCOTTRADE'),
       ('AMERITRADE', u'AMERITRADE'),
       ('ZECCO', u'ZECCO'),
+      ('FIDELITY', u'FIDELITY'),
     ]
   
   type = forms.ChoiceField(choices = TYPE_CHOICES)
