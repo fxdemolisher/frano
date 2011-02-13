@@ -373,7 +373,9 @@ def import_transactions(request, portfolio, is_sample, read_only):
           by_date_map.get(transaction.as_of_date).append(transaction)
         
         for transaction in transactions:
-                    
+          if len(transaction.symbol) < 1 or len(transaction.symbol) > 5:
+            raise Exception("Invalid symbol: %s" % transaction.symbol)
+          
           is_duplicate = False
           possibles = by_date_map.get(transaction.as_of_date)
           if possibles != None:
@@ -540,6 +542,7 @@ class ImportForm(forms.Form):
       ('AMERITRADE', u'AMERITRADE'),
       ('ZECCO', u'ZECCO'),
       ('FIDELITY', u'FIDELITY'),
+      ('MERCER_401', u'MERCER_401'),
     ]
   
   type = forms.ChoiceField(choices = TYPE_CHOICES)

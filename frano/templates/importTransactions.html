@@ -69,6 +69,7 @@
                     <option value="AMERITRADE">TD Ameritrade</option>
                     <option value="ZECCO">Zecco</option>
                     <option value="FIDELITY">Fidelity</option>
+                    <option value="MERCER_401">Mercer 401(k) - Experimental</option>
                   </select>
                 </td>
                 <td><input type="file" name="file" /></td>
@@ -139,7 +140,7 @@
                     <td><div class="transactionType {{ transaction.type|lower }}">{{ transaction.type }}</div></td>
                     <td>{{ transaction.as_of_date|date:'m/d/Y' }}</td>
                     <td>{{ transaction.symbol }}</td>
-                    <td>{{ transaction.quantity|num_format }}</td>
+                    <td>{{ transaction.quantity|num_format:"4" }}</td>
                     <td>${{ transaction.price|num_format }}</td>
                     <td>${{ transaction.total|num_format }}</td>
                     <td>{{ transaction.linked_symbol|default_if_none:"" }}</td>
