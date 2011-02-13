@@ -3,14 +3,18 @@
 
 {% block title %}Frano: Transactions - {{ portfolio.name }}{% endblock %}
 
-{% block mainContent %}
-  
-  <!-- START: form -->
+{% block extraJs %}
+  <script language="javascript" type="text/javascript" src="/js/transactions.js"></script>
   
   <script type="text/javascript">
     symbols = [ {% for symbol in symbols %} '{{ symbol }}', {% endfor %} ];
   </script>
   
+{% endblock %}
+
+{% block mainContent %}
+  
+  <!-- START: form -->
   <div id="content" >
     <div class="column-row">
       <div class="eight columns">
