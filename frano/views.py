@@ -226,7 +226,7 @@ def remove_all_transactions(request, portfolio, is_sample, read_only):
   Transaction.objects.filter(portfolio__id__exact = portfolio.id).delete()
   Position.refresh_if_needed(portfolio, force = True)
     
-  return redirect_to_portfolio('transactions', portfolio)
+  return redirect_to_portfolio('importTransactions', portfolio)
 
 @portfolio_manipilation_decorator
 def update_transaction(request, portfolio, is_sample, read_only, transaction_id):
