@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Frano: My Account{% endblock %}
+
+{% block mainContent %}
+  <div id="content" >
+    <div class="column-row">                
+      <div class="eight columns">
+        <div class="accountCopy">
+          <strong class="highlight">Information About Your Account</strong>
+          <br class="clear" />
+          <br class="clear" />
+        
+          <strong>Your Open ID is:</strong> {{ user.open_id }}
+          <br class="clear" />
+          
+          <strong>We know you by the email:</strong> {{ user.email }}
+          <br class="clear" />
+          <br class="clear" />
+          
+          If you want to be completely removed from Frano, click <a href="/removeAccount.html" class="buttonLink accountButton removeMeButton">Remove Me</a> 
+          <br class="clear" />
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="content">
+    <div class="column-row">                
+      <div class="eight columns">
+        <div class="accountCopy">
+          <strong class="highlight">Your Portfolios</strong>
+          <br class="clear" />
+          
+          Use the form below to manage your portfolios.
+        </div>
+        
+        <table class="dataTable portfoliosTable" cellpadding="0" cellspacing="0">
+          <thead>
+            <tr>
+              <td>ID</td>
+              <td>Name</td>
+              <td>Link</td>
+              <td>Read-Only Link</td>
+            </tr>
+          </thead>
+          <tbody>
+            
+            {% for current in portfolios %}
+              <tr>
+                <td>{{ current.id }}</td>
+                <td>
+                  <form action="/{{ current.id}}/setName.html" method="post" class="portfolioNameForm">
+                    <input type="text" size="30" maxlength="30" name="portfolioName" id="portfolioName_{{current.id}}" class="portfolioName validate[required,length[1,30],noSpecialCharacters]" value="{{ current.name }}" />
+                  </form>
+                  
+                  <a href="#" class="buttonLink accountButton setNameButton">Set Name</a>
+                  
+                  {% ifnotequal portfolios.count 1 %}
+                    <a href="/{{ current.id }}/remove.html" class="buttonLink accountButton removePortfolioButton">Remove</a>
+                  {% endifnotequal %}
+                  
+                </td>
+                <td><a href="http://{{ request.META.HTTP_HOST }}/{{ current.id }}/positions.html" target="_blank">Click to Open</a></td>
+                <td><a href="http://{{ request.META.HTTP_HOST }}/{{ current.read_only_token }}/" target="_blank">Click to Open</a></td>
+              </tr>
+            {% endfor %}
+            
+            <tr>
+              <td>New</td>
+              <td>
+                <form action="/createPortfolio.html" method="post" class="portfolioNameForm">
+                  <input type="text" size="30" maxlength="30" name="portfolioName" id="newPortfolioName" class="portfolioName validate[required,length[1,30],noSpecialCharacters]" value="{{ current.name }}" />
+                </form>
+                
+                <a href="#" class="buttonLink accountButton createPortfolioButton">Create New Portfolio</a>
+              </td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% comment %}
+  Copyright (c) 2010 Gennadiy Shafranovich
+  Licensed under the MIT license
+  see LICENSE file for copying permission.
+{% endcomment %}

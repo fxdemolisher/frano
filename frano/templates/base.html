@@ -45,7 +45,7 @@
         
         <div class="five columns">
           <div class="pageHeading">
-            {% if not read_only and user and portfolio %}
+            {% if not read_only and user %}
               Portfolio: 
               
               <select class="selectPortfolio">
@@ -55,22 +55,6 @@
                 {% endfor %}
               </select>
               
-              {% ifequal portfolio.user.id user.id %}
-                <a href="#" class="buttonLink navLink" id="editPortfolioName">Edit</a>
-                
-                <form id="portfolioNameForm" class="hidden">
-                  <input type="text" id="portfolioName" class="selectPortfolio" />
-                  <button class="navButton" id="setPortfolioName" value="{{portfolio.id}}">Set</button>
-                  <button class="navButton" id="cancelPortfolioName">Cancel</button>
-                </form>
-                
-                {% ifnotequal portfolios.count 1 %}
-                  <a href="/{{portfolio.id}}/remove.html" id="deletePortfolio" class="buttonLink navLink">Delete</a>
-                {% endifnotequal %}
-                
-                <a href="/createPortfolio.html" class="buttonLink navLink">Create</a>
-              {% endifequal %}
-
             {% else %}
               {% if read_only and not user %}
                 Want to check out Frano for yourself?
@@ -86,6 +70,7 @@
             <ul class="horizontallist">
               {% if user %}
                 {% if not read_only %}
+                  <li><a href="/account.html" class="buttonLink navLink">My Account</a></li>
                   <li><a href="/logout.html" class="buttonLink navLink">Sign Out</a></li>
                 {% else %}
                   <li><a href="/" class="buttonLink navLink">Back to Portfolios</a></li>
@@ -108,17 +93,19 @@
 
 <!-- header row -->
       <div class="subNav">
-        <ul class="horizontallist">    
-          {% if not read_only %}
-            <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
-            <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
-            <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
-            <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
-          {% else %}
-            <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/positions.html">Positions</a></li>
-            <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/income.html">Income</a></li>
-          {% endif %}
-        </ul>
+        {% if portfolio %}
+          <ul class="horizontallist">
+            {% if not read_only %}
+              <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/positions.html">Positions</a></li>
+              <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/income.html">Income</a></li>
+              <li {% ifequal current_tab 'allocation' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/allocation.html">Allocation</a></li>
+              <li {% ifequal current_tab 'transactions' %} class="current" {% endifequal %}><a href="/{{portfolio.id}}/transactions.html">Transactions</a></li>
+            {% else %}
+              <li {% ifequal current_tab 'positions' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/positions.html">Positions</a></li>
+              <li {% ifequal current_tab 'income' %} class="current" {% endifequal %}><a href="/{{portfolio.read_only_token}}/income.html">Income</a></li>
+            {% endif %}
+          </ul>
+        {% endif %}
         
         <div class="socialButtons">
           {% comment %} Flattr button {% endcomment %}

@@ -200,38 +200,6 @@ $(function() {
   $(".inline-editable").mouseleave(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
   $(".inline-editable").click(function() { toggleEditPrompt($(this), ".inline-editable-prompt", false); });
   
-  $("#editPortfolioName").click(function(e) {
-    e.preventDefault();
-    var name = $("SELECT.selectPortfolio :selected").text();
-    $("SELECT.selectPortfolio,#editPortfolioName").hide();
-    $("#portfolioNameForm").css("display", 'inline');
-    $("INPUT.selectPortfolio").val(name).focus();
-  });
-  
-  $("#cancelPortfolioName").click(function (e) {
-    e.preventDefault();
-    $("#portfolioNameForm").hide();
-    $("SELECT.selectPortfolio,#editPortfolioName").show();
-  });
-  
-  $("#setPortfolioName").click(function (e) {
-    e.preventDefault();
-    var id = $(this).val();
-    var value = $("INPUT.selectPortfolio").val();
-    $.post('/' + id + '/setName.json', { name : value }, function(data, textStatus) {
-      if(data.success != 'True') {
-        alert("Something went wrong...sorry");
-        return;
-      }
-      
-      var dropdown = $(".selectPortfolio").get(0);
-      $(dropdown.options[dropdown.selectedIndex]).html(value);
-      
-      $("#portfolioNameForm").hide();
-      $("SELECT.selectPortfolio,#editPortfolioName").show();
-    }, 'json');
-  });
-  
   var previousSelectedPortfolio;
   $("SELECT.selectPortfolio").focus(function() {
     previousSelectedPortfolio = $(this).val();
@@ -248,8 +216,8 @@ $(function() {
     }
   });
   
-  $("#deletePortfolio").click(function (e) {
-    if(!confirm('Are you sure you want to remove this portfolio?')) {
+  $(".removeMeButton").click(function (e) {
+    if(!confirm('Are you sure you want to delete this account?\nNOTE: This cannot be undone, you\'ll have to re-register.')) {
       e.preventDefault();
     }
   });
@@ -387,6 +355,28 @@ $(function() {
     resetAllocation();
     refreshAllocation();
     updateAllocationCharts();
+  });
+  
+  $(".createPortfolioButton,.setNameButton").click(function (e) {
+    e.preventDefault();
+    $(this).parents("TR").find("FORM").submit();
+  });
+  
+  $(".portfolioNameForm").submit(function (e) {
+    var valid = true;
+    $(this).find("INPUT").each(function(idx, obj) {
+      valid = valid && !$.validationEngine.loadValidation(obj);
+    });
+    
+    if(!valid) {
+      e.preventDefault();
+    }
+  });
+  
+  $(".removePortfolioButton").click(function (e) {
+    if(!confirm('Are you sure you want to remove this portfolio?\nNOTE: This cannot be undone...sorry.')) {
+      e.preventDefault();
+    }
   });
   
 });
