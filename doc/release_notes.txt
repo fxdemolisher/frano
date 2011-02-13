@@ -1,4 +1,32 @@
 /================\
+| Release 0.9    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+#112 - Added import from Fidelity 
+       https://github.com/fxdemolisher/frano/issues#issue/112
+
+#126 - Added experimental import from Mercer (401(k)) 
+       https://github.com/fxdemolisher/frano/issues#issue/126
+       
+#127 - Added "My Account" section and cleaned up header
+       https://github.com/fxdemolisher/frano/issues#issue/127
+
+Fixes
+-------------------------------------------------------------------------------
+#129 - Removing all transactions how sends you to import tool
+       https://github.com/fxdemolisher/frano/issues#issue/129
+       
+Infrastructure
+-------------------------------------------------------------------------------
+#103 - Separated JS into a file per page
+       https://github.com/fxdemolisher/frano/issues#issue/103
+       
+#128 - Update year on copyright notices
+       https://github.com/fxdemolisher/frano/issues#issue/128
+
+/================\
 | Release 0.8    |
 \================/
 

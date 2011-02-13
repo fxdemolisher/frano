@@ -14,6 +14,8 @@ AMERITRADE_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TRANSACTION ID', 'DESCRIPTION'
 ZECCO_TRANSACTION_EXPORT_HEADER = [ 'TradeDate', 'AccountTypeDescription', 'TransactionType', 'Symbol', 'Cusip', 'ActivityDescription', 'SecuritySubDescription', 'Quantity', 'Price', 'Currency', 'PrincipalAmount', 'NetAmount', 'TradeNumber' ]
 SCOTTRADE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Quantity', 'Price', 'ActionNameUS', 'TradeDate', 'SettledDate', 'Interest', 'Amount', 'Commission', 'Fees', 'CUSIP', 'Description', 'ActionId', 'TradeNumber', 'RecordType' ]
 CHARLES_TRANSACTION_EXPORT_HEADER = [ 'Date', 'Action', 'Quantity', 'Symbol', 'Description', 'Price', 'Amount', 'Fees & Comm' ]
+FIDELITY_TRANSACTION_EXPORT_HEADER = [ 'Trade Date', 'Action', 'Symbol', 'Security Description', 'Security Type', 'Quantity', 'Price ($)', 'Commission ($)', 'Fees ($)', 'Accrued Interest ($)', 'Amount ($)', 'Settlement Date' ]
+MERCER_401_TRANSACTION_EXPORT_HEADER = [ 'Date', 'Source', 'Transaction', 'Ticker', 'Investment', 'Amount', 'Price', 'Shares/Units' ]
 
 GOOGLE_TRANSACTION_TYPE_MAP = {
     'Buy' : 'BUY',
@@ -29,6 +31,8 @@ HEADER_TO_IMPORT_TYPE_MAP = {
     ",".join(ZECCO_TRANSACTION_EXPORT_HEADER) : 'ZECCO',
     ",".join(SCOTTRADE_TRANSACTION_EXPORT_HEADER) : 'SCOTTRADE',
     ",".join([ ('"%s"' % v) for v in CHARLES_TRANSACTION_EXPORT_HEADER]) : 'CHARLES',
+    ",".join(FIDELITY_TRANSACTION_EXPORT_HEADER) : 'FIDELITY',
+    ",".join(MERCER_401_TRANSACTION_EXPORT_HEADER) : 'MERCER_401',
   }
 
 #------------------\
@@ -75,6 +79,21 @@ def parse_transactions(type, file):
     reader.next() # skip header line
     verify_transaction_file_header(reader, CHARLES_TRANSACTION_EXPORT_HEADER)
     parsed = parse_charles_transactions(reader)
+    
+  elif type == 'FIDELITY':
+    reader = csv.reader(file)
+    
+    # fidelity leaves three blank lines on top of the file...go figure
+    for x in range(3):
+      reader.next()
+      
+    verify_transaction_file_header(reader, FIDELITY_TRANSACTION_EXPORT_HEADER)
+    parsed = parse_fidelity_transactions(reader)
+    
+  elif type == 'MERCER_401':
+    reader = csv.reader(file)
+    verify_transaction_file_header(reader, MERCER_401_TRANSACTION_EXPORT_HEADER)
+    parsed = parse_mercer_401_transactions(reader)
 
   transactions = []
   for row in parsed:
@@ -96,7 +115,7 @@ def detect_transaction_file_type(file):
   for line in file:
     first_line = line
     
-    if first_line != None and not first_line.startswith('"Transactions  for account'):
+    if first_line != None and not first_line.startswith('"Transactions  for account') and len(first_line.strip()) != 0:
       break
   
   return HEADER_TO_IMPORT_TYPE_MAP.get(line.strip(), None)
@@ -418,6 +437,132 @@ def parse_charles_transactions(reader):
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
         'linked_symbol': linked_symbol,
+      });
+      
+  return parsed
+
+def parse_fidelity_transactions(reader):
+  parsed = []
+  for row in reader:
+    if len(row) < 11:
+      continue
+    
+    date_field = row[0].strip()
+    action_field = row[1].strip()
+    symbol_field = row[2].strip()
+    symbol_description_field = row[3].strip()
+    quantity_field = row[5].strip()
+    price_field = row[6].strip()
+    amount_field = row[10].strip()
+    
+    linked_symbol = None
+    
+    # deposits and withdrawals have no symbols or prices
+    if symbol_field == '' and price_field == '':
+      symbol = Quote.CASH_SYMBOL
+      type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
+      quantity = abs(float(amount_field))
+      price = 1.0
+      total = quantity
+    
+    # buys and sells
+    elif action_field.startswith('YOU BOUGHT') or action_field.startswith('YOU SOLD') or (symbol_description_field != 'CASH' and (action_field in [ 'PURCHASE INTO CORE ACCOUNT', 'REDEMPTION FROM CORE ACCOUNT', 'REINVESTMENT' ])):
+      symbol = symbol_field
+      type = ('SELL' if (action_field.startswith('YOU SOLD') or action_field == 'REDEMPTION FROM CORE ACCOUNT') else 'BUY')
+      quantity = abs(float(quantity_field))
+      price = float(price_field)
+      total = abs(float(amount_field))
+      
+    # certain known actions are adjustments
+    elif action_field in [ 'SHORT-TERM CAP GAIN', 'LONG-TERM CAP GAIN', 'DIVIDEND RECEIVED', 'INTEREST EARNED' ]:
+      symbol = Quote.CASH_SYMBOL
+      type = 'ADJUST'
+      quantity = float(amount_field)
+      price = 1.0
+      total = abs(float(amount_field))
+      linked_symbol = (symbol_field if symbol_description_field != 'CASH' else None)
+      
+    # ignore everything else
+    else:
+      continue
+      
+    parsed.append({
+        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
+        'type' : type,
+        'symbol' : symbol,
+        'quantity' : quantity,
+        'price' : price,
+        'total' : total,
+        'linked_symbol': linked_symbol,
+      });
+      
+  return parsed
+
+def parse_mercer_401_transactions(reader):
+  parsed = []
+  for row in reader:
+    if len(row) != 8 or row[0] == 'Total':
+      continue
+    
+    as_of_date = datetime.strptime(row[0].strip(' '), '%m/%d/%Y').date()
+    action = row[2].strip(' ')
+    symbol = row[3].strip(' ')
+    amount_field = row[5].replace('$', '').replace(',', '').strip(' ')
+    price = float(row[6].replace('$', '').replace(',', '').strip(' '))
+    quantity = float(row[7].replace('$', '').replace(',', '').strip(' '))
+    linked_symbol = None
+    
+    if amount_field[:1] == '(' and amount_field[-1:] == ')':
+      amount = 0 - float(amount_field[1:-1])
+    else:
+      amount = float(amount_field)
+    
+    # deposits are contributions or conversions and are treated like transfers
+    if action in [ 'CONTRIBUTIONS', 'CONVERSION' ]:
+      parsed.append({
+        'date' : as_of_date,
+        'type' : 'DEPOSIT',
+        'symbol' : Quote.CASH_SYMBOL,
+        'quantity' : amount,
+        'price' : 1.0,
+        'total' : amount,
+      });
+      
+      type = 'BUY'
+    
+    # buys and sells are transfer in/out actions
+    elif action in [ 'TRANSFER OUT', 'TRANSFER IN' ] and symbol != None and symbol != '':
+      type = ('SELL' if action == 'TRANSFER OUT' else 'BUY')
+      quantity = abs(quantity)
+      amount = abs(amount)
+      
+    # dividends are adjustments and reinvestments. fees are sells and negative adjustments.
+    elif action in [ 'DIVIDEND', 'FEE' ]:
+      parsed.append({
+        'date' : as_of_date,
+        'type' : 'ADJUST',
+        'symbol' : Quote.CASH_SYMBOL,
+        'quantity' : amount,
+        'price' : 1.0,
+        'total' : amount,
+        'linked_symbol' : symbol,
+      });
+      
+      type = ('BUY' if action == 'DIVIDEND' else 'SELL')
+      quantity = abs(quantity)
+      amount = abs(amount)
+      
+    else:
+      continue
+      
+    parsed.append({
+        'date' : as_of_date,
+        'type' : type,
+        'symbol' : symbol,
+        'quantity' : quantity,
+        'price' : price,
+        'total' : amount,
+        'linked_symbol' : linked_symbol,
       });
       
   return parsed

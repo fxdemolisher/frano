@@ -1,4 +1,4 @@
-# Copyright (c) 2010 Gennadiy Shafranovich
+# Copyright (c) 2011 Gennadiy Shafranovich
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
@@ -15,13 +15,15 @@ urlpatterns = patterns('frano.views',
   (r'^feedback.html', 'feedback'),
   (r'^login.html', 'login'),
   (r'^logout.html', 'logout'),
+  (r'^account.html', 'my_account'),
+  (r'^removeAccount.html', 'remove_account'),
   (r'^createPortfolio.html', 'create_portfolio'),
+  (r'^(?P<portfolio_id>\d+)/setName.html', 'portfolio_set_name'),
+  (r'^(?P<portfolio_id>\d+)/remove.html', 'portfolio_remove'),
   (r'^(?P<portfolio_id>\d+)/addTransaction.html', 'add_transaction'),
   (r'^(?P<portfolio_id>\d+)/(?P<transaction_id>\d+)/remove.html', 'remove_transaction'),
   (r'^(?P<portfolio_id>\d+)/removeAllTransactions.html', 'remove_all_transactions'),
   (r'^(?P<portfolio_id>\d+)/(?P<transaction_id>\d+)/update.json', 'update_transaction'),
-  (r'^(?P<portfolio_id>\d+)/setName.json', 'portfolio_set_name'),
-  (r'^(?P<portfolio_id>\d+)/remove.html', 'portfolio_remove'),
   (r'^(?P<portfolio_id>\d+)/positions.html', 'portfolio_positions'),
   (r'^(?P<portfolio_id>\d+)/transactions.html', 'portfolio_transactions'),
   (r'^(?P<portfolio_id>\d+)/exportTransactions.(?P<format>\w{3})', 'export_transactions'),

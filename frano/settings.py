@@ -1,12 +1,12 @@
-# Copyright (c) 2010 Gennadiy Shafranovich
+# Copyright (c) 2011 Gennadiy Shafranovich
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
 import datetime, os, glob
 
 # build info
-BUILD_VERSION = '0.8'
-BUILD_DATETIME = datetime.datetime(2011, 1, 18, 13, 25, 0)
+BUILD_VERSION = '0.9'
+BUILD_DATETIME = datetime.datetime(2011, 2, 13, 18, 20, 0)
 
 # base db set up, the rest is in environment specific setting files
 DATABASE_ENGINE = 'mysql'

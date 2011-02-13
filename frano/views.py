@@ -1,4 +1,4 @@
-# Copyright (c) 2010 Gennadiy Shafranovich
+# Copyright (c) 2011 Gennadiy Shafranovich
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
@@ -147,19 +147,47 @@ def logout(request):
   return redirect("/index.html")
 
 @login_required_decorator
+def my_account(request, user):
+  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
+  return render_to_response('account.html', { }, context_instance = RequestContext(request))
+
+@login_required_decorator
+def remove_account(request, user):
+  user.delete()
+  return logout(request)
+
+@login_required_decorator
 def create_portfolio(request, user):
+  form = PortfolioNameForm(request.POST)
+  if not form.is_valid():
+    return redirect("/account.html")
+  
   portfolios = Portfolio.objects.filter(user__id__exact = user.id)
   names = set([ p.name for p in portfolios])
+  name = effective_portfolio_name(form.cleaned_data.get('portfolioName').encode('UTF-8'), names)
   
-  index = 1
-  new_name = 'Default-%d' % index
-  while new_name in names:
-    new_name = 'Default-%d' % index
-    index += 1
-    
-  portfolio = Portfolio.create(user, new_name)
+  portfolio = Portfolio.create(user, name)
   return redirect('/%d/importTransactions.html' % portfolio.id)
-  
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_set_name(request, user, portfolio, is_sample, read_only):
+  form = PortfolioNameForm(request.POST)
+  if form.is_valid():
+    portfolios = Portfolio.objects.filter(user__id__exact = user.id)
+    names = set([ p.name for p in portfolios])
+    portfolio.name = effective_portfolio_name(form.cleaned_data.get('portfolioName').encode('UTF-8'), names)
+    portfolio.save()
+    
+  return redirect("/account.html")  
+
+
+@login_required_decorator
+@portfolio_manipilation_decorator
+def portfolio_remove(request, user, portfolio, is_sample, read_only):
+  portfolio.delete()
+  return render_to_response('account.html', { }, context_instance = RequestContext(request))
+
 @portfolio_manipilation_decorator
 def add_transaction(request, portfolio, is_sample, read_only):
   form = TransactionForm(request.POST)
@@ -198,7 +226,7 @@ def remove_all_transactions(request, portfolio, is_sample, read_only):
   Transaction.objects.filter(portfolio__id__exact = portfolio.id).delete()
   Position.refresh_if_needed(portfolio, force = True)
     
-  return redirect_to_portfolio('transactions', portfolio)
+  return redirect_to_portfolio('importTransactions', portfolio)
 
 @portfolio_manipilation_decorator
 def update_transaction(request, portfolio, is_sample, read_only, transaction_id):
@@ -278,26 +306,6 @@ def portfolio_read_only_positions(request, read_only_token):
   portfolio = Portfolio.objects.filter(read_only_token__exact = read_only_token)[0]
   return portfolio_positions(request, portfolio.id, read_only = True)
 
-@login_required_decorator
-@portfolio_manipilation_decorator
-def portfolio_set_name(request, user, portfolio, is_sample, read_only):
-  form = PortfolioForm(request.POST)
-  success = False
-  if form.is_valid():
-    portfolio.name = form.cleaned_data.get('name')
-    portfolio.save()
-    success = True
-  
-  return HttpResponse("{ \"success\": \"%s\" }" % success)  
-
-@login_required_decorator
-@portfolio_manipilation_decorator
-def portfolio_remove(request, user, portfolio, is_sample, read_only):
-  portfolio.delete()
-  
-  portfolios = Portfolio.objects.filter(user__id__exact = user.id)
-  return redirect_to_portfolio('positions', portfolios[0], False)
-
 @portfolio_manipilation_decorator
 def portfolio_transactions(request, portfolio, is_sample, read_only):
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
@@ -373,7 +381,9 @@ def import_transactions(request, portfolio, is_sample, read_only):
           by_date_map.get(transaction.as_of_date).append(transaction)
         
         for transaction in transactions:
-                    
+          if len(transaction.symbol) < 1 or len(transaction.symbol) > 5:
+            raise Exception("Invalid symbol: %s" % transaction.symbol)
+          
           is_duplicate = False
           possibles = by_date_map.get(transaction.as_of_date)
           if possibles != None:
@@ -503,6 +513,9 @@ def portfolio_read_only_income(request, read_only_token):
 #  FORMS |
 #--------/
 
+class PortfolioNameForm(forms.Form):
+  portfolioName = forms.CharField(min_length = 3, max_length = 30)
+
 class TransactionForm(forms.Form):
   type = forms.ChoiceField(choices = Transaction.TRANSACTION_TYPES)
   as_of_date = forms.DateField()
@@ -526,10 +539,7 @@ class UpdateTransactionForm(forms.Form):
     
   def get_if_present(self, name):
     return (self.cleaned_data.get(name) if name in self.original_data else None)
-    
-class PortfolioForm(forms.Form):
-  name = forms.CharField(min_length = 3, max_length = 50)
-  
+
 class ImportForm(forms.Form):
   TYPE_CHOICES = [
       ('AUTO', u'AUTO'),
@@ -539,6 +549,8 @@ class ImportForm(forms.Form):
       ('SCOTTRADE', u'SCOTTRADE'),
       ('AMERITRADE', u'AMERITRADE'),
       ('ZECCO', u'ZECCO'),
+      ('FIDELITY', u'FIDELITY'),
+      ('MERCER_401', u'MERCER_401'),
     ]
   
   type = forms.ChoiceField(choices = TYPE_CHOICES)
@@ -775,6 +787,15 @@ def get_performance_history(portfolio, days):
     
   cursor.close()
   return out
+
+def effective_portfolio_name(name, names):
+  index = 0
+  new_name = name
+  while new_name in names:
+    index = index + 1
+    new_name = "%s-%d" % (name, index)
+    
+  return new_name
   
 #-----------------\
 #  VALUE OBJECTS  |

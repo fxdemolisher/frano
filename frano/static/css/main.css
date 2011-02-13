@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010 Gennadiy Shafranovich
+Copyright (c) 2011 Gennadiy Shafranovich
 Licensed under the MIT license
 see LICENSE file for copying permission.
 */
@@ -192,7 +192,7 @@ BUTTON {
 
 .userLinks {float:right;font-size:17px;color:#FFF;padding-top:15px;white-space:nowrap;right:0;}
 
-.selectPortfolio { font-size: 20px; vertical-align: middle; width: 220px; }
+.selectPortfolio { font-size: 20px; vertical-align: middle; width: 340px; }
 
 .signInBox { position: absolute; background-color: #FFFFFF; margin-left: -354px; margin-top: 30px; border: 10px solid #999999; border-radius: 10px; -moz-border-radius: 10px; -webkit-border-radius: 10px}
 .signInBox IFRAME { position: relative; width: 400px; height: 240px; }
@@ -280,6 +280,9 @@ TD.center { text-align: center !important; }
 .incomeTable THEAD TD { text-align: right; padding-right: 5px;}
 .incomeTable TBODY TD { text-align: right; padding: 10px 5px 10px 5px; }
 
+.portfoliosTable THEAD TD { padding: 0 10px 0 10px;}
+.portfoliosTable TBODY TD { padding: 10px 10px 10px 10px; vertical-align: middle; }
+
 /******************\
 = POSITION SUMMARY =
 \******************/
@@ -338,6 +341,15 @@ TD.center { text-align: center !important; }
 
 #addTransactionForm TABLE TBODY TR TD INPUT#total { background-color: #CCCCCC; }
 
+/************\
+= MY ACCOUNT =
+\************/
+
+.accountButton { background: url(/img/gradients.png) 0 -72px repeat-x;color:#FFF;font-size:14px; font-weight: bold; vertical-align: middle; }
+.setNameButton { margin-right: 10px; }
+
+.portfolioNameForm { display: inline; }
+
 /*************\
 = COPY BLOCKS =
 \*************/
@@ -364,6 +376,10 @@ TD.center { text-align: center !important; }
 .incomeCopy {line-height:24px;font-size:17px;}
 .incomeCopy .highlight {color:#F90;font-weight:bold;}
 .incomeCopy STRONG { font-weight: bolder; }
+
+.accountCopy {line-height:24px;font-size:17px;}
+.accountCopy .highlight {color:#F90;font-weight:bold;}
+.accountCopy STRONG { font-weight: bolder; }
 
 /********\
 = CHARTS =
