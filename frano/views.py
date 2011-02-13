@@ -2,25 +2,42 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import json, math, random
+import json
+import math
+import random
 
 from StringIO import StringIO
-from datetime import date, datetime, timedelta
+from datetime import date
+from datetime import datetime
+from datetime import timedelta
 from urllib import urlopen
 
 from django import forms
 from django.core.mail import EmailMessage
-from django.core.paginator import Paginator, InvalidPage, EmptyPage
-from django.db import connection, transaction
+from django.core.paginator import Paginator
+from django.core.paginator import InvalidPage
+from django.core.paginator import EmptyPage
+from django.db import connection
+from django.db import transaction
 from django.forms.formsets import formset_factory
-from django.http import HttpResponse, HttpResponseServerError
-from django.shortcuts import render_to_response, redirect
+from django.http import HttpResponse
+from django.http import HttpResponseServerError
+from django.shortcuts import render_to_response
+from django.http import redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.contrib.sessions.models import Session
 
-from import_export import transactions_as_csv, parse_transactions, detect_transaction_file_type
-from models import User, Portfolio, Transaction, Position, TaxLot, Quote
+from import_export import detect_transaction_file_type
+from import_export import parse_transactions
+from import_export import transactions_as_csv
+from models import Portfolio
+from models import Position
+from models import Quote
+from models import TaxLot
+from models import Transaction
+from models import User
+from positions import decorate_position_with_prices
 from settings import BUILD_VERSION, BUILD_DATETIME, JANRAIN_API_KEY, SAMPLE_TRANSACTION_FILE
 
 #-------------\
@@ -622,7 +639,7 @@ def decorate_positions_for_display(positions, symbols, showClosedPositions):
     price = (1.0 if position.symbol == Quote.CASH_SYMBOL else quotes[position.symbol].price)
     previous_price = (1.0 if position.symbol == Quote.CASH_SYMBOL else quotes[position.symbol].previous_close_price())
     
-    position.decorate_with_prices(price, previous_price)
+    decorate_position_with_prices(position, price, previous_price)
     position.show = (showClosedPositions or abs(position.quantity) > 0.01 or position.symbol == Quote.CASH_SYMBOL)
     
     total_market_value += position.market_value
