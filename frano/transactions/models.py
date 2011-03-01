@@ -9,6 +9,14 @@ from exceptions import Exception
 
 from django.db import models
 
+from parsers import FRANO_TRANSACTION_EXPORT_HEADER
+from parsers import GOOGLE_TRANSACTION_EXPORT_HEADER
+from parsers import AMERITRADE_TRANSACTION_EXPORT_HEADER
+from parsers import ZECCO_TRANSACTION_EXPORT_HEADER
+from parsers import SCOTTRADE_TRANSACTION_EXPORT_HEADER
+from parsers import CHARLES_TRANSACTION_EXPORT_HEADER
+from parsers import FIDELITY_TRANSACTION_EXPORT_HEADER
+from parsers import MERCER_401_TRANSACTION_EXPORT_HEADER
 from parsers import parse_frano_transactions
 from parsers import parse_google_transactions
 from parsers import parse_ameritrade_transactions
@@ -22,15 +30,6 @@ from main.models import Portfolio
 #-------------\
 #  CONSTANTS  |
 #-------------/
-
-FRANO_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TYPE', 'SYMBOL', 'QUANTITY', 'PRICE', 'TOTAL', 'LINKED_SYMBOL' ]
-GOOGLE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Name', 'Type', 'Date', 'Shares', 'Price', 'Cash value', 'Commission', 'Notes' ]
-AMERITRADE_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TRANSACTION ID', 'DESCRIPTION', 'QUANTITY', 'SYMBOL', 'PRICE', 'COMMISSION', 'AMOUNT', 'NET CASH BALANCE', 'SALES FEE', 'SHORT-TERM RDM FEE', 'FUND REDEMPTION FEE', ' DEFERRED SALES CHARGE' ]
-ZECCO_TRANSACTION_EXPORT_HEADER = [ 'TradeDate', 'AccountTypeDescription', 'TransactionType', 'Symbol', 'Cusip', 'ActivityDescription', 'SecuritySubDescription', 'Quantity', 'Price', 'Currency', 'PrincipalAmount', 'NetAmount', 'TradeNumber' ]
-SCOTTRADE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Quantity', 'Price', 'ActionNameUS', 'TradeDate', 'SettledDate', 'Interest', 'Amount', 'Commission', 'Fees', 'CUSIP', 'Description', 'ActionId', 'TradeNumber', 'RecordType' ]
-CHARLES_TRANSACTION_EXPORT_HEADER = [ 'Date', 'Action', 'Quantity', 'Symbol', 'Description', 'Price', 'Amount', 'Fees & Comm' ]
-FIDELITY_TRANSACTION_EXPORT_HEADER = [ 'Trade Date', 'Action', 'Symbol', 'Security Description', 'Security Type', 'Quantity', 'Price ($)', 'Commission ($)', 'Fees ($)', 'Accrued Interest ($)', 'Amount ($)', 'Settlement Date' ]
-MERCER_401_TRANSACTION_EXPORT_HEADER = [ 'Date', 'Source', 'Transaction', 'Ticker', 'Investment', 'Amount', 'Price', 'Shares/Units' ]
 
 HEADER_TO_IMPORT_TYPE_MAP = {
     ",".join(FRANO_TRANSACTION_EXPORT_HEADER) : 'FRANO',
@@ -114,7 +113,7 @@ def parse_transactions(type, file):
   elif type == 'AMERITRADE':
     reader = csv.reader(file)
     _verify_transaction_file_header(reader, AMERITRADE_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_ameritrade_transactions(reader, len(AMERITRADE_TRANSACTION_EXPORT_HEADER))
+    parsed = parse_ameritrade_transactions(reader)
     
   elif type == 'ZECCO':
     reader = csv.reader(file)
