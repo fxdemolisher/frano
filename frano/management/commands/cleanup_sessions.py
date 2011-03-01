@@ -3,9 +3,10 @@
 # see LICENSE file for copying permission.
 
 from datetime import datetime
+from sys import stdout
+
 from django.contrib.sessions.models import Session
 from django.core.management.base import BaseCommand
-from sys import stdout
 
 class Command(BaseCommand):
   help = 'Cleanup any expired sessions'

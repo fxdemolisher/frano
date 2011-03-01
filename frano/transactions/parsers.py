@@ -1,21 +1,17 @@
-import codecs, csv
+# Copyright (c) 2011 Gennadiy Shafranovich
+# Licensed under the MIT license
+# see LICENSE file for copying permission.
 
 from datetime import datetime
+from exceptions import Exception
 
-from models import Quote, Transaction
+from quotes.models import CASH_SYMBOL
+from quotes.models import quote_by_symbol
+from quotes.models import price_as_of
 
-#------------\
-#  CONSTANTS |
-#------------/
-
-FRANO_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TYPE', 'SYMBOL', 'QUANTITY', 'PRICE', 'TOTAL', 'LINKED_SYMBOL' ]
-GOOGLE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Name', 'Type', 'Date', 'Shares', 'Price', 'Cash value', 'Commission', 'Notes' ]
-AMERITRADE_TRANSACTION_EXPORT_HEADER = [ 'DATE', 'TRANSACTION ID', 'DESCRIPTION', 'QUANTITY', 'SYMBOL', 'PRICE', 'COMMISSION', 'AMOUNT', 'NET CASH BALANCE', 'SALES FEE', 'SHORT-TERM RDM FEE', 'FUND REDEMPTION FEE', ' DEFERRED SALES CHARGE' ]
-ZECCO_TRANSACTION_EXPORT_HEADER = [ 'TradeDate', 'AccountTypeDescription', 'TransactionType', 'Symbol', 'Cusip', 'ActivityDescription', 'SecuritySubDescription', 'Quantity', 'Price', 'Currency', 'PrincipalAmount', 'NetAmount', 'TradeNumber' ]
-SCOTTRADE_TRANSACTION_EXPORT_HEADER = [ 'Symbol', 'Quantity', 'Price', 'ActionNameUS', 'TradeDate', 'SettledDate', 'Interest', 'Amount', 'Commission', 'Fees', 'CUSIP', 'Description', 'ActionId', 'TradeNumber', 'RecordType' ]
-CHARLES_TRANSACTION_EXPORT_HEADER = [ 'Date', 'Action', 'Quantity', 'Symbol', 'Description', 'Price', 'Amount', 'Fees & Comm' ]
-FIDELITY_TRANSACTION_EXPORT_HEADER = [ 'Trade Date', 'Action', 'Symbol', 'Security Description', 'Security Type', 'Quantity', 'Price ($)', 'Commission ($)', 'Fees ($)', 'Accrued Interest ($)', 'Amount ($)', 'Settlement Date' ]
-MERCER_401_TRANSACTION_EXPORT_HEADER = [ 'Date', 'Source', 'Transaction', 'Ticker', 'Investment', 'Amount', 'Price', 'Shares/Units' ]
+#-------------\
+#  CONSTANTS  |
+#-------------/
 
 GOOGLE_TRANSACTION_TYPE_MAP = {
     'Buy' : 'BUY',
@@ -24,106 +20,10 @@ GOOGLE_TRANSACTION_TYPE_MAP = {
     'Withdraw Cash' : 'WITHDRAW',
   }
 
-HEADER_TO_IMPORT_TYPE_MAP = {
-    ",".join(FRANO_TRANSACTION_EXPORT_HEADER) : 'FRANO',
-    ("\xef\xbb\xbf" + ",".join(GOOGLE_TRANSACTION_EXPORT_HEADER)) : 'GOOGLE',
-    ",".join(AMERITRADE_TRANSACTION_EXPORT_HEADER) : 'AMERITRADE',
-    ",".join(ZECCO_TRANSACTION_EXPORT_HEADER) : 'ZECCO',
-    ",".join(SCOTTRADE_TRANSACTION_EXPORT_HEADER) : 'SCOTTRADE',
-    ",".join([ ('"%s"' % v) for v in CHARLES_TRANSACTION_EXPORT_HEADER]) : 'CHARLES',
-    ",".join(FIDELITY_TRANSACTION_EXPORT_HEADER) : 'FIDELITY',
-    ",".join(MERCER_401_TRANSACTION_EXPORT_HEADER) : 'MERCER_401',
-  }
+#---------------------\
+#  EXPOSED FUNCTIONS  |
+#---------------------/
 
-#------------------\
-#  MAIN FUNCTIONS  |
-#------------------/
-
-def transactions_as_csv(target, portfolio):
-  writer = csv.writer(target)
-  writer.writerow(FRANO_TRANSACTION_EXPORT_HEADER)
-  
-  transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
-  for transaction in transactions:
-    writer.writerow([transaction.as_of_date.strftime('%m/%d/%Y'), transaction.type, transaction.symbol, transaction.quantity, transaction.price, transaction.total, transaction.linked_symbol])
-
-def parse_transactions(type, file):
-  parsed = None
-  if type == 'FRANO':
-    reader = csv.reader(file)
-    verify_transaction_file_header(reader, FRANO_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_frano_transactions(reader)
-    
-  elif type == 'GOOGLE':
-    reader = csv.reader(codecs.iterdecode(file, 'utf_8_sig'))
-    verify_transaction_file_header(reader, GOOGLE_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_google_transactions(reader)
-    
-  elif type == 'AMERITRADE':
-    reader = csv.reader(file)
-    verify_transaction_file_header(reader, AMERITRADE_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_ameritrade_transactions(reader)
-    
-  elif type == 'ZECCO':
-    reader = csv.reader(file)
-    verify_transaction_file_header(reader, ZECCO_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_zecco_transactions(reader)
-
-  elif type == 'SCOTTRADE':
-    reader = csv.reader(null_byte_line_filter(file))
-    verify_transaction_file_header(reader, SCOTTRADE_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_scottrade_transactions(reader)
-    
-  elif type == 'CHARLES':
-    reader = csv.reader(null_byte_line_filter(file))
-    reader.next() # skip header line
-    verify_transaction_file_header(reader, CHARLES_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_charles_transactions(reader)
-    
-  elif type == 'FIDELITY':
-    reader = csv.reader(file)
-    
-    # fidelity leaves three blank lines on top of the file...go figure
-    for x in range(3):
-      reader.next()
-      
-    verify_transaction_file_header(reader, FIDELITY_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_fidelity_transactions(reader)
-    
-  elif type == 'MERCER_401':
-    reader = csv.reader(file)
-    verify_transaction_file_header(reader, MERCER_401_TRANSACTION_EXPORT_HEADER)
-    parsed = parse_mercer_401_transactions(reader)
-
-  transactions = []
-  for row in parsed:
-    transaction = Transaction()
-    transaction.as_of_date = row['date']
-    transaction.type = row['type']
-    transaction.symbol = row['symbol'].upper()
-    transaction.quantity = row['quantity']
-    transaction.price = row['price']
-    transaction.total = row['total']
-    transaction.linked_symbol = row.get('linked_symbol', None)
-    
-    transactions.append(transaction)
-    
-  return transactions
-
-def detect_transaction_file_type(file):
-  first_line = None
-  for line in file:
-    first_line = line
-    
-    if first_line != None and not first_line.startswith('"Transactions  for account') and len(first_line.strip()) != 0:
-      break
-  
-  return HEADER_TO_IMPORT_TYPE_MAP.get(line.strip(), None)
-  
-#----------------------\
-#  PER SOURCE PARSERS  |
-#----------------------/
-    
 def parse_frano_transactions(reader):
   parsed = []
   for row in reader:
@@ -147,7 +47,7 @@ def parse_google_transactions(reader):
       raise Exception("Unknown transaction type in google finance file: %s" % row[2])
     
     if type == 'DEPOSIT' or type == 'WITHDRAW':
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       quantity = abs(float(row[6]))
       price = 1.0
       commission = 0.0
@@ -173,10 +73,10 @@ def parse_google_transactions(reader):
       
   return parsed
 
-def parse_ameritrade_transactions(reader):
+def parse_ameritrade_transactions(reader, num_columns):
   parsed = []
   for row in reader:
-    if len(row) != len(AMERITRADE_TRANSACTION_EXPORT_HEADER):
+    if len(row) != num_columns:
       continue
     
     date_field = row[0]
@@ -202,7 +102,7 @@ def parse_ameritrade_transactions(reader):
       
     # symbol is there, but price is not, dividend
     elif symbol_field != '':
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(amount_field)
       price = 1.0
@@ -211,7 +111,7 @@ def parse_ameritrade_transactions(reader):
     
     # otherwise its a cash movement
     else:
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
       quantity = (abs(float(amount_field)))
       price = 1.0
@@ -256,7 +156,7 @@ def parse_zecco_transactions(reader):
         description_field.startswith('W/T FRM CUST') or description_field.startswith('W/T TO CUST')
       ):
       
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = ('DEPOSIT' if float(net_amount_field) >= 0 else 'WITHDRAW')
       quantity = (abs(float(net_amount_field)))
       price = 1.0
@@ -272,7 +172,7 @@ def parse_zecco_transactions(reader):
       
     # everything else on the margin account or cash is an adjustment
     elif transaction_type in ['Interest Paid', 'Qualified Dividend', 'Short Term Capital Gain', 'Long Term Capital Gain']:
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(net_amount_field)
       price = 1.0
@@ -313,7 +213,7 @@ def parse_scottrade_transactions(reader):
     
     # deposits and withdrawals
     if action_field == 'IRA Receipt' or action_field == 'Journal':
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
       quantity = abs(float(amount_field))
       price = 1.0
@@ -334,7 +234,7 @@ def parse_scottrade_transactions(reader):
       parsed.append({
         'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
         'type' : 'DEPOSIT',
-        'symbol' : Quote.CASH_SYMBOL,
+        'symbol' : CASH_SYMBOL,
         'quantity' : (price * quantity),
         'price' : 1.0,
         'total' : (price * quantity),
@@ -346,7 +246,7 @@ def parse_scottrade_transactions(reader):
     
     # everything else is an adjustment
     else:
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(amount_field)
       price = 1.0
@@ -383,7 +283,7 @@ def parse_charles_transactions(reader):
     
     # deposits and withdrawals have no symbols or prices
     if symbol_field == '' and price_field == '':
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
       quantity = abs(float(amount_field))
       price = 1.0
@@ -402,12 +302,12 @@ def parse_charles_transactions(reader):
       as_of_date = datetime.strptime(date_field, '%m/%d/%Y')
       symbol = symbol_field
       quantity = float(quantity_field)
-      price = Quote.by_symbol(symbol).price_as_of(as_of_date)
+      price = price_as_of(quote_by_symbol(symbol), as_of_date)
                           
       parsed.append({
         'date' : as_of_date.date(),
         'type' : 'DEPOSIT',
-        'symbol' : Quote.CASH_SYMBOL,
+        'symbol' : CASH_SYMBOL,
         'quantity' : (price * quantity),
         'price' : 1.0,
         'total' : (price * quantity),
@@ -418,7 +318,7 @@ def parse_charles_transactions(reader):
       
     # everything else is an adjustment
     else:
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(amount_field)
       price = 1.0
@@ -459,7 +359,7 @@ def parse_fidelity_transactions(reader):
     
     # deposits and withdrawals have no symbols or prices
     if symbol_field == '' and price_field == '':
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = ('DEPOSIT' if float(amount_field) >= 0 else 'WITHDRAW')
       quantity = abs(float(amount_field))
       price = 1.0
@@ -475,7 +375,7 @@ def parse_fidelity_transactions(reader):
       
     # certain known actions are adjustments
     elif action_field in [ 'SHORT-TERM CAP GAIN', 'LONG-TERM CAP GAIN', 'DIVIDEND RECEIVED', 'INTEREST EARNED' ]:
-      symbol = Quote.CASH_SYMBOL
+      symbol = CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(amount_field)
       price = 1.0
@@ -522,7 +422,7 @@ def parse_mercer_401_transactions(reader):
       parsed.append({
         'date' : as_of_date,
         'type' : 'DEPOSIT',
-        'symbol' : Quote.CASH_SYMBOL,
+        'symbol' : CASH_SYMBOL,
         'quantity' : amount,
         'price' : 1.0,
         'total' : amount,
@@ -541,7 +441,7 @@ def parse_mercer_401_transactions(reader):
       parsed.append({
         'date' : as_of_date,
         'type' : 'ADJUST',
-        'symbol' : Quote.CASH_SYMBOL,
+        'symbol' : CASH_SYMBOL,
         'quantity' : amount,
         'price' : 1.0,
         'total' : amount,
@@ -567,20 +467,6 @@ def parse_mercer_401_transactions(reader):
       
   return parsed
 
-#-------------\
-#  UTILITIES  |
-#-------------/
-
-def null_byte_line_filter(stream):
-  for line in stream:
-    yield line.replace('\x00', '')
-
-def verify_transaction_file_header(reader, required_header):
-  header = reader.next()
-  if len(header) != len(required_header):
-    raise Exception('Header mismatch for transaction file')
-  
-  for i in range(len(required_header)):
-    if header[i] != required_header[i]:
-      raise Exception("Header mismatch at %d: %s <> %s" % (i, header[i], required_header[i]))
-    
+#-------------------\
+#  LOCAL FUNCTIONS  |
+#-------------------/
