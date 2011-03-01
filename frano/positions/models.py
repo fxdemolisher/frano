@@ -4,10 +4,11 @@
 
 from datetime import datetime
 
-from models import Position
-from models import Quote
-from models import TaxLot
-from models import Transaction
+from django.db import models
+
+from main.models import Portfolio
+from quotes.models import CASH_SYMBOL
+from transactions.models import Transaction
 
 #-------------\
 #  CONSTANTS  |
@@ -15,9 +16,73 @@ from models import Transaction
 
 QUANTITY_TOLERANCE = 0.000001
 
-#---------------------\
-#  EXPOSED FUNCTIONS  |
-#---------------------/
+#----------\
+#  MODELS  |
+#----------/
+
+class Position(models.Model):
+  portfolio = models.ForeignKey(Portfolio)
+  as_of_date = models.DateField()
+  symbol = models.CharField(max_length = 5)
+  quantity = models.FloatField()
+  cost_price = models.FloatField()
+  realized_pl = models.FloatField()
+  
+  class Meta:
+    db_table = 'position'
+    
+  def __unicode__(self):
+    return "%.2f of %s on %s @ %.2f" % (self.quantity, self.symbol, self.as_of_date.strftime('%m/%d/%Y'), self.cost_price)
+    
+class TaxLot(models.Model):
+  position = models.ForeignKey(Position)
+  as_of_date = models.DateField()
+  quantity = models.FloatField()
+  cost_price = models.FloatField()
+  sold_quantity = models.FloatField()
+  sold_price = models.FloatField()
+  
+  class Meta:
+    db_table = 'tax_lot'
+    
+  def __unicode__(self):
+    return "%.2f on %s @ %.2f with %.2f sold at %.2f" % (self.quantity, self.as_of_date.strftime('%m/%d/%Y'), self.cost_price, self.sold_quantity, self.sold_price)
+  
+#------------\
+#  SERVICES  |
+#------------/
+
+def clone_tax_lot(tax_lot):
+  """Return a copy of the given tax lot."""
+  
+  return TaxLot(as_of_date = tax_lot.as_of_date,
+      quantity = tax_lot.quantity,
+      cost_price = tax_lot.cost_price,
+      sold_quantity = tax_lot.sold_quantity,
+      sold_price = tax_lot.sold_price
+    )
+
+def clone_position(position, new_as_of_date = None):
+  """Returns a copy of the given position, optionally overriding the as_of_date."""
+  
+  out = Position()
+  out.portfolio = position.portfolio
+  out.as_of_date = (position.as_of_date if new_as_of_date == None else new_as_of_date)
+  out.symbol = position.symbol
+  out.quantity = position.quantity
+  out.cost_price = position.cost_price
+  out.realized_pl = position.realized_pl
+  
+  return out;
+  
+def latest_positions(portfolio):
+  """Retrieve a list of latest positions for the given portfolio."""
+  
+  latest_date = Position.objects.filter(portfolio__id__exact = portfolio.id).dates('as_of_date', 'day', order = 'DESC')[0:1]
+  if latest_date.count() > 0:
+    return Position.objects.filter(portfolio__id__exact = portfolio.id, as_of_date = latest_date[0]).order_by('symbol')
+  else:
+    return []
 
 def decorate_position_with_prices(position, price, previous_price):
   """Decorate the given position with various pieces of data that require pricing (p/l, cost_basis, market_value)"""
@@ -41,13 +106,13 @@ def refresh_positions(portfolio, transactions = None, force = False):
     
   positions = Position.objects.filter(portfolio__id__exact = portfolio.id)
   if (transactions.count() > 0 and positions.count() == 0) or force:
-    Position.objects.filter(portfolio__id__exact = portfolio.id).delete()
+    positions.delete()
     _refresh_positions_from_transactions(transactions)
 
 #-------------------\
 #  LOCAL FUNCTIONS  |
 #-------------------/
-  
+
 def _refresh_positions_from_transactions(transactions):
   if len(transactions) == 0:
     return
@@ -66,7 +131,7 @@ def _refresh_positions_from_transactions(transactions):
   cash = {}
   last_cash = Position(portfolio = transactions[0].portfolio,
       as_of_date = datetime.now().date(),
-      symbol = Quote.CASH_SYMBOL,
+      symbol = CASH_SYMBOL,
       quantity = 0,
       cost_price = 1.0,
       realized_pl = 0.0
@@ -74,8 +139,8 @@ def _refresh_positions_from_transactions(transactions):
   
   for date in dates:
     current_transactions = transactions_by_date.get(date)
-    current_lot_set = dict([ (symbol, [lot.clone() for lot in lots]) for symbol, lots in last_lot_set.items()])
-    current_cash = last_cash.clone(date)
+    current_lot_set = dict([ (symbol, [clone_tax_lot(lot) for lot in lots]) for symbol, lots in last_lot_set.items()])
+    current_cash = clone_position(last_cash, date)
     
     for transaction in current_transactions:
       if transaction.type == 'DEPOSIT' or transaction.type == 'SELL':
@@ -93,10 +158,10 @@ def _refresh_positions_from_transactions(transactions):
         current_lot_set[transaction.symbol] = lots
         
         if transaction.type == 'BUY':
-          buy_in_lots(lots, transaction.as_of_date, transaction.quantity, transaction.price)
+          _buy_in_lots(lots, transaction.as_of_date, transaction.quantity, transaction.price)
                       
         elif transaction.type == 'SELL':
-          sell_in_lots(lots, transaction.quantity, transaction.price)
+          _sell_in_lots(lots, transaction.quantity, transaction.price)
     
     last_lot_set = lot_sets[date] = current_lot_set
     last_cash = cash[date] = current_cash
@@ -178,3 +243,4 @@ def _sell_in_lots(lots, quantity, price):
       sold_price = price)
   
     lots.append(lot)
+    

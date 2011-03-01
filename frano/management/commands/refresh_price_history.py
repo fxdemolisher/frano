@@ -2,9 +2,12 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-from django.core.management.base import BaseCommand
-from frano.models import Quote
 from sys import stdout
+
+from django.core.management.base import BaseCommand
+
+from frano.quotes.models import Quote
+from frano.quotes.models import refresh_price_history
 
 class Command(BaseCommand):
   help = 'Refreshes the price history for all quotes'
@@ -15,6 +18,6 @@ class Command(BaseCommand):
     stdout.write('Found %d quotes to refresh price history\nStarting...\n' % quotes.count())
     for quote in quotes:
       stdout.write('Refreshing price history for: %s\n' % quote.symbol)
-      quote.refresh_history()
+      refresh_price_history(quote)
     
     stdout.write('Successfully refreshed priced history\n')

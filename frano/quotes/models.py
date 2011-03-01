@@ -4,13 +4,12 @@
 
 import csv
 
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
-
 from urllib import urlopen
 
-from models import PriceHistory
-from models import Quote
+from django.db import models
 
 #-------------\
 #  CONSTANTS  |
@@ -19,11 +18,60 @@ from models import Quote
 CASH_SYMBOL = '*CASH'
 HISTORY_START_DATE = date(1900, 1, 1)
 
-#---------------------\
-#  EXPOSED FUNCTIONS  |
-#---------------------/
+#----------\
+#  MODELS  |
+#----------/
 
-def get_quotes_by_symbols(symbols):
+class Quote(models.Model):
+  symbol = models.CharField(max_length = 5, unique = True)
+  name = models.CharField(max_length = 255)
+  price = models.FloatField()
+  last_trade = models.DateTimeField()
+  cash_equivalent = models.BooleanField()
+  
+  class Meta:
+    db_table = 'quote'
+  
+  def __unicode__(self):
+    return "%s - %s" % (self.symbol, self.name)
+    
+class PriceHistory(models.Model):
+  quote = models.ForeignKey(Quote)
+  as_of_date = models.DateTimeField()
+  price = models.FloatField()
+  
+  class Meta:
+    db_table = 'price_history'
+    unique_together = ( 'quote', 'as_of_date' )
+    
+  def __unicode__(self):
+    return "%s @ %.2f on %s" % (self.quote.symbol, self.price, self.as_of_date.strftime('%Y-%m-%d'))
+  
+#------------\
+#  SERVICES  |
+#------------/
+
+def price_as_of(quote, as_of):
+  """Get the price for quote as of a specific date."""
+  
+  if quote.cash_equivalent or quote.last_trade.date() == as_of:
+    return quote.price
+  else:
+    candidates = quote.pricehistory_set.filter(as_of_date__lte = as_of.strftime('%Y-%m-%d')).order_by('-as_of_date')[0:1]
+    return (candidates[0].price if candidates.count() > 0 else 0)
+  
+def previous_close_price(quote):
+  """Get the previous close price for a quote."""
+  
+  return price_as_of(quote, quote.last_trade.date() - timedelta(days = 1))
+
+def quote_by_symbol(symbol):
+  """Retrieve a quote by symbol."""
+
+  return quotes_by_symbols([ symbol ])[0]
+
+def quotes_by_symbols(symbols, force_retrieve = False):
+  """Retrieve a quotes by a list of symbols."""
   
   # load or prime quotes for each symbol
   existing_quotes = dict([ (q.symbol, q) for q in Quote.objects.filter(symbol__in = symbols) ])
@@ -31,17 +79,24 @@ def get_quotes_by_symbols(symbols):
   symbols_to_retrieve = []
   for symbol in symbols:
     quote = existing_quotes.get(symbol, None)
+    exists = True
     if quote == None:
       quote = Quote(symbol = symbol, last_trade = datetime.now())
-      
+      exists = False
+            
     quotes[symbol] = quote
-    if symbol != CASH_SYMBOL:
-      symbols_to_retrieve.append(symbol)
-      
-    else:
+    if symbol == CASH_SYMBOL and not exists:
       quote.name = 'US Dollars'
       quote.price = 1.0
       quote.cash_equivalent = True
+      quote.changed = True
+      
+    elif not exists or force_retrieve:
+      symbols_to_retrieve.append(symbol)
+      quote.changed = True
+      
+    else:
+      quote.changed = False
   
   # retrieve fresh prices from yahoo
   if len(symbols_to_retrieve) > 0:
@@ -68,9 +123,15 @@ def get_quotes_by_symbols(symbols):
       
   # save all changes
   for quote in quotes.values():
-    quote.save()
+    if quote.changed:
+      quote.save()
+    
+    if quote.pricehistory_set.count() == 0:
+      refresh_price_history(quote)
+    
+  return quotes.values()
 
-def refresh_price_history_for_quote(quote):
+def refresh_price_history(quote):
   history = []
   u = None
   try:
