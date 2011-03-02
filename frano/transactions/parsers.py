@@ -214,16 +214,8 @@ def parse_zecco_transactions(reader):
         'linked_symbol': linked_symbol,
       })
   
-  # split processing - adjust price and quantity of all pre-split transactions
-  # the double loop is intentional since a stock can split more than once, start processing by earliest date
   splits = [ split for sub_list in split_map.values() for split in sub_list ]
-  for split in sorted(splits, key = (lambda split: split.as_of_date)):
-    for transaction in parsed:
-      if transaction.get('symbol') == split.from_symbol and transaction.get('date') <= split.as_of_date:
-        factor = split.to_quantity / split.from_quantity
-        transaction['symbol'] = split.to_symbol
-        transaction['quantity'] = transaction.get('quantity') * factor
-        transaction['price'] = transaction.get('price') / factor
+  _apply_splits(parsed, splits)
     
   return parsed
 
@@ -541,3 +533,18 @@ def _record_split(split_map, as_of_date, symbol, quantity):
         
     if not found:
       splits_on_date.append(Split(as_of_date, symbol, quantity))
+
+def _apply_splits(parsed, splits):
+  """
+    split processing - adjust price and quantity of all pre-split transactions
+    the double loop is intentional since a stock can split more than once, start processing by earliest date
+  """
+  
+  for split in sorted(splits, key = (lambda split: split.as_of_date)):
+    for transaction in parsed:
+      if transaction.get('symbol') == split.from_symbol and transaction.get('date') <= split.as_of_date:
+        factor = split.to_quantity / split.from_quantity
+        transaction['symbol'] = split.to_symbol
+        transaction['quantity'] = transaction.get('quantity') * factor
+        transaction['price'] = transaction.get('price') / factor
+
