@@ -2,11 +2,12 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
-import csv
+import json
 
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from urllib import quote_plus
 from urllib import urlopen
 
 from django.db import models
@@ -16,7 +17,7 @@ from django.db import models
 #-------------/
 
 CASH_SYMBOL = '*CASH'
-HISTORY_START_DATE = date(1900, 1, 1)
+PRICE_HISTORY_LIMIT_IN_DAYS = 365 * 10
 
 #----------\
 #  MODELS  |
@@ -33,7 +34,7 @@ class Quote(models.Model):
     db_table = 'quote'
   
   def __unicode__(self):
-    return "%s - %s" % (self.symbol, self.name)
+    return '%s - %s' % (self.symbol, self.name)
     
 class PriceHistory(models.Model):
   quote = models.ForeignKey(Quote)
@@ -45,7 +46,7 @@ class PriceHistory(models.Model):
     unique_together = ( 'quote', 'as_of_date' )
     
   def __unicode__(self):
-    return "%s @ %.2f on %s" % (self.quote.symbol, self.price, self.as_of_date.strftime('%Y-%m-%d'))
+    return '%s @ %.2f on %s' % (self.quote.symbol, self.price, self.as_of_date.strftime('%Y-%m-%d'))
   
 #------------\
 #  SERVICES  |
@@ -100,27 +101,23 @@ def quotes_by_symbols(symbols, force_retrieve = False):
   
   # retrieve fresh prices from yahoo
   if len(symbols_to_retrieve) > 0:
-    u = None
-    try:
-      u = urlopen('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=sl1d1t1n&e=.csv' % (",".join(symbols_to_retrieve)))
-      for row in csv.reader(u):
-        if len(row) < 5:
-          continue
+    csv_url = ('http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=sl1d1t1n&e=.csv' % (','.join(symbols_to_retrieve)))
+    csv_columns = 'symbol,price,date,time,name'
+    for row in _yql_csv_to_json(csv_url, csv_columns):
+      price = row['price']
+      tradeDate = row['date']
+      tradeTime = row['time']
       
-        quote = quotes.get(row[0])
-        quote.cash_equivalent = row[1].endswith('%')
-        quote.price = (1.0 if quote.cash_equivalent else float(row[1]))
-        quote.name = row[4]
-      
-        if row[2] != 'N/A' and row[3] != 'N/A':
-          month, day, year = [int(f) for f in row[2].split('/')]
-          time = datetime.strptime(row[3], '%I:%M%p')
-          quote.last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
+      quote = quotes.get(row['symbol'])
+      quote.cash_equivalent = price.endswith('%')
+      quote.price = (1.0 if quote.cash_equivalent else float(price))
+      quote.name = row['name']
+    
+      if tradeDate != 'N/A' and tradeTime != 'N/A':
+        month, day, year = [int(f) for f in tradeDate.split('/')]
+        time = datetime.strptime(tradeTime, '%I:%M%p')
+        quote.last_trade = datetime(year, month, day, time.hour, time.minute, time.second)
         
-    finally:
-      if u != None:
-        u.close()
-      
   # save all changes
   for quote in quotes.values():
     if quote.changed:
@@ -133,36 +130,28 @@ def quotes_by_symbols(symbols, force_retrieve = False):
 
 def refresh_price_history(quote):
   history = []
-  u = None
-  try:
-    end_date = quote.last_trade + timedelta(days = 1)
-    u = urlopen('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (
-        quote.symbol, 
-        (HISTORY_START_DATE.month - 1), 
-        HISTORY_START_DATE.day, 
-        HISTORY_START_DATE.year, 
-        (end_date.month - 1), 
-        end_date.day, 
-        end_date.year)
-      )
-    
-    reader = csv.reader(u)
-    header_row = reader.next()
-    if len(header_row) < 7:
-      return
-    
-    for row in reader:
-      current = PriceHistory()
-      current.quote = quote
-      current.as_of_date = datetime.strptime(row[0], '%Y-%m-%d')
-      current.price = float(row[6])
-      
-      history.append(current)
-    
-  finally:
-    if u != None:
-      u.close()
+  
+  start_date = quote.last_trade + timedelta(days = 0 - PRICE_HISTORY_LIMIT_IN_DAYS)
+  end_date = quote.last_trade + timedelta(days = 1)
+  csv_columns = 'date,open,high,low,close,volume,adj_close'
+  csv_url = ('http://ichart.finance.yahoo.com/table.csv?s=%s&a=%.2d&b=%.2d&c=%.4d&d=%.2d&e=%.2d&f=%.4d&g=d&ignore=.csv' % (
+      quote.symbol, 
+      (start_date.month - 1), 
+      start_date.day, 
+      start_date.year, 
+      (end_date.month - 1), 
+      end_date.day, 
+      end_date.year)
+    )
 
+  for row in _yql_csv_to_json(csv_url, csv_columns, PRICE_HISTORY_LIMIT_IN_DAYS, 2):
+    current = PriceHistory()
+    current.quote = quote
+    current.as_of_date = datetime.strptime(row['date'], '%Y-%m-%d')
+    current.price = float(row['adj_close'])
+    
+    history.append(current)
+    
   if len(history) > 0:
     PriceHistory.objects.filter(quote__id__exact = quote.id).delete()
     for current in history:
@@ -175,3 +164,30 @@ def refresh_price_history(quote):
 #-------------------\
 #  LOCAL FUNCTIONS  |
 #-------------------/
+
+def _yql_csv_to_json(csv_url, csv_columns, limit = None, offset = None):
+  u = None
+  try:
+    
+    yql_suffix = ''
+    if limit != None and offset != None:
+      yql_suffix = yql_suffix + (' limit %d offset %d' % (limit, offset))
+    
+    yql_query = ("select * from csv where url='%s' and columns='%s' %s" % (csv_url, csv_columns, yql_suffix))
+    u = urlopen('http://query.yahooapis.com/v1/public/yql?q=%s&format=json&callback=' % quote_plus(yql_query))
+    
+    packet = json.loads(u.read())
+    out = [ ]
+    if packet.has_key('query'):
+      count = packet['query']['count']
+      if count == 1:
+        out.append(packet['query']['results']['row'])
+      elif count > 0:
+        out = packet['query']['results']['row']
+    
+    return out
+
+  finally:
+    if u != None:
+      u.close()
+      
