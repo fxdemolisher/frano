@@ -58,11 +58,11 @@ class Transaction(models.Model):
   portfolio = models.ForeignKey(Portfolio)
   type = models.CharField(max_length = 10, choices = TRANSACTION_TYPES)
   as_of_date = models.DateField()
-  symbol = models.CharField(max_length = 5)
+  symbol = models.CharField(max_length = 10)
   quantity = models.FloatField()
   price = models.FloatField()
   total = models.FloatField()
-  linked_symbol = models.CharField(max_length = 5, null = True)
+  linked_symbol = models.CharField(max_length = 10, null = True)
   
   class Meta:
     db_table = 'transaction'

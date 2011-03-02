@@ -23,7 +23,7 @@ HISTORY_START_DATE = date(1900, 1, 1)
 #----------/
 
 class Quote(models.Model):
-  symbol = models.CharField(max_length = 5, unique = True)
+  symbol = models.CharField(max_length = 10, unique = True)
   name = models.CharField(max_length = 255)
   price = models.FloatField()
   last_trade = models.DateTimeField()

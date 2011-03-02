@@ -188,7 +188,7 @@ def import_form(request, portfolio, is_sample, read_only):
           by_date_map.get(transaction.as_of_date).append(transaction)
         
         for transaction in transactions:
-          if len(transaction.symbol) < 1 or len(transaction.symbol) > 5:
+          if len(transaction.symbol) < 1 or len(transaction.symbol) > 10:
             raise Exception("Invalid symbol: %s" % transaction.symbol)
           
           is_duplicate = False
@@ -269,7 +269,7 @@ def request_import_type(request, portfolio, is_sample, read_only):
 class TransactionForm(forms.Form):
   type = forms.ChoiceField(choices = TRANSACTION_TYPES)
   as_of_date = forms.DateField()
-  symbol = forms.CharField(min_length = 1, max_length = 5)
+  symbol = forms.CharField(min_length = 1, max_length = 10)
   quantity = forms.FloatField()
   price = forms.FloatField(min_value = 0.01)
   commission = forms.FloatField(min_value = 0.01, required = False)
@@ -277,11 +277,11 @@ class TransactionForm(forms.Form):
 class UpdateTransactionForm(forms.Form):
   type = forms.ChoiceField(choices = TRANSACTION_TYPES, required = False)
   date = forms.DateField(required = False)
-  symbol = forms.CharField(required = False, min_length = 1, max_length = 5)
+  symbol = forms.CharField(required = False, min_length = 1, max_length = 10)
   quantity = forms.FloatField(required = False)
   price = forms.FloatField(required = False, min_value = 0.01)
   total = forms.FloatField(required = False)
-  linkedsymbol = forms.CharField(required = False, max_length = 5) # underscore removed due to JS split issue
+  linkedsymbol = forms.CharField(required = False, max_length = 10) # underscore removed due to JS split issue
   
   def __init__(self, data):
     forms.Form.__init__(self, data)
@@ -313,11 +313,11 @@ class RequestImportForm(forms.Form):
 class ImportTransactionForm(forms.Form):
   type = forms.ChoiceField(choices = TRANSACTION_TYPES)
   as_of_date = forms.DateField()
-  symbol = forms.CharField(min_length = 1, max_length = 5)
+  symbol = forms.CharField(min_length = 1, max_length = 10)
   quantity = forms.FloatField()
   price = forms.FloatField(min_value = 0.01)
   total = forms.FloatField()
-  linked_symbol = forms.CharField(max_length = 5, required = False)
+  linked_symbol = forms.CharField(max_length = 10, required = False)
   exclude = forms.BooleanField(required = False)
 
 ImportTransactionFormSet = formset_factory(ImportTransactionForm)

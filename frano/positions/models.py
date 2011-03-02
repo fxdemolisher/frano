@@ -23,7 +23,7 @@ QUANTITY_TOLERANCE = 0.000001
 class Position(models.Model):
   portfolio = models.ForeignKey(Portfolio)
   as_of_date = models.DateField()
-  symbol = models.CharField(max_length = 5)
+  symbol = models.CharField(max_length = 10)
   quantity = models.FloatField()
   cost_price = models.FloatField()
   realized_pl = models.FloatField()

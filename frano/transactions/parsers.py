@@ -44,7 +44,7 @@ def parse_frano_transactions(reader):
         'price' : float(row[4]),
         'total' : float(row[5]),
         'linked_symbol' : (row[6] if row[6] != '' else None),
-      });
+      })
       
   return parsed
 
@@ -78,7 +78,7 @@ def parse_google_transactions(reader):
         'quantity' : quantity,
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
-      });
+      })
       
   return parsed
 
@@ -138,17 +138,19 @@ def parse_ameritrade_transactions(reader):
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
         'linked_symbol': linked_symbol,
-      });
+      })
       
   return parsed
 
 def parse_zecco_transactions(reader):
+  split_map = { }
+  
   parsed = []
   for row in reader:
+    as_of_date = datetime.strptime(row[0], '%m/%d/%Y').date()
     account_type = row[1]
     transaction_type = row[2]
     description_field = row[5]
-    date_field = row[0]
     symbol_field = row[3]
     quantity_field = row[7]
     price_field = row[8]
@@ -187,6 +189,12 @@ def parse_zecco_transactions(reader):
       price = 1.0
       commission = 0.0
       linked_symbol = symbol_field
+    
+      
+    # splits are processed after all the parsing is done, just record and skip them
+    elif transaction_type in [ 'Security Journal' ] and description_field.endswith('SPLIT'):
+      _record_split(split_map, as_of_date, symbol_field, float(quantity_field))
+      continue
       
     # otherwise just skip it for now
     else:
@@ -197,15 +205,26 @@ def parse_zecco_transactions(reader):
       commission_multiplier = -1.0
     
     parsed.append({
-        'date' : datetime.strptime(date_field, '%m/%d/%Y').date(),
+        'date' : as_of_date,
         'type' : type,
         'symbol' : symbol,
         'quantity' : quantity,
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
         'linked_symbol': linked_symbol,
-      });
-      
+      })
+  
+  # split processing - adjust price and quantity of all pre-split transactions
+  # the double loop is intentional since a stock can split more than once, start processing by earliest date
+  splits = [ split for sub_list in split_map.values() for split in sub_list ]
+  for split in sorted(splits, key = (lambda split: split.as_of_date)):
+    for transaction in parsed:
+      if transaction.get('symbol') == split.from_symbol and transaction.get('date') <= split.as_of_date:
+        factor = split.to_quantity / split.from_quantity
+        transaction['symbol'] = split.to_symbol
+        transaction['quantity'] = transaction.get('quantity') * factor
+        transaction['price'] = transaction.get('price') / factor
+    
   return parsed
 
 def parse_scottrade_transactions(reader):
@@ -247,7 +266,7 @@ def parse_scottrade_transactions(reader):
         'quantity' : (price * quantity),
         'price' : 1.0,
         'total' : (price * quantity),
-      });
+      })
       
       symbol = symbol_field
       type = 'BUY'
@@ -274,7 +293,7 @@ def parse_scottrade_transactions(reader):
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
         'linked_symbol': linked_symbol,
-      });
+      })
       
   return parsed
 
@@ -320,7 +339,7 @@ def parse_charles_transactions(reader):
         'quantity' : (price * quantity),
         'price' : 1.0,
         'total' : (price * quantity),
-      });
+      })
       
       type = 'BUY'
       commission = 0.0
@@ -346,7 +365,7 @@ def parse_charles_transactions(reader):
         'price' : price,
         'total' : ((quantity * price) + (commission_multiplier * commission)),
         'linked_symbol': linked_symbol,
-      });
+      })
       
   return parsed
 
@@ -403,7 +422,7 @@ def parse_fidelity_transactions(reader):
         'price' : price,
         'total' : total,
         'linked_symbol': linked_symbol,
-      });
+      })
       
   return parsed
 
@@ -435,7 +454,7 @@ def parse_mercer_401_transactions(reader):
         'quantity' : amount,
         'price' : 1.0,
         'total' : amount,
-      });
+      })
       
       type = 'BUY'
     
@@ -455,7 +474,7 @@ def parse_mercer_401_transactions(reader):
         'price' : 1.0,
         'total' : amount,
         'linked_symbol' : symbol,
-      });
+      })
       
       type = ('BUY' if action == 'DIVIDEND' else 'SELL')
       quantity = abs(quantity)
@@ -472,10 +491,53 @@ def parse_mercer_401_transactions(reader):
         'price' : price,
         'total' : amount,
         'linked_symbol' : linked_symbol,
-      });
+      })
       
   return parsed
+
+#-----------------\
+#  VALUE OBJECTS  |
+#-----------------/
+
+class Split:
+  def __init__(self, as_of_date, symbol, quantity):
+    self.as_of_date = as_of_date
+    
+    if quantity > 0:
+      self.to_symbol = symbol
+      self.to_quantity = quantity
+      
+    else:
+      self.from_symbol = symbol
+      self.from_quantity = abs(quantity)
+
+  def __repr__(self):
+    return "Split: %.4f of %s to %.4f of %s" % (self.from_quantity, self.from_symbol, self.to_quantity, self.to_symbol)
 
 #-------------------\
 #  LOCAL FUNCTIONS  |
 #-------------------/
+
+def _record_split(split_map, as_of_date, symbol, quantity):
+  splits_on_date = split_map.get(as_of_date, None)
+  if splits_on_date == None:
+    splits_on_date = [ Split(as_of_date, symbol, quantity) ]
+    split_map[as_of_date] = splits_on_date
+  
+  else:
+    found = False
+    for split in splits_on_date:
+      if quantity > 0 and split.from_symbol != None and split.from_symbol.startswith(symbol):
+        split.to_symbol = symbol
+        split.to_quantity = quantity
+        found = True
+        break
+        
+      elif split.to_symbol != None and symbol.startswith(split.to_symbol):
+        split.from_symbol = symbol
+        split.from_quantity = abs(quantity)
+        found = True
+        break
+        
+    if not found:
+      splits_on_date.append(Split(as_of_date, symbol, quantity))
