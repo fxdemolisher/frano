@@ -79,11 +79,11 @@ $(function() {
     var requestedMarketValue = totalMarketValue * (parseFloat($(this).val()) / 100);
     
     if(requestedMarketValue < currentMarketValue) {
-      var sellQuantity = (currentMarketValue - requestedMarketValue) / price;
+      var sellQuantity = Math.ceil((currentMarketValue - requestedMarketValue) / price);
       row.find(".buy INPUT").val('0.00');
       row.find(".sell INPUT").val(sellQuantity.toFixed(2));
     } else {
-      var buyQuantity = (requestedMarketValue - currentMarketValue) / price;
+      var buyQuantity = Math.floor((requestedMarketValue - currentMarketValue) / price);
       row.find(".buy INPUT").val(buyQuantity.toFixed(2));
       row.find(".sell INPUT").val('0.00');
     }
