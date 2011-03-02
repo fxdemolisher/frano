@@ -12,7 +12,6 @@ $(function() {
     var val = $(this).val();
     var isCash = (val == 'DEPOSIT' || val == 'WITHDRAW' || val == 'ADJUST');
     var wasCash = (lastTransactionType == 'DEPOSIT' || lastTransactionType == 'WITHDRAW' || lastTransactionType == 'ADJUST');
-    lastTransactionType = val;
     
     if(isCash != wasCash) {
       if(isCash) {
@@ -26,6 +25,14 @@ $(function() {
     
     $(".securitiesField").each(function (idx, obj) { $.validationEngine.closePrompt(obj) });
     $(".cashField").each(function (idx, obj) { $.validationEngine.closePrompt(obj) });
+    
+    if(lastTransactionType != val && val == 'ADJUST') {
+      $(".securitiesField[name=symbol]").attr("disabled", "").val("").css("background-color", "#FFFFFF");
+      $(".cashField[name=symbol]").attr("disabled", "disabled").val("").css("background-color", "#CCCCCC");
+    }
+    
+    lastTransactionType = val;
+    
   });
   
   $("#addTransactionForm input").keypress(function(e) {
@@ -35,8 +42,8 @@ $(function() {
     }
   });
   
-  $("#quantity, #price, #comission").change(function() {
-    $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0));
+  $("#quantity, #price, #commission").change(function() {
+    $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#commission', 0.0));
   });
   
   $("#addTransaction").click(function () {
@@ -79,10 +86,10 @@ $(function() {
       return;
     }
     
-    $.getJSON('/priceQuote.json', { day: asOf.getDate(), month: asOf.getMonth() + 1, year: asOf.getFullYear(), symbol: symbol }, function(data, textStatus) {
+    $.getJSON('/priceQuote.json', { day: asOf.getDate(), month: asOf.getMonth() + 1, year: asOf.getFullYear(), symbol: symbol.toUpperCase() }, function(data, textStatus) {
       if(textStatus == 'success' && data.price > 0) {
         $('#price').val(data.price);
-        $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#comission', 0.0));
+        $('#total').val((valueToFloat('#quantity', 0.0) * valueToFloat('#price', 0.0)) + valueToFloat('#commission', 0.0));
       }
     });
     

@@ -61,17 +61,27 @@ def add(request, portfolio, is_sample, read_only):
     
     type = form.cleaned_data.get('type').encode('UTF-8')
     
-    transaction = Transaction()
-    transaction.portfolio = portfolio
-    transaction.type = type
-    transaction.as_of_date = form.cleaned_data.get('as_of_date')
-    transaction.symbol = form.cleaned_data.get('symbol').encode('UTF-8').upper()
-    transaction.quantity = form.cleaned_data.get('quantity')
-    transaction.price = form.cleaned_data.get('price')
-    transaction.total = (transaction.quantity * transaction.price) + commission
-    transaction.save()
+    symbol = form.cleaned_data.get('symbol').encode('UTF-8').upper()
+    linked_symbol = None
+    if type == 'ADJUST':
+      linked_symbol = symbol
+      
+    if type in ['DEPOSIT', 'WITHDRAW', 'ADJUST']:
+      symbol = CASH_SYMBOL
     
-    refresh_positions(portfolio, force = True)
+    if symbol != None and len(symbol) > 0:
+      transaction = Transaction()
+      transaction.portfolio = portfolio
+      transaction.type = type
+      transaction.as_of_date = form.cleaned_data.get('as_of_date')
+      transaction.symbol = symbol
+      transaction.quantity = form.cleaned_data.get('quantity')
+      transaction.price = form.cleaned_data.get('price')
+      transaction.total = (transaction.quantity * transaction.price) + commission
+      transaction.linked_symbol = linked_symbol
+      transaction.save()
+    
+      refresh_positions(portfolio, force = True)
   
   return redirect_to_portfolio_action('transactions', portfolio)
 
@@ -269,7 +279,7 @@ def request_import_type(request, portfolio, is_sample, read_only):
 class TransactionForm(forms.Form):
   type = forms.ChoiceField(choices = TRANSACTION_TYPES)
   as_of_date = forms.DateField()
-  symbol = forms.CharField(min_length = 1, max_length = 10)
+  symbol = forms.CharField(min_length = 1, max_length = 10, required = False)
   quantity = forms.FloatField()
   price = forms.FloatField(min_value = 0.01)
   commission = forms.FloatField(min_value = 0.01, required = False)
