@@ -36,7 +36,7 @@ def new_portfolio(request, user):
   if not form.is_valid():
     return redirect("/account.html")
   
-  name = _get_effective_portfolio_name(form.cleaned_data.get('portfolioName').encode('UTF-8'), names)
+  name = _get_effective_portfolio_name(user, form.cleaned_data.get('portfolioName').encode('UTF-8'))
   portfolio = create_portfolio(user, name)
   
   return redirect_to_portfolio_action('importTransactions', portfolio)
@@ -46,7 +46,7 @@ def new_portfolio(request, user):
 def set_portfolio_name(request, user, portfolio, is_sample, read_only):
   form = PortfolioNameForm(request.POST)
   if form.is_valid():
-    portfolio.name = _get_effective_portfolio_name(form.cleaned_data.get('portfolioName').encode('UTF-8'), names)
+    portfolio.name = _get_effective_portfolio_name(user, form.cleaned_data.get('portfolioName').encode('UTF-8'))
     portfolio.save()
     
   return redirect("/account.html")

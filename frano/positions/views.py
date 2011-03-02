@@ -34,6 +34,7 @@ PERFORMANCE_BENCHMARK_SYMBOL = 'ACWI'
 
 @portfolio_manipulation_decorator
 def positions(request, portfolio, is_sample, read_only):
+  
   transactions = Transaction.objects.filter(portfolio__id__exact = portfolio.id).order_by('-as_of_date', '-id')
   refresh_positions(portfolio, transactions)
   
@@ -124,6 +125,7 @@ def read_only_income(request, portfolio):
 #-------------------/
 
 def _decorate_positions_for_display(positions, showClosedPositions):
+  
   symbols = [ position.symbol for position in positions ] + [ CASH_SYMBOL ]
   quotes = dict((quote.symbol, quote) for quote in quotes_by_symbols(symbols))
   as_of_date = min([quote.last_trade.date() for symbol, quote in quotes.items()])
@@ -216,6 +218,7 @@ def _get_performance_history(portfolio, days):
                                                      P.symbol
                                                 FROM position P
                                                WHERE P.symbol != '*CASH'
+                                                 AND P.portfolio_id = %(portfolio_id)s
                                             ) S
                                             JOIN quote Q ON (Q.symbol = S.symbol)
                                             JOIN price_history H ON (H.quote_id = Q.id)
@@ -224,9 +227,10 @@ def _get_performance_history(portfolio, days):
                                                 SELECT P.portfolio_id,
                                                        MIN(as_of_date) as start_date
                                                   FROM position P
+                                                 WHERE P.portfolio_id = %(portfolio_id)s
                                               GROUP BY P.portfolio_id
                                             ) D ON (D.portfolio_id = S.portfolio_id AND H.as_of_date >= D.start_date)
-                                      WHERE DATEDIFF(NOW(), H.as_of_date) < %s
+                                      WHERE DATEDIFF(NOW(), H.as_of_date) < %(days)s
                                    ) D
                                    JOIN 
                                    (
@@ -234,6 +238,7 @@ def _get_performance_history(portfolio, days):
                                             P.portfolio_id,
                                             P.as_of_date
                                        FROM position P
+                                      WHERE P.portfolio_id = %(portfolio_id)s
                                    )  P ON (P.portfolio_id = D.portfolio_id AND P.as_of_date <= D.portfolio_date)
                           GROUP BY D.portfolio_id,
                                    D.portfolio_date
@@ -246,6 +251,7 @@ def _get_performance_history(portfolio, days):
                                  T.total
                             FROM transaction T
                            WHERE T.type IN ('DEPOSIT', 'WITHDRAW')
+                             AND T.portfolio_id = %(portfolio_id)s
                         ) T ON (T.portfolio_id = D.portfolio_id AND T.as_of_date = D.portfolio_date)
                GROUP BY D.portfolio_id,
                         D.portfolio_date
@@ -253,12 +259,12 @@ def _get_performance_history(portfolio, days):
              LEFT JOIN quote Q ON (Q.symbol = P.symbol)
              LEFT JOIN price_history H ON (H.quote_id = Q.id AND H.as_of_date = D.portfolio_date)
        WHERE P.quantity <> 0
-         AND P.portfolio_id = %s
+         AND P.portfolio_id = %(portfolio_id)s
     GROUP BY D.portfolio_date
     ORDER BY D.portfolio_date"""
   
   cursor = connection.cursor()
-  cursor.execute(query, [days, portfolio.id])
+  cursor.execute(query, { 'days' : days, 'portfolio_id' : portfolio.id })
   
   benchmark_quote = quote_by_symbol(PERFORMANCE_BENCHMARK_SYMBOL)
   cutoff_date = datetime.now().date() - timedelta(days = DAYS_IN_PERFORMANCE_HISTORY)

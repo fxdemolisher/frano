@@ -93,8 +93,9 @@ def quotes_by_symbols(symbols, force_retrieve = False):
       quote.changed = True
       
     elif not exists or force_retrieve:
-      symbols_to_retrieve.append(symbol)
+      quote.price = 0.0
       quote.changed = True
+      symbols_to_retrieve.append(symbol)
       
     else:
       quote.changed = False
@@ -123,7 +124,7 @@ def quotes_by_symbols(symbols, force_retrieve = False):
     if quote.changed:
       quote.save()
     
-    if quote.pricehistory_set.count() == 0:
+    if not quote.cash_equivalent and quote.price > 0.0 and quote.pricehistory_set.count() == 0:
       refresh_price_history(quote)
     
   return quotes.values()
