@@ -1,4 +1,38 @@
 /================\
+| Release 0.10    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+#130 - Portfolio names in read-only view
+       https://github.com/fxdemolisher/frano/issues#issue/130
+
+Fixes
+-------------------------------------------------------------------------------
+#134 - Fixing scottrade import
+       https://github.com/fxdemolisher/frano/issues#issue/134
+
+#138 - Adding split handling to zecco import
+       https://github.com/fxdemolisher/frano/issues#issue/138
+       
+#135 - Allocating by percentage buys/sells whole shares by default
+       https://github.com/fxdemolisher/frano/issues#issue/135
+       
+#131 - Adjust transactions now allow linking to a symbol when adding
+       https://github.com/fxdemolisher/frano/issues#issue/131
+       
+#136 - Improving performance of quote retrieval and performance summary
+       https://github.com/fxdemolisher/frano/issues#issue/136
+       
+Infrastructure
+-------------------------------------------------------------------------------
+#61  - Code refactor (full refactor of project structure)
+       https://github.com/fxdemolisher/frano/issues#issue/61
+
+#133 - Switching to YQL for quote/historic data
+       https://github.com/fxdemolisher/frano/issues#issue/133
+
+/================\
 | Release 0.9    |
 \================/
 
