@@ -2,11 +2,13 @@
 # Licensed under the MIT license
 # see LICENSE file for copying permission.
 
+from sys import stdout
+
 from django.core.management.base import BaseCommand
 from django.db import connection
-from frano.models import Quote
-from frano.views import PERFORMANCE_BENCHMARK_SYMBOL
-from sys import stdout
+
+from frano.quotes.models import Quote
+from frano.positions.views import PERFORMANCE_BENCHMARK_SYMBOL
 
 class Command(BaseCommand):
   help = 'Cleanup any quotes and price history that are unused'

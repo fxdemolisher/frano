@@ -5,8 +5,8 @@
 import datetime, os, glob
 
 # build info
-BUILD_VERSION = '0.9'
-BUILD_DATETIME = datetime.datetime(2011, 2, 13, 18, 20, 0)
+BUILD_VERSION = '0.10'
+BUILD_DATETIME = datetime.datetime(2011, 3, 02, 18, 51, 0)
 
 # base db set up, the rest is in environment specific setting files
 DATABASE_ENGINE = 'mysql'
@@ -22,7 +22,6 @@ TEMPLATE_LOADERS = ( 'django.template.loaders.app_directories.load_template_sour
 TEMPLATE_DIRS = ( )
 TEMPLATE_CONTEXT_PROCESSORS =  ( 
     'django.core.context_processors.request', 
-    'frano.views.standard_settings_context',
   )
 
 # middleware and app set up
@@ -33,8 +32,13 @@ MIDDLEWARE_CLASSES = (
   )
 
 INSTALLED_APPS = ( 
-    'django.contrib.sessions', 
-    'frano' 
+    'django.contrib.sessions',
+    'frano', 
+    'frano.main',
+    'frano.quotes',
+    'frano.transactions',
+    'frano.account',
+    'frano.positions',
   )
 
 # session settings

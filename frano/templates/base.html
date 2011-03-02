@@ -43,7 +43,7 @@
           </div>
         </a>
         
-        <div class="five columns">
+        <div class="four columns">
           <div class="pageHeading">
             {% if not read_only and user %}
               Portfolio: 
@@ -56,8 +56,8 @@
               </select>
               
             {% else %}
-              {% if read_only and not user %}
-                Want to check out Frano for yourself?
+              {% if read_only %}
+                Portfolio: {{ portfolio.name }}
               {% else %}
                 &nbsp;
               {% endif %}
@@ -65,7 +65,7 @@
           </div>
         </div>
         
-        <div class="two columns">
+        <div class="three columns">
           <div class="userLinks">
             <ul class="horizontallist">
               {% if user %}
@@ -77,7 +77,7 @@
                 {% endif %}
               {% else %}
                 {% if read_only %}
-                  <li><a href="/" class="buttonLink navLink">Try the Demo</a></li>
+                  <li>Want your own? <a href="/" class="buttonLink navLink">Try the Demo</a></li>
                 {% endif %}
                 
                 <div class="signInBox hidden">
