@@ -161,7 +161,7 @@ def _refresh_positions_from_transactions(transactions):
           _buy_in_lots(lots, transaction.as_of_date, transaction.quantity, transaction.price)
                       
         elif transaction.type == 'SELL':
-          _sell_in_lots(lots, transaction.quantity, transaction.price)
+          _sell_in_lots(lots, transaction.as_of_date, transaction.quantity, transaction.price)
     
     last_lot_set = lot_sets[date] = current_lot_set
     last_cash = cash[date] = current_cash
@@ -222,7 +222,7 @@ def _buy_in_lots(lots, date, quantity, price):
     
     lots.append(lot)
   
-def _sell_in_lots(lots, quantity, price):
+def _sell_in_lots(lots, date, quantity, price):
   for lot in lots:
     sold_in_lot = min(lot.quantity - lot.sold_quantity, quantity)
     if sold_in_lot > 0:
