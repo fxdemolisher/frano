@@ -169,11 +169,11 @@ BUTTON {
 
 .wikipediaLink {
   line-height: 12px;
-  font-size: 10px;
   margin-left: 2px;
   vertical-align: top;
   background: url(/img/question_mark.gif) top left no-repeat;
   padding-right: 10px;
+  text-decoration: none;
 }
 
 /*********\
