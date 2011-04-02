@@ -203,7 +203,7 @@ def _get_performance_history(portfolio, days):
       SELECT D.portfolio_date,
              D.deposit,
              D.withdrawal,
-             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value
+             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' OR Q.cash_equivalent = '1' THEN 1.0 ELSE H.price END))) as market_value
         FROM position P
              JOIN
              (
