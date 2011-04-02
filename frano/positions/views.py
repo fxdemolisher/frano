@@ -103,6 +103,14 @@ def income(request, portfolio, is_sample, read_only):
     
   summaries = sorted(summary_map.values(), key = (lambda summary: summary.symbol))
   
+  for summary in summaries:
+      total_summary.market_value = total_summary.market_value + summary.market_value
+      total_summary.cost_basis = total_summary.cost_basis + summary.cost_basis
+      total_summary.unrealized_pl = total_summary.unrealized_pl + summary.unrealized_pl
+      total_summary.realized_pl = total_summary.realized_pl + summary.realized_pl
+  
+  total_summary.unrealized_pl_percent = ((total_summary.market_value / total_summary.cost_basis) - 1) * 100
+  
   context = {
       'read_only' : read_only,
       'summaries': summaries,

@@ -360,6 +360,8 @@ TD.center { text-align: center !important; }
 
 .homepageCopy {line-height:24px;font-size:17px;border-bottom: solid 1px #CCC;padding-bottom:8px;}
 .homepageCopy .highlight {color:#F90;font-weight:bold;font-size:32px;}
+
+.homepageCopySample { height: 155px; }
     
 .legalCopy A {color:#3399cc;}
 .legalCopy LI {line-height:24px;font-size:14px;}

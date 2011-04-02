@@ -34,7 +34,7 @@
               <td>Three Months</td>
               <td>Six Months</td>
               <td>One Year</td>
-              <td>Total</td>
+              <td>Total Income</td>
             </tr>
           </thead>
           <tbody>
@@ -60,7 +60,12 @@
             {% endfor %}
             
             <tr>
-              <td colspan="6">&nbsp;</td>
+              <td>&nbsp;</td>
+              <td>${{ total_summary.market_value|num_format }}</td>
+              <td>${{ total_summary.cost_basis|num_format }}</td>
+              <td class="{{ total_summary.unrealized_pl|sign_choice:'pos,neg,' }}">${{ total_summary.unrealized_pl|num_format }}</td>
+              <td class="{{ total_summary.unrealized_pl|sign_choice:'pos,neg,' }}">{{ total_summary.unrealized_pl_percent|floatformat:2 }}%</td>
+              <td class="{{ total_summary.realized_pl|sign_choice:'pos,neg,' }}">${{ total_summary.realized_pl|num_format }}</td>
               <td class="{{ total_summary.income_one_month|sign_choice:'pos,neg,' }}">${{ total_summary.income_one_month|num_format }}</td>
               <td class="{{ total_summary.income_three_months|sign_choice:'pos,neg,' }}">${{ total_summary.income_three_months|num_format }}</td>
               <td class="{{ total_summary.income_six_months|sign_choice:'pos,neg,' }}">${{ total_summary.income_six_months|num_format }}</td>
