@@ -159,11 +159,11 @@
                             <td class="center">{{ lot.as_of_date|date:'m/d/Y' }}</td>
                             <td>{{ lot.quantity|num_format:"4" }}</td>
                             <td>${{ lot.price|num_format }}</td>
-                            <td>${{ lot.buy_total|num_format }}</td>
+                            <td>${{ lot.total|num_format }}</td>
                             <td class="center">{{ lot.sold_as_of_date|date:'m/d/Y' }}</td>
                             <td>{{ lot.sold_quantity|num_format:"4" }}</td>
                             <td>${{ lot.sold_price|num_format }}</td>
-                            <td>${{ lot.sell_total|num_format }}</td>
+                            <td>${{ lot.sold_total|num_format }}</td>
                             <td class="{{ lot.pl|sign_choice:'pos,neg,' }}">${{ lot.pl|num_format }}</td>
                             <td class="{{ lot.pl|sign_choice:'pos,neg,' }}">{{ lot.pl_percent|floatformat:2 }}%</td>
                           </tr>

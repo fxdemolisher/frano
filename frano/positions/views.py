@@ -156,20 +156,17 @@ def _decorate_positions_with_lots(positions):
   for position in positions:
     lots = []
     for lot in position.lot_set.order_by('-as_of_date'):
-      lot.buy_total = lot.price * lot.quantity
-      lot.sell_total = lot.sold_price * lot.sold_quantity
-      total = max(lot.buy_total, lot.sell_total)
+      total = max(lot.total, lot.sold_total)
       
       days_open = (datetime.now().date() - (lot.as_of_date if lot.as_of_date != None else lot.sold_as_of_date)).days
       if abs(lot.quantity - lot.sold_quantity) < 0.0001:
         lot.status = 'Closed'
-        lot.pl = lot.sold_quantity * (lot.sold_price - lot.price)
+        lot.pl = lot.sold_total - lot.total
       else:
         lot.status = 'Open'
-        open_price = (lot.price if lot.quantity > lot.sold_quantity else lot.sold_price)
-        lot.pl = abs(lot.quantity - lot.sold_quantity) * (position.price - open_price)
+        lot.pl = ((lot.quantity - lot.sold_quantity) * position.price) - (lot.total - lot.sold_total)
       
-      lot.pl_percent = ((lot.pl / total) if total <> 0.0 else 0)
+      lot.pl_percent = (((lot.pl / total) * 100) if total <> 0.0 else 0)
       lots.append(lot)
     
     position.lots = lots
@@ -191,7 +188,7 @@ def _get_summary(positions, transactions):
   previous_market_value = 0
   for position in positions:
     market_value += position.market_value
-    cost_basis += position.cost_price * position.quantity
+    cost_basis += position.cost_basis
     realized_pl += position.realized_pl
     previous_market_value += position.previous_market_value
   
