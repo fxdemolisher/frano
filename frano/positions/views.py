@@ -155,22 +155,21 @@ def _decorate_positions_for_display(positions, showClosedPositions):
 def _decorate_positions_with_lots(positions):
   for position in positions:
     lots = []
-    for lot in position.taxlot_set.order_by('-as_of_date'):
-      lot.cost_basis = lot.cost_price * lot.quantity
-      lot.unrealized_pl = (lot.quantity - lot.sold_quantity) * (position.price - lot.cost_price)
-      lot.unrealized_pl_percent = ((((position.price / lot.cost_price) - 1) * 100) if lot.cost_price <> 0 and abs(lot.unrealized_pl) > 0.01 else 0)
-      lot.realized_pl = lot.sold_quantity * (lot.sold_price - lot.cost_price)
+    for lot in position.lot_set.order_by('-as_of_date'):
+      lot.buy_total = lot.price * lot.quantity
+      lot.sell_total = lot.sold_price * lot.sold_quantity
+      total = max(lot.buy_total, lot.sell_total)
       
-      days_open = (datetime.now().date() - lot.as_of_date).days
+      days_open = (datetime.now().date() - (lot.as_of_date if lot.as_of_date != None else lot.sold_as_of_date)).days
       if abs(lot.quantity - lot.sold_quantity) < 0.0001:
         lot.status = 'Closed'
-        
-      elif days_open <= 365:
-        lot.status = 'Short'
-        
+        lot.pl = lot.sold_quantity * (lot.sold_price - lot.price)
       else:
-        lot.status = 'Long'
-    
+        lot.status = 'Open'
+        open_price = (lot.price if lot.quantity > lot.sold_quantity else lot.sold_price)
+        lot.pl = abs(lot.quantity - lot.sold_quantity) * (position.price - open_price)
+      
+      lot.pl_percent = ((lot.pl / total) if total <> 0.0 else 0)
       lots.append(lot)
     
     position.lots = lots

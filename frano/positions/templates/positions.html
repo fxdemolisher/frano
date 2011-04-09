@@ -138,32 +138,34 @@
                     <table class="dataTable lotTable" width="100%" cellpadding="0" cellspacing="0">
                       <thead>
                         <tr>
-                          <td class="center">Date</td>
-                          <td>Quantity</td>
-                          <td>Cost Price</td>
-                          <td>Cost Basis<a href="http://en.wikipedia.org/wiki/Cost_basis" class="wikipediaLink" target="_blank">&nbsp;</a></td>
-                          <td>Unreal. P/L $</td>
-                          <td>Unreal. P/L %</td>
-                          <td>Quantity Sold</td>
-                          <td>Avg. Sell Price</td>
-                          <td>Realized P/L $</td>                                
                           <td class="center">Status</td>
+                          <td class="center">Bought</td>
+                          <td>Quantity</td>
+                          <td>Price</td>
+                          <td>Total<a href="http://en.wikipedia.org/wiki/Cost_basis" class="wikipediaLink" target="_blank">&nbsp;</a></td>
+                          <td class="center">Sold</td>
+                          <td>Quantity</td>
+                          <td>Price</td>
+                          <td>Total</td>
+                          <td>P/L $</td>
+                          <td>P/L %</td>
                           <td>&nbsp;</td>
                         </tr>
                       </thead>
                       <tbody>
                         {% for lot in position.lots %}
                           <tr>
+                            <td class="center">{{ lot.status }}
                             <td class="center">{{ lot.as_of_date|date:'m/d/Y' }}</td>
                             <td>{{ lot.quantity|num_format:"4" }}</td>
-                            <td>${{ lot.cost_price|num_format }}</td>
-                            <td>${{ lot.cost_basis|num_format }}</td>
-                            <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">${{ lot.unrealized_pl|num_format }}</td>
-                            <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">{{ lot.unrealized_pl_percent|floatformat:2 }}%</td>
+                            <td>${{ lot.price|num_format }}</td>
+                            <td>${{ lot.buy_total|num_format }}</td>
+                            <td class="center">{{ lot.sold_as_of_date|date:'m/d/Y' }}</td>
                             <td>{{ lot.sold_quantity|num_format:"4" }}</td>
                             <td>${{ lot.sold_price|num_format }}</td>
-                            <td class="{{ lot.realized_pl|sign_choice:'pos,neg,' }}">${{ lot.realized_pl|num_format }}</td>
-                            <td class="center">{{ lot.status }}
+                            <td>${{ lot.sell_total|num_format }}</td>
+                            <td class="{{ lot.pl|sign_choice:'pos,neg,' }}">${{ lot.pl|num_format }}</td>
+                            <td class="{{ lot.pl|sign_choice:'pos,neg,' }}">{{ lot.pl_percent|floatformat:2 }}%</td>
                           </tr>
                         {% endfor %}
                       </tbody>
