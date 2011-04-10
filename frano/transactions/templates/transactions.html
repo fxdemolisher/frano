@@ -117,6 +117,7 @@
                 <td>Symbol</td>
                 <td>Qty</td>
                 <td>Price</td>
+                <td>Fees</td>
                 <td>Total</td>
                 <td>Linked To</td>
                 <td>&nbsp;</td>
@@ -158,6 +159,9 @@
                       {% else %}
                         ${{ transaction.price|num_format }}
                       {% endifnotequal %}
+                    </td>
+                    <td>
+                      ${{ transaction.fees|num_format }}
                     </td>
                     <td>
                       <div class="inline-editable editable-transaction-field" id="edit_{{ portfolio.id }}_{{ transaction.id }}_total_83">${{ transaction.total|num_format:"4" }}</div>

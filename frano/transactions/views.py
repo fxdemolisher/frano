@@ -42,6 +42,9 @@ def transactions(request, portfolio, is_sample, read_only):
   if symbol_filter != None and symbol_filter != '':
     transactions = transactions.filter(symbol = symbol_filter)
   
+  for transaction in transactions:
+    transaction.fees = abs(transaction.total - (transaction.price * transaction.quantity))
+  
   context = {
       'symbols' : symbols.difference([CASH_SYMBOL]),
       'transaction_sets' : [ transactions[0:TRANSACTIONS_BEFORE_SEE_ALL], transactions[TRANSACTIONS_BEFORE_SEE_ALL:transactions.count()] ],

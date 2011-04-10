@@ -149,7 +149,6 @@
                           <td>Total</td>
                           <td>P/L $</td>
                           <td>P/L %</td>
-                          <td>&nbsp;</td>
                         </tr>
                       </thead>
                       <tbody>
@@ -168,6 +167,13 @@
                             <td class="{{ lot.pl|sign_choice:'pos,neg,' }}">{{ lot.pl_percent|floatformat:2 }}%</td>
                           </tr>
                         {% endfor %}
+                        {% if not read_only %}
+                          <tr>
+                            <td class="center" colspan="11">
+                              <a href="/{{portfolio.id}}/transactions.html?filter={{position.symbol}}">See all transactions for {{position.symbol}}.</a>
+                            </td>
+                          </tr>
+                        {% endif %}
                       </tbody>
                     </table>
                   </td>
