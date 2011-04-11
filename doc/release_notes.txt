@@ -1,4 +1,51 @@
 /================\
+| Release 0.11    |
+\================/
+
+Features
+-------------------------------------------------------------------------------
+
+#152 - New demo page copy and style.
+       https://github.com/fxdemolisher/frano/issues#issue/152
+
+#141 - Pointing Todd's link to his portfolio.
+       https://github.com/fxdemolisher/frano/issues#issue/141
+
+#149 - Transaction screen will now include a field for commissions/fees.
+       https://github.com/fxdemolisher/frano/issues#issue/149
+
+#151 - Lot view links to filtered transaction view.
+       https://github.com/fxdemolisher/frano/issues#issue/151
+
+#153 - Demo page is now a set of randomly generated portfolios.
+       https://github.com/fxdemolisher/frano/issues#issue/153
+
+Fixes
+-------------------------------------------------------------------------------
+#139 - Fixed core account settlment issued with Fidelity.
+       https://github.com/fxdemolisher/frano/issues#issue/139
+       
+#144 - Question mark link being busted by nbsp underscore.
+       https://github.com/fxdemolisher/frano/issues#issue/144
+
+#147 - Unrealized/Realized P/L will now include buy/sell transaction fees.
+       https://github.com/fxdemolisher/frano/issues#issue/147
+
+#148 - Various visual modifications to income screen, including more 
+       total columns.
+       https://github.com/fxdemolisher/frano/issues#issue/148
+                     
+Infrastructure
+-------------------------------------------------------------------------------
+#150 - Brand new lot system, no more partial lots. Lots are split when they are
+       partially bought/sold. Only latest lots are saved to DB for better 
+       performance.
+       https://github.com/fxdemolisher/frano/issues#issue/150
+
+#154 - Speeding up price history refresh batch job.
+       https://github.com/fxdemolisher/frano/issues#issue/154
+
+/================\
 | Release 0.10    |
 \================/
 
