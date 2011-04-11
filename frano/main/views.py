@@ -10,15 +10,13 @@ from urllib import urlopen
 
 from django.shortcuts import redirect
 
+from demo import get_demo_transactions
 from models import Portfolio
 from models import User
 from models import create_portfolio
 from models import create_user
 from transactions.models import clone_transaction
-from transactions.models import detect_transaction_file_type
-from transactions.models import parse_transactions
 from settings import JANRAIN_API_KEY
-from settings import SAMPLE_TRANSACTION_FILE
 from view_utils import get_demo_user
 from view_utils import logout_user
 from view_utils import redirect_to_portfolio_action
@@ -27,8 +25,6 @@ from view_utils import render_page
 #-------------\
 #  CONSTANTS  |
 #-------------/
-
-DEFAULT_SAMPLE_TRANSACTIONS = parse_transactions(detect_transaction_file_type(StringIO(SAMPLE_TRANSACTION_FILE)), StringIO(SAMPLE_TRANSACTION_FILE))
 
 #---------\
 #  VIEWS  |
@@ -112,7 +108,7 @@ def _get_demo_portfolio(portfolio_id):
   
   else:
     portfolio = create_portfolio(get_demo_user(), ('SAMPLE #%d' % random.randint(100000000, 999999999)))
-    for sample_transaction in DEFAULT_SAMPLE_TRANSACTIONS:
+    for sample_transaction in get_demo_transactions():
       transaction = clone_transaction(sample_transaction, portfolio);
       transaction.save()
 
