@@ -13,13 +13,29 @@
   <div id="mainContent" >
   
     {% if is_sample %}
-      <div class="column-row">                
-        <div class="eight columns">
-          <div class="homepageCopy">
-            <strong class="highlight">No marketing, no bullshit, just portfolios</strong>
+      <div class="column-row">
+        <div class="summaryColumn column">
+          <div class="homepageCopy homepageCopySample">
+            <strong class="highlight">What is Frano?</strong>
             <br/>
-            Here's a sample portfolio for you to play around with. It is valid for the current session. If you wish to track your own portlios, simply sign in and
-            enter your data. Happy Tracking.
+            Frano strives to provide an accurate and understandable analysis of your portfolio,
+            with the ability to import data from your broker's data files.
+          </div>
+        </div>
+        <div class="summaryColumn summaryOffset columns">
+          <div class="homepageCopy homepageCopySample">
+            <strong class="highlight">Is it for me?</strong>
+            <br/>
+            Frano serves a variety of users, from those wishing to take a simple quick glance at 
+            how they are doing to users who wish a deep analysis of their holdings and allocations. 
+          </div>
+        </div>
+        <div class="summaryColumn summaryOffset columns">
+          <div class="homepageCopy homepageCopySample">
+            <strong class="highlight">Getting started.</strong>
+            <br/>
+            Here is a sample portfolio for you to play around with. It is valid for the current 
+            session. If you wish to track your own portlios, simply sign in and enter your data.
           </div>
         </div>
       </div>
@@ -122,34 +138,42 @@
                     <table class="dataTable lotTable" width="100%" cellpadding="0" cellspacing="0">
                       <thead>
                         <tr>
-                          <td class="center">Date</td>
-                          <td>Quantity</td>
-                          <td>Cost Price</td>
-                          <td>Cost Basis<a href="http://en.wikipedia.org/wiki/Cost_basis" class="wikipediaLink" target="_blank">&nbsp;</a></td>
-                          <td>Unreal. P/L $</td>
-                          <td>Unreal. P/L %</td>
-                          <td>Quantity Sold</td>
-                          <td>Avg. Sell Price</td>
-                          <td>Realized P/L $</td>                                
                           <td class="center">Status</td>
-                          <td>&nbsp;</td>
+                          <td class="center">Bought</td>
+                          <td>Quantity</td>
+                          <td>Price</td>
+                          <td>Total<a href="http://en.wikipedia.org/wiki/Cost_basis" class="wikipediaLink" target="_blank">&nbsp;</a></td>
+                          <td class="center">Sold</td>
+                          <td>Quantity</td>
+                          <td>Price</td>
+                          <td>Total</td>
+                          <td>P/L $</td>
+                          <td>P/L %</td>
                         </tr>
                       </thead>
                       <tbody>
                         {% for lot in position.lots %}
                           <tr>
+                            <td class="center">{{ lot.status }}
                             <td class="center">{{ lot.as_of_date|date:'m/d/Y' }}</td>
                             <td>{{ lot.quantity|num_format:"4" }}</td>
-                            <td>${{ lot.cost_price|num_format }}</td>
-                            <td>${{ lot.cost_basis|num_format }}</td>
-                            <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">${{ lot.unrealized_pl|num_format }}</td>
-                            <td class="{{ lot.unrealized_pl|sign_choice:'pos,neg,' }}">{{ lot.unrealized_pl_percent|floatformat:2 }}%</td>
+                            <td>${{ lot.price|num_format }}</td>
+                            <td>${{ lot.total|num_format }}</td>
+                            <td class="center">{{ lot.sold_as_of_date|date:'m/d/Y' }}</td>
                             <td>{{ lot.sold_quantity|num_format:"4" }}</td>
                             <td>${{ lot.sold_price|num_format }}</td>
-                            <td class="{{ lot.realized_pl|sign_choice:'pos,neg,' }}">${{ lot.realized_pl|num_format }}</td>
-                            <td class="center">{{ lot.status }}
+                            <td>${{ lot.sold_total|num_format }}</td>
+                            <td class="{{ lot.pl|sign_choice:'pos,neg,' }}">${{ lot.pl|num_format }}</td>
+                            <td class="{{ lot.pl|sign_choice:'pos,neg,' }}">{{ lot.pl_percent|floatformat:2 }}%</td>
                           </tr>
                         {% endfor %}
+                        {% if not read_only %}
+                          <tr>
+                            <td class="center" colspan="11">
+                              <a href="/{{portfolio.id}}/transactions.html?filter={{position.symbol}}">See all transactions for {{position.symbol}}.</a>
+                            </td>
+                          </tr>
+                        {% endif %}
                       </tbody>
                     </table>
                   </td>

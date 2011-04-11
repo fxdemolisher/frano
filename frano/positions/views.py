@@ -103,6 +103,14 @@ def income(request, portfolio, is_sample, read_only):
     
   summaries = sorted(summary_map.values(), key = (lambda summary: summary.symbol))
   
+  for summary in summaries:
+      total_summary.market_value = total_summary.market_value + summary.market_value
+      total_summary.cost_basis = total_summary.cost_basis + summary.cost_basis
+      total_summary.unrealized_pl = total_summary.unrealized_pl + summary.unrealized_pl
+      total_summary.realized_pl = total_summary.realized_pl + summary.realized_pl
+  
+  total_summary.unrealized_pl_percent = ((total_summary.market_value / total_summary.cost_basis) - 1) * 100
+  
   context = {
       'read_only' : read_only,
       'summaries': summaries,
@@ -147,22 +155,18 @@ def _decorate_positions_for_display(positions, showClosedPositions):
 def _decorate_positions_with_lots(positions):
   for position in positions:
     lots = []
-    for lot in position.taxlot_set.order_by('-as_of_date'):
-      lot.cost_basis = lot.cost_price * lot.quantity
-      lot.unrealized_pl = (lot.quantity - lot.sold_quantity) * (position.price - lot.cost_price)
-      lot.unrealized_pl_percent = ((((position.price / lot.cost_price) - 1) * 100) if lot.cost_price <> 0 and abs(lot.unrealized_pl) > 0.01 else 0)
-      lot.realized_pl = lot.sold_quantity * (lot.sold_price - lot.cost_price)
+    for lot in position.lot_set.order_by('-as_of_date'):
+      total = max(lot.total, lot.sold_total)
       
-      days_open = (datetime.now().date() - lot.as_of_date).days
+      days_open = (datetime.now().date() - (lot.as_of_date if lot.as_of_date != None else lot.sold_as_of_date)).days
       if abs(lot.quantity - lot.sold_quantity) < 0.0001:
         lot.status = 'Closed'
-        
-      elif days_open <= 365:
-        lot.status = 'Short'
-        
+        lot.pl = lot.sold_total - lot.total
       else:
-        lot.status = 'Long'
-    
+        lot.status = 'Open'
+        lot.pl = ((lot.quantity - lot.sold_quantity) * position.price) - (lot.total - lot.sold_total)
+      
+      lot.pl_percent = (((lot.pl / total) * 100) if total <> 0.0 else 0)
       lots.append(lot)
     
     position.lots = lots
@@ -184,7 +188,7 @@ def _get_summary(positions, transactions):
   previous_market_value = 0
   for position in positions:
     market_value += position.market_value
-    cost_basis += position.cost_price * position.quantity
+    cost_basis += position.cost_basis
     realized_pl += position.realized_pl
     previous_market_value += position.previous_market_value
   
@@ -195,7 +199,7 @@ def _get_performance_history(portfolio, days):
       SELECT D.portfolio_date,
              D.deposit,
              D.withdrawal,
-             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' THEN 1.0 ELSE H.price END))) as market_value
+             SUM(P.quantity * ((CASE WHEN P.symbol = '*CASH' OR Q.cash_equivalent = '1' THEN 1.0 ELSE H.price END))) as market_value
         FROM position P
              JOIN
              (

@@ -89,6 +89,7 @@ def parse_ameritrade_transactions(reader):
       continue
     
     date_field = row[0]
+    description_field = row[2]
     quantity_field = row[3]
     symbol_field = row[4]
     price_field = row[5]
@@ -97,20 +98,32 @@ def parse_ameritrade_transactions(reader):
     net_cash_field = row[8]
     linked_symbol = None
     
+    # money market interest is a special case since it doesn't have a normal amount
+    if description_field.startswith('MONEY MARKET INTEREST'):
+      symbol = CASH_SYMBOL
+      type = 'ADJUST'
+      quantity = float(quantity_field)
+      price = 1.0
+      commission = 0.0
+    
     # skip no amount and no net cash transactions...for now
-    if abs(float(amount_field)) < 0.01 or abs(float(net_cash_field)) < 0.01:
+    elif abs(float(amount_field)) < 0.01 or abs(float(net_cash_field)) < 0.01:
+      continue
+    
+    # skip money market purchases and redemptions\
+    elif description_field.startswith('MONEY MARKET PURCHASE') or description_field.startswith('MONEY MARKET REDEMPTION'):
       continue
     
     # symbol and price in place, buy/sell transactions
-    if symbol_field != '' and price_field != '':
+    elif symbol_field != '' and price_field != '':
       symbol = symbol_field
       type = ('SELL' if float(amount_field) >= 0 else 'BUY')
       quantity = float(quantity_field)
       price = float(price_field)
-      commission = float(commission_field)
+      commission = (float(commission_field) if len(commission_field) > 0 else 0.0)
       
     # symbol is there, but price is not, dividend
-    elif symbol_field != '':
+    elif symbol_field != '' or description_field.startswith('MONEY MARKET INTEREST'):
       symbol = CASH_SYMBOL
       type = 'ADJUST'
       quantity = float(amount_field)

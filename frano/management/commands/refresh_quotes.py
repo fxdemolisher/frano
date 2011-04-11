@@ -6,6 +6,7 @@ from sys import stdout
 
 from django.core.management.base import BaseCommand
 
+from frano.main.demo import DEMO_INSTRUMENTS
 from frano.quotes.models import Quote
 from frano.quotes.models import quotes_by_symbols
 
@@ -13,7 +14,7 @@ class Command(BaseCommand):
   help = 'Refreshes all quotes from yahoo finance'
 
   def handle(self, *args, **options):
-    symbols = set([ quote.symbol for quote in Quote.objects.all()])
+    symbols = set([ quote.symbol for quote in Quote.objects.all()] + DEMO_INSTRUMENTS)
     stdout.write('Found %d quotes to refresh\nStarting...\n' % len(symbols))
     
     quotes_by_symbols(symbols, True)

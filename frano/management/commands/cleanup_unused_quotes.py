@@ -7,6 +7,7 @@ from sys import stdout
 from django.core.management.base import BaseCommand
 from django.db import connection
 
+from frano.main.demo import DEMO_INSTRUMENTS
 from frano.quotes.models import Quote
 from frano.positions.views import PERFORMANCE_BENCHMARK_SYMBOL
 
@@ -26,15 +27,15 @@ class Command(BaseCommand):
                )
       '''
     
-    symbols = []
+    symbols = set([])
     cursor = connection.cursor()
     cursor.execute(query)
     for row in cursor.fetchall():
-      symbols.append(row[0])
+      symbols.add(row[0])
       
     cursor.close()
     
-    symbols.remove(PERFORMANCE_BENCHMARK_SYMBOL)
+    symbols.difference_update(DEMO_INSTRUMENTS + [ PERFORMANCE_BENCHMARK_SYMBOL ])
     unused = Quote.objects.filter(symbol__in = symbols)
     stdout.write('Found %d unused quotes\n' % unused.count())
     
