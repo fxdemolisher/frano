@@ -130,8 +130,6 @@ def quotes_by_symbols(symbols, force_retrieve = False):
   return quotes.values()
 
 def refresh_price_history(quote):
-  history = []
-  
   start_date = quote.last_trade + timedelta(days = 0 - PRICE_HISTORY_LIMIT_IN_DAYS)
   end_date = quote.last_trade + timedelta(days = 1)
   csv_columns = 'date,open,high,low,close,volume,adj_close'
@@ -145,18 +143,38 @@ def refresh_price_history(quote):
       end_date.year)
     )
 
+  to_remove = { }
+  for history in quote.pricehistory_set.filter(as_of_date__gte = start_date.date()):
+    to_remove[history.as_of_date.date()] = history
+
+  to_save = []
   for row in _yql_csv_to_json(csv_url, csv_columns, PRICE_HISTORY_LIMIT_IN_DAYS, 2):
-    current = PriceHistory()
-    current.quote = quote
-    current.as_of_date = datetime.strptime(row['date'], '%Y-%m-%d')
-    current.price = float(row['adj_close'])
+    as_of_date = datetime.strptime(row['date'], '%Y-%m-%d')
+    price = float(row['adj_close'])
     
-    history.append(current)
+    history = to_remove.get(as_of_date.date())
+    if history == None:
+      history = PriceHistory()
+      history.quote = quote
+      history.as_of_date = as_of_date
+      history.price = price
+      
+    else:
+      del(to_remove[as_of_date.date()])
+      if abs(history.price - price) > 0.0001:
+        history.price = price
+      else:
+        continue
+
+    to_save.append(history)
+  
+  if len(to_remove) > 0:
+    ids = [ h.id for h in to_remove.values() ]
+    PriceHistory.objects.filter(id__in = ids).delete()
     
-  if len(history) > 0:
-    PriceHistory.objects.filter(quote__id__exact = quote.id).delete()
-    for current in history:
-      current.save()
+  if len(to_save) > 0:
+    for history in to_save:
+      history.save()
 
   quote.history_date = datetime.now()
   quote.save()
