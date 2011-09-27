@@ -25,7 +25,6 @@ DEMO_INSTRUMENTS = [
     'AAPL',  # Apple
     'ACWI',  # MSCI ACWI
     'AGG',   # Barclays Aggregate Bond Fund
-    'BA',    # Boeing
     'BND',   # Vanguard Total Bond Market
     'DBC',   # PowerShares DB Commodity Index
     'DBO',   # PowerShares DB Oil Fund
@@ -34,7 +33,6 @@ DEMO_INSTRUMENTS = [
     'EFA',   # MSCI EAFE
     'EMB',   # JP Morgan USD Emerging Markets
     'FFNOX', # Fidelity Four-in-One
-    'FSLXX', # Fidelity Select MM
     'GE',    # General Electric
     'GLD',   # GLD Trust
     'GOOG',  # Google
