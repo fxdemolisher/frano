@@ -311,7 +311,7 @@ def parse_charles_transactions(reader):
     symbol_field = row[3].strip(' ')
     price_field = row[5].replace('$', '').strip(' ')
     amount_field = row[6].replace('$', '').strip(' ')
-    commission_field = row[7].replace('$', '').strip(' ')
+    commission_field = row[7].replace('$', '').strip(' ').strip('*')
     linked_symbol = None
     
     # deposits and withdrawals have no symbols or prices
