@@ -1,4 +1,11 @@
 /================\
+| Release 0.12   |
+\================/
+
+Parser fixes provided by Andy (plasticube). 
+Remove some stable symbols from the demo portfolios.
+
+/================\
 | Release 0.11    |
 \================/
 
