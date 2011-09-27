@@ -33,7 +33,7 @@ from main.models import Portfolio
 
 HEADER_TO_IMPORT_TYPE_MAP = {
     ",".join(FRANO_TRANSACTION_EXPORT_HEADER) : 'FRANO',
-    ("\xef\xbb\xbf" + ",".join(GOOGLE_TRANSACTION_EXPORT_HEADER)) : 'GOOGLE',
+    ",".join(GOOGLE_TRANSACTION_EXPORT_HEADER) : 'GOOGLE',
     ",".join(AMERITRADE_TRANSACTION_EXPORT_HEADER) : 'AMERITRADE',
     ",".join(ZECCO_TRANSACTION_EXPORT_HEADER) : 'ZECCO',
     ",".join(SCOTTRADE_TRANSACTION_EXPORT_HEADER) : 'SCOTTRADE',
@@ -99,6 +99,9 @@ def transactions_as_csv(target, portfolio):
     writer.writerow([transaction.as_of_date.strftime('%m/%d/%Y'), transaction.type, transaction.symbol, transaction.quantity, transaction.price, transaction.total, transaction.linked_symbol])
 
 def parse_transactions(type, file):
+  # Filter the file for utf sigs at the front of the file or null bytes.
+  file = _null_byte_line_filter(codecs.iterdecode(file, 'utf_8_sig'))
+  
   parsed = None
   if type == 'FRANO':
     reader = csv.reader(file)
@@ -162,13 +165,16 @@ def parse_transactions(type, file):
   return transactions
 
 def detect_transaction_file_type(file):
+  # Filter the file for utf sigs at the front of the file or null bytes.
+  file = _null_byte_line_filter(codecs.iterdecode(file, 'utf_8_sig'))
+  
   first_line = None
   for line in file:
     first_line = line
     
     if first_line != None and not first_line.startswith('"Transactions  for account') and len(first_line.strip()) != 0:
       break
-  
+
   return HEADER_TO_IMPORT_TYPE_MAP.get(line.strip(), None)
 
 #-------------------\
