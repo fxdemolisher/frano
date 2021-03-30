@@ -8,7 +8,7 @@ It is also my first python/djano project.
 For Users:
 ----------
 
-It is easy to get started with. Visit [frano](http://frano.carelessmusings.com), create a portfolio, enter all your transactions (or from a starting point) 
+It is easy to get started with. Visit frano, create a portfolio, enter all your transactions (or from a starting point) 
 and start watching how your portfolio is doing. One outstanding feature that frano provides is calculating your [XIRR](http://en.wikipedia.org/wiki/Internal_rate_of_return),
 giving you a clear view of how your portfolio is doing over time.
 
